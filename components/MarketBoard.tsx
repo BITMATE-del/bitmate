@@ -1,0 +1,4 @@
+'use client';
+import {useEffect,useState} from 'react';
+type Row={symbol:string,price:number,changePct:number,volume:number};
+export default function MarketBoard(){const [rows,setRows]=useState<Row[]>([]);const [err,setErr]=useState('');useEffect(()=>{const load=()=>fetch('/api/market').then(r=>r.ok?r.json():Promise.reject()).then(d=>{setRows(d.rows);setErr('')}).catch(()=>setErr('시세 연결이 지연되고 있습니다. 다시 시도해주세요.'));load();const id=setInterval(load,8000);return()=>clearInterval(id)},[]);return <div className="card"><h2>실시간 시장현황</h2>{err&&<p className="warning">{err}</p>}<table><thead><tr><th>자산</th><th>현재가</th><th>24H</th><th>거래량</th></tr></thead><tbody>{rows.map(r=><tr key={r.symbol}><td><b>{r.symbol}</b></td><td>{r.price.toLocaleString()}</td><td className={r.changePct>=0?'good':'bad'}>{r.changePct.toFixed(2)}%</td><td>{Math.round(r.volume).toLocaleString()}</td></tr>)}</tbody></table></div>}
