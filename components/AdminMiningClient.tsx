@@ -5,10 +5,30 @@ type Tier={id:string;code:string;name:string;min_principal:number;max_principal:
 type Rate={tier_id:string;reward_rate:number;effective_from:string};
 export default function AdminMiningClient(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]); const [admin,setAdmin]=useState<boolean|null>(null); const [tiers,setTiers]=useState<Tier[]>([]); const [rates,setRates]=useState<Rate[]>([]); const [selected,setSelected]=useState(''); const [rate,setRate]=useState('0.15'); const [effective,setEffective]=useState(''); const [reason,setReason]=useState('운영 정책 변경'); const [msg,setMsg]=useState('');
- async function load(){const {data:{user}}=await supabase.auth.getUser(); const ok=user?.app_metadata?.role==='admin'; setAdmin(ok); if(!ok)return; const {data:p}=await supabase.from('mining_products').select('id').eq('code','CORE').single(); const {data:t}=await supabase.from('mining_tiers').select('*').eq('product_id',p.id).order('sort_order'); setTiers((t||[]) as Tier[]); const ids=(t||[]).map((x:{id:string})=>x.id); const {data:r}=await supabase.from('mining_rate_history').select('tier_id,reward_rate,effective_from').in('tier_id',ids).order('effective_from',{ascending:false}); setRates((r||[]) as Rate[]); if(!selected&&ids[0])setSelected(ids[0]); }
+ async function load(){
+  const {data:{user}}=await supabase.auth.getUser();
+  const ok=user?.app_metadata?.role==='admin';
+  setAdmin(ok);
+  if(!ok)return;
+
+  const {data:p,error:productError}=await supabase.from('mining_products').select('id').eq('code','CORE').maybeSingle();
+  if(productError||!p){setMsg(productError?.message||'CORE Mining 상품을 찾을 수 없습니다.');setTiers([]);setRates([]);return;}
+
+  const {data:t,error:tierError}=await supabase.from('mining_tiers').select('*').eq('product_id',p.id).order('sort_order');
+  if(tierError){setMsg(tierError.message);setTiers([]);setRates([]);return;}
+  const tierRows=(t||[]) as Tier[];
+  setTiers(tierRows);
+  const ids=tierRows.map(x=>x.id);
+  if(ids.length===0){setRates([]);return;}
+
+  const {data:r,error:rateError}=await supabase.from('mining_rate_history').select('tier_id,reward_rate,effective_from').in('tier_id',ids).order('effective_from',{ascending:false});
+  if(rateError){setMsg(rateError.message);setRates([]);return;}
+  setRates((r||[]) as Rate[]);
+  if(!selected&&ids[0])setSelected(ids[0]);
+ }
  useEffect(()=>{load();},[]);
  const current=(id:string)=>rates.find(r=>r.tier_id===id);
- async function saveRate(){setMsg(''); const {error}=await supabase.rpc('admin_schedule_mining_rate',{p_tier_id:selected,p_reward_rate:Number(rate)/100,p_effective_from:new Date(effective).toISOString(),p_reason:reason}); if(error){setMsg(error.message);return;} setMsg('새 Rate가 적용 시작일 기준으로 예약되었습니다. 과거 정산은 변경되지 않습니다.'); await load();}
+ async function saveRate(){setMsg(''); if(!selected||!effective){setMsg('등급과 적용 시작일을 선택하세요.');return;} const parsedRate=Number(rate); if(!Number.isFinite(parsedRate)||parsedRate<0){setMsg('올바른 보상률을 입력하세요.');return;} const {error}=await supabase.rpc('admin_schedule_mining_rate',{p_tier_id:selected,p_reward_rate:parsedRate/100,p_effective_from:new Date(effective).toISOString(),p_reason:reason}); if(error){setMsg(error.message);return;} setMsg('새 Rate가 적용 시작일 기준으로 예약되었습니다. 과거 정산은 변경되지 않습니다.'); await load();}
  if(admin===null)return <main className="tradePage"><section className="tradeHero"><div className="xtShell"><h1>Mining Admin</h1><p>권한 확인 중...</p></div></section></main>;
  if(!admin)return <main className="tradePage"><section className="tradeHero"><div className="xtShell"><h1>Mining Admin</h1><p>관리자 권한이 필요합니다.</p></div></section></main>;
  return <main className="tradePage"><section className="tradeHero"><div className="xtShell"><span className="sectionLabel">MINING ADMIN</span><h1>Mining 수익률 관리</h1><p>회원별 숫자를 직접 수정하지 않고 상품/등급 정책과 정산 이력으로 관리합니다.</p></div></section><section className="xtShell adminMiningGrid"><div className="adminTierList">{tiers.map(t=><button className={selected===t.id?'active':''} onClick={()=>setSelected(t.id)} key={t.id}><span>{t.code}</span><b>{t.name}</b><small>{t.min_principal} ~ {t.max_principal??'∞'} USDT · {t.mining_power} TH/s</small><em>현재 {(Number(current(t.id)?.reward_rate||0)*100).toFixed(2)}%</em></button>)}</div><div className="adminRateForm"><h2>새 Rate 예약</h2><label>적용 등급<select value={selected} onChange={e=>setSelected(e.target.value)}>{tiers.map(t=><option value={t.id} key={t.id}>{t.name}</option>)}</select></label><label>일일 보상률 (%)<input value={rate} onChange={e=>setRate(e.target.value)} type="number" step="0.01"/></label><label>적용 시작일<input value={effective} onChange={e=>setEffective(e.target.value)} type="datetime-local"/></label><label>변경 사유<textarea value={reason} onChange={e=>setReason(e.target.value)}/></label><button className="limeBtn" disabled={!effective||!selected} onClick={saveRate}>Rate 변경 예약</button>{msg&&<p className="adminMsg">{msg}</p>}<small>변경 전/후 값, 관리자, 시간, 적용일, 사유는 서버 로그에 저장됩니다.</small></div></section></main>;
