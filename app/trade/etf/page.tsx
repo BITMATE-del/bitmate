@@ -1,2 +1,0 @@
-import TradeLanding from '@/components/TradeLanding';
-export default function Page(){return <TradeLanding eyebrow="LEVERAGED TOKENS" title="레버리지 토큰을 단순한 구조로" description="강제청산 구조를 직접 관리하지 않고도 방향성 노출을 확인할 수 있는 ETF형 상품 페이지입니다. 현재는 DEMO 설명/체험 중심입니다." badge="ETF" stats={[{label:'Leverage range',value:'2x · 3x'},{label:'Liquidation',value:'None'},{label:'Mode',value:'DEMO'},{label:'Rebalance',value:'Rule-based'}]} bullets={['레버리지 토큰형 상품 구조','청산가 관리 없는 단순 UX','위험도와 배율을 명확히 표시','실거래 활성화 전 별도 검토']}/>}

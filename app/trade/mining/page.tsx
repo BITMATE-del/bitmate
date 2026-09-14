@@ -1,2 +1,0 @@
-import TradeLanding from '@/components/TradeLanding';
-export default function Page(){return <TradeLanding eyebrow="MINING ZONE" title="마이닝 관련 상품을 한 곳에서" description="채굴 생태계와 연결된 디지털자산 상품을 모아보는 Mining Zone 페이지입니다. 투자성과를 보장하지 않고 구조와 위험을 우선 설명합니다." badge="Mining Zone" stats={[{label:'Products',value:'Curated'},{label:'Yield display',value:'Verified only'},{label:'Mode',value:'Preview'},{label:'Risk',value:'High'}]} bullets={['마이닝 연계 상품 카테고리','수익률은 검증 데이터만 표시','리스크 고지 우선','운영 전 별도 심사']}/>}
