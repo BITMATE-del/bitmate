@@ -84,10 +84,10 @@ export default function MiningGame(){
     const {error}=await supabase.rpc('start_demo_mining',{p_amount:selectedAmount,p_idempotency_key:key,p_terms_version:'v1'});
     setPending(false);setConfirming(false);
     if(error){
-      setNotice(error.message.includes('INSUFFICIENT_DEMO_USDT_BALANCE')?'DEMO USDT 잔액이 부족합니다. Mining 참여금액은 서버 잔액에서만 차감됩니다.':error.message);
+      setNotice(error.message.includes('INSUFFICIENT_DEMO_USDT_BALANCE')?'USDT 사용 가능 잔액이 부족합니다. Mining 참여금액은 서버 잔액에서만 차감됩니다.':error.message);
       return;
     }
-    setNotice('채굴기가 가동되었습니다. 실제 Position 생성 및 잔액 잠금이 완료됐습니다.');
+    setNotice('채굴기가 가동되었습니다. Position 생성 및 잔액 잠금이 완료됐습니다.');
     await load();
   }
 
@@ -97,7 +97,7 @@ export default function MiningGame(){
       <div className="miningIntro">
         <span className="miningKicker">BITMATE DIGITAL MINING</span>
         <h1>{active?'MINING ACTIVE':'YOUR MINING CORE'}</h1>
-        <p>{active?'채굴기는 정상 가동 중입니다. 서버 정산이 완료된 보상만 실제 잔액에 반영됩니다.':'금액을 선택하고 채굴기를 켜세요. 복잡한 설정 없이 매일 Mining Reward 기록을 확인할 수 있습니다.'}</p>
+        <p>{active?'채굴기는 정상 가동 중입니다. 서버 정산이 완료된 보상만 잔액에 반영됩니다.':'금액을 선택하고 채굴기를 켜세요. 복잡한 설정 없이 매일 Mining Reward 기록을 확인할 수 있습니다.'}</p>
         <div className="miningKpis">
           <div><span>내 Mining Power</span><b>{money(game?.mining_power||0)} TH/s</b></div>
           <div><span>오늘 보상</span><b>{money(game?.today_reward||0)} USDT</b></div>
@@ -122,7 +122,7 @@ export default function MiningGame(){
 
     <section className="xtShell miningQuickStats">
       <div><span>ACTIVE POSITION</span><b>{game?.active_positions||0}</b></div>
-      <div><span>12 DAYS MINING</span><b>{game?.mining_days||0} DAYS</b></div>
+      <div><span>MINING DAYS</span><b>{game?.mining_days||0} DAYS</b></div>
       <div><span>오늘 예상 보상</span><b>{money(activeExpected)} USDT</b></div>
       <div><span>정산 기준</span><b>09:05 KST</b></div>
     </section>
@@ -145,7 +145,7 @@ export default function MiningGame(){
 
     <section className="xtShell tierSection"><div className="sectionTitle"><span>MINER RANK</span><h2>Mining 등급</h2></div><div className="tierGrid">{tiers.map(t=><article className={tier?.id===t.id?'active':''} key={t.id}><span>{t.code}</span><h3>{t.name}</h3><b>{money(t.mining_power)} TH/s</b><p>{money(t.min_principal)}{t.max_principal?` ~ ${money(t.max_principal)}`:'+'} USDT</p><small>현재 Rate {pct(rateFor(t.id))}</small></article>)}</div></section>
 
-    <section className="xtShell miningMission"><div><span className="sectionLabel">MINING STREAK</span><h2>연속 Mining</h2><p>접속만으로 보상이 생기지 않습니다. 실제 ACTIVE Mining 정산일을 기준으로 기록합니다.</p></div><div className="dayTrack">{[1,2,3,4,5,6,7].map(d=><span className={(game?.mining_days||0)%7>=d?'done':''} key={d}>DAY {d}</span>)}</div><Link href="/my-mining" className="secondaryTradeBtn">내 채굴 / History 보기</Link></section>
+    <section className="xtShell miningMission"><div><span className="sectionLabel">MINING STREAK</span><h2>연속 Mining</h2><p>접속만으로 보상이 생기지 않습니다. ACTIVE Mining 정산일을 기준으로 기록합니다.</p></div><div className="dayTrack">{[1,2,3,4,5,6,7].map(d=><span className={(game?.mining_days||0)%7>=d?'done':''} key={d}>DAY {d}</span>)}</div><Link href="/my-mining" className="secondaryTradeBtn">내 채굴 / History 보기</Link></section>
 
     {notice&&<div className="miningToast">{notice}</div>}
     {confirming&&tier&&<div className="miningModalBack"><div className="miningModal"><span className="sectionLabel">CONFIRM MINING</span><h2>채굴 시작 확인</h2><dl><div><dt>참여금액</dt><dd>{money(selectedAmount)} USDT</dd></div><div><dt>등급</dt><dd>{tier.name}</dd></div><div><dt>현재 적용 Rate</dt><dd>{pct(currentRate)}</dd></div><div><dt>다음 정산 예정</dt><dd>내일 09:05 KST</dd></div></dl><p>완료된 과거 정산은 향후 Rate 변경으로 소급 수정되지 않습니다.</p><div className="modalActions"><button className="secondaryTradeBtn" onClick={()=>setConfirming(false)}>취소</button><button className="limeBtn" onClick={startMining} disabled={pending}>{pending?'처리 중...':'채굴 시작'}</button></div></div></div>}
