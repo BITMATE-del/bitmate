@@ -19,10 +19,10 @@ export default function ExchangeHeader(){
   const closeMenus=()=>{setMobileOpen(false);setMiningOpen(false);setAiOpen(false);setCopyOpen(false);setEtfOpen(false)};
   const item=(href:string,icon:string,title:string,desc:string)=><Link style={itemStyle} className="tradeMenuItem" href={href} onClick={closeMenus}><span className="tradeIcon">{icon}</span><span style={copyStyle}><b>{title}</b><small style={descStyle}>{desc}</small></span><em>›</em></Link>;
 
-  return <header className="xtHeader"><div className="xtShell xtHeaderInner">
-    <Link className="xtBrand" href="/" onClick={closeMenus}><span className="xtLogo">B</span><b>BITMATE</b></Link>
+  return <header className="xtHeader"><div className="xtShell xtHeaderInner" style={{width:'100%',maxWidth:'none',margin:0,padding:'0 24px',gap:'22px',boxSizing:'border-box'}}>
+    <Link className="xtBrand" href="/" onClick={closeMenus} style={{flexShrink:0}}><span className="xtLogo">B</span><b>BITMATE</b></Link>
     <button className="mobileToggle" onClick={()=>setMobileOpen(v=>!v)} aria-label="Toggle menu">☰</button>
-    <nav className={mobileOpen?'mobileOpen':''} style={{flexWrap:'nowrap',minWidth:0}}>
+    <nav className={mobileOpen?'mobileOpen':''} style={{flex:'0 1 auto',flexWrap:'nowrap',minWidth:0}}>
       <div className="navDropdown" onMouseEnter={()=>setAiOpen(true)} onMouseLeave={()=>setAiOpen(false)}>
         <button style={desktopMenuStyle} className={aiOpen?'navDropButton active':'navDropButton'} onClick={()=>setAiOpen(v=>!v)} aria-expanded={aiOpen}>AI Trading <span>⌄</span></button>
         <div style={dropdownStyle} className={aiOpen?'tradeDropdown open':'tradeDropdown'}>
@@ -56,7 +56,7 @@ export default function ExchangeHeader(){
       <Link style={desktopMenuStyle} href="/#markets" onClick={closeMenus}>Markets</Link>
       <Link style={desktopMenuStyle} href="/more" onClick={closeMenus}>More <span>⌄</span></Link>
     </nav>
-    <div className="xtHeaderTools" style={{flexShrink:0,gap:'14px',height:'100%'}}>
+    <div className="xtHeaderTools" style={{marginLeft:'auto',flexShrink:0,gap:'14px',height:'100%'}}>
       <button className="searchPill" style={{height:'40px',width:'172px',minWidth:'172px',borderRadius:'11px',border:'1px solid #4a4e52',background:'#25272a',color:'#9ea4aa',padding:'0 13px',display:'flex',alignItems:'center',gap:'7px',fontSize:'14px'}}><span style={{fontSize:'15px',lineHeight:1}}>⌕</span><span style={{fontSize:'13px'}}>🔥</span><span>BTC/USDT</span></button>
       <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
       <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
