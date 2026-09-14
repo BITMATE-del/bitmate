@@ -1,5 +1,5 @@
 import MarketBoard from '@/components/MarketBoard';
-import styles from './HomeHero.module.css';
+import HeroArtwork from '@/components/HeroArtwork';
 
 const promos=[
   {tag:'NEW',title:'Trading Access',copy:'시장 확인부터 주문과 자산 관리까지 하나의 흐름으로 빠르게 이용하세요.',meta:'Markets · Orders · Portfolio'},
@@ -20,21 +20,14 @@ const stats=[['5','Live market assets'],['5','Core product lines'],['24/7','Mark
 
 export default function Home(){
   return <main>
-    <section className={styles.hero} id="home">
-      <div className={styles.grid}>
-        <div className={styles.copy}>
-          <div className={styles.eyebrow}>BRING A BRIGHTER TOMORROW</div>
-          <h1 className={styles.headline}><strong>가치를 만드는</strong><em>더 나은 거래의 시작</em></h1>
-          <p className={styles.desc}>전 세계가 신뢰하는 디지털 자산 거래소, BITMATE.<br/>더 안전하고, 더 빠르고, 더 큰 가능성을 경험하세요.</p>
-          <div className={styles.bonus}><span>🎁</span><span>신규 사용자 전용 <b>$8,888</b> 보너스!</span></div>
-          <form className={styles.signup} action="/signup"><input name="account" aria-label="전화번호 또는 이메일" placeholder="전화번호/이메일"/><a href="/signup">회원 가입</a></form>
-          <div className={styles.social}><button aria-label="Google login">G</button><button aria-label="Apple login">●</button><a href="#app" aria-label="App download">↓</a></div>
-          <div className={styles.features}><span>실시간 시세</span><span>서버 기준 잔액 처리</span><span>보안 중심 설계</span></div>
-        </div>
-        <div className={styles.visualWrap} aria-hidden="true"><div className={styles.visualGlow}/><img className={styles.visual} src="/bitmate-hero.svg?v=20260914-main" alt=""/><div className={styles.slogan}>MORE THAN TRADING<br/>A BRIGHTER TOMORROW</div></div>
-      </div>
-      <div className={styles.stats}><div className={styles.statsInner}><div><b>24/7</b><small>Market monitoring</small></div><div><b>5+</b><small>Core products</small></div><div><b>99.99%</b><small>System availability target</small></div><div><b>LIVE</b><small>Market data</small></div></div></div>
-    </section>
+    <section className="xtHero" id="home"><div className="xtShell xtHeroGrid">
+      <div className="xtHeroCopy"><div className="xtEyebrow"><span/> DIGITAL ASSET EXPERIENCE</div><h1>Explore markets.<br/>Trade with clarity.</h1><p>BITMATE는 시장 확인부터 주문, 전략, 자산 관리까지 끊김 없이 이어지는 디지털자산 거래 경험을 지향합니다.</p>
+      <div style={{marginTop:28,fontSize:15,fontWeight:800,color:'#f5f6f7'}}>🎁 신규 사용자 전용 <b style={{color:'#b9ff31'}}>$8,888</b> 보너스!</div>
+      <div style={{display:'flex',maxWidth:570,marginTop:16,border:'1px solid #34393d',borderRadius:18,padding:5,background:'#101315'}}><div style={{flex:1,display:'flex',alignItems:'center',padding:'0 16px',color:'#777f84',fontSize:14}}>전화번호/이메일</div><a href="/signup" style={{minWidth:132,height:48,borderRadius:14,background:'#f5f6f7',color:'#111',display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:800}}>회원 가입</a></div>
+      <div style={{display:'flex',alignItems:'center',gap:12,marginTop:18}}><button aria-label="Google" style={{width:44,height:44,border:'1px solid #34393d',borderRadius:'50%',background:'#111416',color:'#fff',fontWeight:800}}>G</button><button aria-label="Apple" style={{width:44,height:44,border:'1px solid #34393d',borderRadius:'50%',background:'#111416',color:'#fff',fontSize:18}}>●</button><a href="#app" aria-label="App download" style={{width:44,height:44,border:'1px solid #34393d',borderRadius:'50%',background:'#111416',color:'#fff',display:'grid',placeItems:'center',fontSize:18}}>↓</a></div>
+      <div className="trustChips"><span>✓ 실시간 시세</span><span>✓ 서버 기준 잔액 처리</span><span>✓ 보안 중심 설계</span></div></div>
+      <HeroArtwork/>
+    </div></section>
 
     <section className="noticeStrip"><div className="xtShell"><b>●</b><span>BITMATE market systems online</span><span className="noticeSep">•</span><span>Market data and risk controls are monitored continuously</span><a href="#markets">View markets →</a></div></section>
 
