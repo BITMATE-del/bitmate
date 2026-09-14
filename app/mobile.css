@@ -1,0 +1,72 @@
+/* Mobile-only overrides. Keep desktop layout untouched. */
+@media (max-width:1060px){
+  .xtHeaderInner{height:60px!important;padding:0 12px!important;gap:10px!important;}
+  .xtBrand{order:1;flex-shrink:0;font-size:18px;gap:8px;}
+  .xtLogo{width:30px;height:30px;border-radius:8px;}
+
+  .mobileToggle{display:grid!important;place-items:center;order:4;margin-left:0!important;width:38px;height:38px;padding:0;border:0;border-radius:10px;background:transparent;color:#f5f6f7;font-size:21px;line-height:1;}
+  .xtHeaderTools{order:3;margin-left:auto!important;gap:8px!important;height:60px!important;min-width:0;}
+  .xtHeaderTools .loginLink,.xtHeaderTools .iconBtn{display:none!important;}
+  .xtHeaderTools .headerBtn{display:inline-flex!important;height:38px!important;min-height:38px!important;padding:0 13px!important;border-radius:9px!important;font-size:12px!important;}
+  .xtHeaderTools .searchPill{display:flex!important;width:clamp(112px,31vw,168px)!important;min-width:0!important;height:38px!important;padding:0 10px!important;border-radius:10px!important;overflow:hidden;white-space:nowrap;}
+  .xtHeaderTools .searchPill span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+  .xtHeader nav{position:fixed!important;top:60px!important;left:0!important;right:auto!important;bottom:0!important;width:min(86vw,330px)!important;height:calc(100dvh - 60px)!important;display:none!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:0!important;padding:10px 14px 24px!important;background:#0d1013!important;border-right:1px solid #22272b!important;border-bottom:0!important;overflow-y:auto!important;overscroll-behavior:contain;z-index:210!important;box-shadow:18px 0 45px rgba(0,0,0,.5),320px 0 0 100vmax rgba(0,0,0,.48);}
+  .xtHeader nav.mobileOpen{display:flex!important;}
+  body:has(.xtHeader nav.mobileOpen){overflow:hidden;}
+
+  .xtHeader nav>a,.xtHeader .navDropButton{width:100%!important;min-height:50px!important;display:flex!important;align-items:center!important;justify-content:space-between!important;padding:0 8px!important;margin:0!important;border:0!important;border-bottom:1px solid rgba(255,255,255,.055)!important;border-radius:0!important;background:transparent!important;color:#eef1f2!important;font-size:14px!important;font-weight:650!important;text-align:left;}
+  .xtHeader .navDropButton.active{color:var(--lime)!important;}
+  .xtHeader .navDropdown{width:100%!important;position:relative!important;}
+
+  /* Hidden desktop dropdowns were reserving vertical space on mobile. */
+  .xtHeader .tradeDropdown{display:none!important;position:static!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:none!important;max-height:none!important;margin:4px 0 8px!important;padding:6px!important;background:#15191c!important;border:1px solid #20262a!important;border-radius:12px!important;box-shadow:none!important;opacity:1!important;visibility:visible!important;transform:none!important;overflow:visible!important;}
+  .xtHeader .tradeDropdown.open{display:block!important;}
+  .xtHeader .tradeMenuItem{grid-template-columns:24px minmax(0,1fr) 12px!important;gap:10px!important;width:100%!important;min-height:58px!important;padding:10px 9px!important;border-radius:9px!important;border-bottom:0!important;}
+  .xtHeader .tradeMenuItem b{font-size:13px!important;margin-bottom:3px!important;}
+  .xtHeader .tradeMenuItem small{font-size:11px!important;line-height:1.4!important;}
+  .xtHeader .tradeIcon{font-size:16px!important;}
+}
+
+@media (max-width:700px){
+  .xtShell{width:calc(100% - 28px)!important;}
+  .xtHeaderInner{padding:0 10px!important;gap:7px!important;}
+  .xtBrand{font-size:16px;gap:7px;}
+  .xtLogo{width:29px;height:29px;}
+  .mobileToggle{width:34px;height:36px;font-size:19px;}
+  .xtHeaderTools{gap:6px!important;}
+  .xtHeaderTools .searchPill{width:clamp(104px,29vw,145px)!important;height:36px!important;font-size:11px!important;gap:5px!important;}
+  .xtHeaderTools .searchPill span:first-child{font-size:12px!important;}
+  .xtHeaderTools .searchPill span:nth-child(2){font-size:11px!important;}
+  .xtHeaderTools .headerBtn{height:36px!important;min-height:36px!important;padding:0 11px!important;font-size:11px!important;}
+
+  .xtHeroGrid{grid-template-columns:1fr!important;min-height:auto!important;gap:24px!important;padding:46px 0 42px!important;}
+  .xtHeroCopy h1{font-size:clamp(48px,15vw,68px)!important;line-height:.96!important;margin:16px 0 20px!important;}
+  .xtHeroCopy>p{font-size:15px!important;line-height:1.65!important;}
+  .trustChips{gap:10px 16px!important;margin-top:22px!important;}
+  .heroArt{height:390px!important;transform:scale(.86);transform-origin:top center;margin-bottom:-55px;}
+
+  .promoGrid{grid-template-columns:1fr!important;}
+  .marketHeading{align-items:flex-start!important;flex-direction:column!important;}
+  .marketTabs{overflow-x:auto;width:100%;padding-bottom:4px;}
+  .productGrid{grid-template-columns:1fr!important;}
+  .featureBandGrid,.appGrid,.safetyGrid{grid-template-columns:1fr!important;gap:36px!important;}
+  .featureBand,.appSection,.safetySection,.marketsSection,.productSection{padding:58px 0!important;}
+  .featureCopy h2,.appCopy h2,.marketHeading h2,.sectionTitle h2,.safetyGrid h2{font-size:36px!important;}
+  .workspaceBody{grid-template-columns:1fr!important;}
+  .workspaceOrder{border-top:1px solid #252a2d;}
+  .statsGrid{grid-template-columns:1fr 1fr!important;}
+  .statsGrid div{padding:24px 16px!important;border-bottom:1px solid #25292c;}
+  .statsGrid strong{font-size:28px!important;}
+  .safetyCards{grid-template-columns:1fr!important;}
+  .footerTop{align-items:flex-start!important;gap:14px;flex-direction:column!important;}
+  .footerCols{grid-template-columns:1fr 1fr!important;gap:26px 18px!important;}
+  .footerBottom{gap:12px;flex-direction:column!important;}
+}
+
+@media (max-width:420px){
+  .xtBrand b{display:none;}
+  .xtHeaderTools .searchPill{width:118px!important;}
+  .xtHeaderTools .headerBtn{padding:0 10px!important;}
+  .footerCols{grid-template-columns:1fr!important;}
+}
