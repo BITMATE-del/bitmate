@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import {useEffect,useMemo,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState,type CSSProperties} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 
 const coreNav=[{href:'/cfd',label:'CFD Margin'}];
@@ -24,7 +24,7 @@ const quickLinks=[
  {href:'/#markets',icon:'▦',label:'Markets',sub:'실시간 시장'},
 ];
 
-const panelStyle={position:'absolute',right:0,top:'48px',width:'480px',maxWidth:'calc(100vw - 32px)',maxHeight:'calc(100vh - 86px)',overflowY:'auto' as const,background:'#181a1c',border:'1px solid #26292c',borderRadius:'20px',boxShadow:'0 28px 80px rgba(0,0,0,.55)',padding:'22px 20px',zIndex:240};
+const panelStyle:CSSProperties={position:'absolute',right:0,top:'48px',width:'480px',maxWidth:'calc(100vw - 32px)',maxHeight:'calc(100vh - 86px)',overflowY:'auto',background:'#181a1c',border:'1px solid #26292c',borderRadius:'20px',boxShadow:'0 28px 80px rgba(0,0,0,.55)',padding:'22px 20px',zIndex:240};
 const sectionTitleStyle={fontSize:'13px',fontWeight:800,color:'#f3f5f6',margin:'8px 0 14px'} as const;
 
 export default function ExchangeHeader(){
