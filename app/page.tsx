@@ -1,4 +1,5 @@
 import MarketBoard from '@/components/MarketBoard';
+import HeroArtwork from '@/components/HeroArtwork';
 
 const promos=[
   {tag:'NEW',title:'DEMO Trading Week',copy:'첫 거래 흐름부터 자산 확인까지 연습 환경에서 빠르게 익혀보세요.',meta:'Practice · No deposit'},
@@ -21,7 +22,7 @@ export default function Home(){
   return <main>
     <section className="xtHero" id="home"><div className="xtShell xtHeroGrid">
       <div className="xtHeroCopy"><div className="xtEyebrow"><span/> DIGITAL ASSET EXPERIENCE</div><h1>Explore markets.<br/>Trade with clarity.</h1><p>BITMATE는 시장 확인부터 주문, 전략, 자산 관리까지 끊김 없이 이어지는 디지털자산 거래 경험을 지향합니다.</p><div className="signupBar"><div className="signupField"><span>이메일 또는 휴대폰</span></div><a className="limeBtn" href="#markets">Get Started</a></div><div className="altRow"><span>또는</span><button aria-label="Google">G</button><button aria-label="Apple">●</button><a href="#app">App Download</a></div><div className="trustChips"><span>✓ DEMO 우선</span><span>✓ 실시간 시세</span><span>✓ 보안 중심 설계</span></div></div>
-      <div className="heroArt" aria-hidden="true"><div className="orbit orbitOne"/><div className="orbit orbitTwo"/><div className="deviceCard deviceMain"><div className="deviceTop"><span>BTC/USDT</span><b>DEMO</b></div><div className="devicePrice">77,259.40</div><div className="deviceChange">-0.02%</div><div className="microChart">{[34,42,31,48,57,44,62,66,58,73,70,82,77,90].map((h,i)=><i key={i} style={{height:`${h}%`}}/>)}</div><div className="deviceActions"><span>Buy</span><span>Sell</span></div></div><div className="coin coinA">₿</div><div className="coin coinB">Ξ</div><div className="coin coinC">S</div><div className="floatBadge badgeA"><span>Portfolio</span><b>₩10,000,000</b></div><div className="floatBadge badgeB"><span>Mode</span><b>DEMO</b></div></div>
+      <HeroArtwork/>
     </div></section>
 
     <section className="noticeStrip"><div className="xtShell"><b>●</b><span>BITMATE DEMO market environment is live</span><span className="noticeSep">•</span><span>Real-money features remain disabled by default</span><a href="#markets">View markets →</a></div></section>
