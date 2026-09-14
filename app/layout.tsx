@@ -1,4 +1,5 @@
 import './globals.css';
+import './hero.css';
 import Link from 'next/link';
 import ExchangeHeader from '@/components/ExchangeHeader';
 
