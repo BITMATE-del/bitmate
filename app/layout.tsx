@@ -1,4 +1,5 @@
 import './globals.css';
+import './mobile.css';
 import './hero.css';
 import './mining.css';
 import Link from 'next/link';
