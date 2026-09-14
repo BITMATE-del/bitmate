@@ -15,7 +15,7 @@ type MarketRow={symbol:string;price:number;changePct:number;volume:number};
 type TraderRow={id:string;nickname:string;risk_level:string};
 type TraderPerf={trader_id:string;roi_30d:number|null};
 
-const quickLinks=[
+const baseQuickLinks=[
  {href:'/ai-core',icon:'◉',label:'AI Trading',sub:'AI 자동운용'},
  {href:'/copy-trading',icon:'◎',label:'Copy Trading',sub:'트레이더 카피'},
  {href:'/cfd',icon:'↗',label:'CFD Margin',sub:'레버리지 거래'},
@@ -41,10 +41,18 @@ export default function ExchangeHeader(){
   const [markets,setMarkets]=useState<MarketRow[]>([]);
   const [traders,setTraders]=useState<TraderRow[]>([]);
   const [traderPerf,setTraderPerf]=useState<Record<string,TraderPerf>>({});
+  const [isLoggedIn,setIsLoggedIn]=useState(false);
   const searchRef=useRef<HTMLDivElement>(null);
 
   const closeMenus=()=>{setMobileOpen(false);setMiningOpen(false);setAiOpen(false);setCopyOpen(false);setEtfOpen(false);setMoreOpen(false)};
   const item=(href:string,icon:string,title:string,desc:string)=><Link style={itemStyle} className="tradeMenuItem" href={href} onClick={closeMenus}><span className="tradeIcon">{icon}</span><span style={copyStyle}><b>{title}</b><small style={descStyle}>{desc}</small></span><em>›</em></Link>;
+
+  useEffect(()=>{
+    let alive=true;
+    supabase.auth.getUser().then(({data:{user}})=>{if(alive)setIsLoggedIn(!!user)});
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{if(alive)setIsLoggedIn(!!session?.user)});
+    return()=>{alive=false;subscription.unsubscribe()};
+  },[supabase]);
 
   useEffect(()=>{
     const onDown=(e:MouseEvent)=>{if(searchRef.current&&!searchRef.current.contains(e.target as Node))setSearchOpen(false)};
@@ -67,6 +75,7 @@ export default function ExchangeHeader(){
     return()=>{cancelled=true};
   },[searchOpen,supabase]);
 
+  const quickLinks=isLoggedIn?[...baseQuickLinks,{href:'/more/btmt-membership',icon:'◆',label:'BTMT Membership',sub:'BTMT 스테이킹 멤버십'}]:baseQuickLinks;
   const q=query.trim().toLowerCase();
   const filteredLinks=quickLinks.filter(x=>!q||`${x.label} ${x.sub}`.toLowerCase().includes(q));
   const filteredMarkets=markets.filter(x=>!q||`${x.symbol} usdt`.toLowerCase().includes(q));
@@ -97,7 +106,7 @@ export default function ExchangeHeader(){
       <Link style={desktopMenuStyle} href="/#markets" onClick={closeMenus}>Markets</Link>
       <div className="navDropdown" onMouseEnter={()=>setMoreOpen(true)} onMouseLeave={()=>setMoreOpen(false)}>
         <button style={desktopMenuStyle} className={moreOpen?'navDropButton active':'navDropButton'} onClick={()=>setMoreOpen(v=>!v)} aria-expanded={moreOpen}>More <span>⌄</span></button>
-        <div style={{...dropdownRightStyle,width:'390px'}} className={moreOpen?'tradeDropdown open':'tradeDropdown'}>
+        <div style={{...dropdownRightStyle,width:'390px',maxHeight:'calc(100vh - 100px)',overflowY:'auto'}} className={moreOpen?'tradeDropdown open':'tradeDropdown'}>
           {item('/more/notice','▣','Notice','서비스 공지, 시스템 업데이트 및 점검 안내')}
           {item('/more/referral','↗','Referral Program','초대 링크, 추천 현황 및 커미션 프로그램')}
           {item('/more/reward-hub','◆','Reward Hub','레퍼럴 파트너·총판 성과와 리워드 관리')}
@@ -105,6 +114,7 @@ export default function ExchangeHeader(){
           {item('/more/mining-boost','⚡','Mining Boost','Mining Power 및 채굴 효율 부스트 프로그램')}
           {item('/lucky-draw','✦','Lucky Draw','행운볼 획득, 서버 추첨 및 보상 내역')}
           {item('/crypto-loan','◫','Crypto Loan','보유 암호화폐를 담보로 하는 자산담보 대출')}
+          {isLoggedIn&&item('/more/btmt-membership','◆','BTMT Membership','BTMT 스테이킹 등급과 거래금액 리워드')}
         </div>
       </div>
     </nav>
