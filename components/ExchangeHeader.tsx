@@ -56,6 +56,12 @@ export default function ExchangeHeader(){
       <Link style={desktopMenuStyle} href="/#markets" onClick={closeMenus}>Markets</Link>
       <Link style={desktopMenuStyle} href="/more" onClick={closeMenus}>More <span>⌄</span></Link>
     </nav>
-    <div className="xtHeaderTools" style={{flexShrink:0}}><button className="searchPill">⌕ BTC/USDT</button><Link className="loginLink" href="/login">Log in</Link><Link className="limeBtn headerBtn" href="/signup">Sign up</Link><button className="iconBtn">↓</button><button className="iconBtn">◎</button></div>
+    <div className="xtHeaderTools" style={{flexShrink:0,gap:'14px',height:'100%'}}>
+      <button className="searchPill" style={{height:'40px',width:'172px',minWidth:'172px',borderRadius:'11px',border:'1px solid #4a4e52',background:'#25272a',color:'#9ea4aa',padding:'0 13px',display:'flex',alignItems:'center',gap:'7px',fontSize:'14px'}}><span style={{fontSize:'15px',lineHeight:1}}>⌕</span><span style={{fontSize:'13px'}}>🔥</span><span>BTC/USDT</span></button>
+      <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
+      <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
+      <button className="iconBtn" aria-label="Download app" style={{width:'30px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter"/></svg></button>
+      <button className="iconBtn" aria-label="Language" style={{width:'32px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M3.5 12h17M12 3c2.1 2.3 3.2 5.3 3.2 9S14.1 18.7 12 21M12 3C9.9 5.3 8.8 8.3 8.8 12S9.9 18.7 12 21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg></button>
+    </div>
   </div></header>
 }
