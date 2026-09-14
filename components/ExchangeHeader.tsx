@@ -21,6 +21,7 @@ const quickLinks=[
  {href:'/cfd',icon:'↗',label:'CFD Margin',sub:'레버리지 거래'},
  {href:'/crypto-etf',icon:'◈',label:'Crypto ETF',sub:'BITMATE INDEX'},
  {href:'/mining',icon:'⛏',label:'Mining',sub:'Digital Mining'},
+ {href:'/crypto-loan',icon:'◫',label:'Crypto Loan',sub:'암호화폐 담보 대출'},
  {href:'/#markets',icon:'▦',label:'Markets',sub:'실시간 시장'},
 ];
 
@@ -102,7 +103,8 @@ export default function ExchangeHeader(){
           {item('/more/reward-hub','◆','Reward Hub','레퍼럴 파트너·총판 성과와 리워드 관리')}
           {item('/more/academy','▤','Academy','플랫폼 사용법, 상품 가이드 및 시작 안내')}
           {item('/more/mining-boost','⚡','Mining Boost','Mining Power 및 채굴 효율 부스트 프로그램')}
-          {item('/more/lucky-draw','✦','Lucky Draw','이벤트 참여 및 추첨형 프로모션')}
+          {item('/lucky-draw','✦','Lucky Draw','행운볼 획득, 서버 추첨 및 보상 내역')}
+          {item('/crypto-loan','◫','Crypto Loan','보유 암호화폐를 담보로 하는 자산담보 대출')}
         </div>
       </div>
     </nav>
@@ -112,13 +114,9 @@ export default function ExchangeHeader(){
         <button className="searchPill" onClick={()=>setSearchOpen(v=>!v)} aria-expanded={searchOpen} style={{height:'40px',width:'172px',minWidth:'172px',borderRadius:'11px',border:'1px solid #4a4e52',background:'#25272a',color:'#9ea4aa',padding:'0 13px',display:'flex',alignItems:'center',gap:'7px',fontSize:'14px',cursor:'pointer'}}><span style={{fontSize:'15px',lineHeight:1}}>⌕</span><span style={{fontSize:'13px'}}>🔥</span><span>{hotSymbol}/USDT</span></button>
         {searchOpen&&<div style={panelStyle}>
           <div style={{display:'flex',alignItems:'center',gap:'10px',height:'44px',padding:'0 13px',background:'#25272a',border:'1px solid #45494d',borderRadius:'11px',marginBottom:'20px'}}><span style={{color:'#8e959a',fontSize:'18px'}}>⌕</span><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="코인 또는 기능 검색" style={{width:'100%',border:0,outline:0,background:'transparent',color:'#f5f6f7',fontSize:'14px'}}/>{query&&<button onClick={()=>setQuery('')} style={{border:0,background:'transparent',color:'#8e959a',cursor:'pointer'}}>×</button>}</div>
-
           {filteredLinks.length>0&&<section><div style={sectionTitleStyle}>Common Functions</div><div style={{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',marginBottom:'22px'}}>{filteredLinks.map(x=><Link key={x.href} href={x.href} onClick={()=>setSearchOpen(false)} style={{minHeight:'82px',borderRadius:'12px',padding:'12px 10px',background:'#202326',display:'flex',flexDirection:'column',justifyContent:'center',gap:'5px',color:'#f1f3f4'}}><span style={{fontSize:'20px',color:'#b9ff31'}}>{x.icon}</span><b style={{fontSize:'12px'}}>{x.label}</b><small style={{fontSize:'10px',color:'#7f878c'}}>{x.sub}</small></Link>)}</div></section>}
-
           {filteredMarkets.length>0&&<section><div style={{...sectionTitleStyle,display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>Trending Markets</span><Link href="/#markets" onClick={()=>setSearchOpen(false)} style={{color:'#747c81'}}>›</Link></div><div style={{display:'grid',gap:'2px',marginBottom:'22px'}}>{filteredMarkets.slice(0,5).map((m,i)=><Link href="/cfd" key={m.symbol} onClick={()=>setSearchOpen(false)} style={{display:'grid',gridTemplateColumns:'1fr 110px 82px',alignItems:'center',minHeight:'42px',padding:'0 5px',fontSize:'13px'}}><span><b>{i+1} {m.symbol}</b><em style={{fontStyle:'normal',color:'#697176'}}> / USDT</em> <small style={{color:'#f5a623'}}>🔥</small></span><b style={{textAlign:'right',fontVariantNumeric:'tabular-nums'}}>{Number(m.price).toLocaleString(undefined,{maximumFractionDigits:m.price<1?6:2})}</b><b style={{textAlign:'right',color:m.changePct>=0?'#b9ff31':'#ff5368'}}>{m.changePct>=0?'+':''}{Number(m.changePct).toFixed(2)}%</b></Link>)}</div></section>}
-
           {filteredTraders.length>0&&<section><div style={{...sectionTitleStyle,display:'flex',justifyContent:'space-between',alignItems:'center'}}><span>Copy Trading</span><Link href="/copy-trading" onClick={()=>setSearchOpen(false)} style={{color:'#747c81'}}>›</Link></div><div style={{display:'grid',gridTemplateColumns:'repeat(2,1fr)',gap:'9px'}}>{filteredTraders.map(t=>{const roi=traderPerf[t.id]?.roi_30d;return <Link key={t.id} href={`/copy-trading/${t.id}`} onClick={()=>setSearchOpen(false)} style={{padding:'12px',borderRadius:'12px',background:'#202326',display:'grid',gap:'7px'}}><div style={{display:'flex',alignItems:'center',gap:'8px'}}><span style={{width:'28px',height:'28px',borderRadius:'50%',display:'grid',placeItems:'center',background:'#2a2e31',fontWeight:800}}>{t.nickname.slice(0,1).toUpperCase()}</span><b style={{fontSize:'12px',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{t.nickname}</b></div><strong style={{fontSize:'18px',color:roi==null?'#9aa1a5':roi>=0?'#b9ff31':'#ff5368'}}>{roi==null?'—':`${roi>=0?'+':''}${Number(roi).toFixed(2)}%`}</strong><small style={{color:'#70787d'}}>30D ROI · {t.risk_level}</small></Link>})}</div></section>}
-
           {filteredLinks.length===0&&filteredMarkets.length===0&&filteredTraders.length===0&&<div style={{padding:'32px 8px',textAlign:'center',color:'#7e868b',fontSize:'13px'}}>검색 결과가 없습니다.</div>}
         </div>}
       </div>
