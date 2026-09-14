@@ -1,0 +1,2 @@
+import TradeLanding from '@/components/TradeLanding';
+export default function Page(){return <TradeLanding eyebrow="CRYPTO ETF" title="주요 코인 테마를 묶어서 보는 Crypto ETF" description="개별 코인을 직접 고르기 어려운 사용자를 위해 주요 디지털자산 테마를 바스켓 형태로 보여주는 ETF 전용 페이지입니다." badge="Crypto ETF" stats={[{label:'Themes',value:'BTC · ETH · L1'},{label:'Rebalance',value:'Scheduled'},{label:'Risk',value:'Basket based'},{label:'Base mode',value:'DEMO'}]} bullets={['코인 바스켓형 상품 구조','테마별 구성자산 표시','리밸런싱 일정 표시','레버리지 여부와 위험도 명확화']}/>}
