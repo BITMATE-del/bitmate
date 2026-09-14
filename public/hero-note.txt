@@ -1,0 +1,1 @@
+BITMATE hero artwork asset will be embedded via public/bitmate-hero.webp
