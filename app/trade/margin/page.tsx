@@ -1,0 +1,2 @@
+import TradeLanding from '@/components/TradeLanding';
+export default function Page(){return <TradeLanding eyebrow="MARGIN TRADING" title="증거금과 레버리지를 한눈에" description="차입 자산, 사용 증거금, 유지 증거금과 포지션 위험을 한 화면에서 관리할 수 있도록 설계한 Margin 페이지입니다." badge="Margin" stats={[{label:'Leverage',value:'Up to 20x'},{label:'Borrowing',value:'Flexible'},{label:'Risk engine',value:'Enabled'},{label:'Mode',value:'DEMO'}]} bullets={['포지션 단위 증거금 표시','차입/상환 상태 분리','유지 증거금 경고','서버 기반 리스크 제한']}/>}

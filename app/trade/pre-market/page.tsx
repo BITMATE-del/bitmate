@@ -1,0 +1,2 @@
+import TradeLanding from '@/components/TradeLanding';
+export default function Page(){return <TradeLanding eyebrow="PRE-MARKET" title="정식 상장 전 시장 기회를 미리 확인" description="선정된 자산의 정식 시장 개시 전 관심도와 가격 탐색 구조를 보여주는 Pre-market 페이지입니다. 실제 거래 제공 여부는 별도 정책으로 통제합니다." badge="Pre-market" stats={[{label:'Access',value:'Selected assets'},{label:'Price discovery',value:'Early'},{label:'Settlement',value:'Policy based'},{label:'Mode',value:'Preview'}]} bullets={['선정 자산 사전 시장 페이지','가격 탐색과 관심도 확인','결제/정산 정책 명확화','운영 승인 전 실제 주문 제한']}/>}

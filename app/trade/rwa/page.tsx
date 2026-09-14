@@ -1,0 +1,2 @@
+import TradeLanding from '@/components/TradeLanding';
+export default function Page(){return <TradeLanding eyebrow="RWA ZONE" title="실물자산 연계 시장을 탐색" description="토큰화된 실물자산과 디지털자산 시장의 연결 가능성을 소개하는 전용 영역입니다. 현재 버전은 상품 소개 및 구조 시연 단계입니다." badge="RWA Zone" stats={[{label:'Asset class',value:'Tokenized RWA'},{label:'Trading mode',value:'Preview'},{label:'Settlement',value:'TBD'},{label:'Compliance',value:'Required'}]} bullets={['실물자산 토큰화 상품 소개','상품별 기초자산 정보','시장/법률 정보 분리 표시','승인 전 실거래 비활성화']}/>}

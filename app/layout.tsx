@@ -1,24 +1,20 @@
 import './globals.css';
+import Link from 'next/link';
+import ExchangeHeader from '@/components/ExchangeHeader';
 
 export const metadata={title:'BITMATE | Digital Asset Exchange',description:'Markets, trading and digital asset management in one experience'};
 
-const nav=[['#markets','Markets'],['#trade','Trade'],['#tools','Futures'],['#tools','Tools'],['#finance','Finance'],['#campaigns','Campaigns']];
-
 export default function Layout({children}:{children:React.ReactNode}){
   return <html lang="ko"><body id="top">
-    <header className="xtHeader"><div className="xtShell xtHeaderInner">
-      <a className="xtBrand" href="#home"><span className="xtLogo">B</span><b>BITMATE</b></a>
-      <nav>{nav.map(([h,l])=><a key={l} href={h}>{l}<span>⌄</span></a>)}<a href="#app">More</a></nav>
-      <div className="xtHeaderTools"><button className="searchPill">⌕ BTC/USDT</button><a className="loginLink" href="#home">Log in</a><a className="limeBtn headerBtn" href="#markets">Sign up</a><button className="iconBtn">↓</button><button className="iconBtn">◎</button></div>
-    </div></header>
+    <ExchangeHeader/>
     {children}
     <footer className="xtFooter"><div className="xtShell">
-      <div className="footerTop"><a className="xtBrand" href="#top"><span className="xtLogo">B</span><b>BITMATE</b></a><p>Explore digital assets with a clear, demo-first trading experience.</p></div>
+      <div className="footerTop"><Link className="xtBrand" href="/"><span className="xtLogo">B</span><b>BITMATE</b></Link><p>Explore digital assets with a clear, demo-first trading experience.</p></div>
       <div className="footerCols">
-        <div><h4>Company</h4><a href="#home">About</a><a href="#campaigns">Campaigns</a><a href="#finance">Security</a><a href="#app">App</a></div>
-        <div><h4>Product</h4><a href="#markets">Spot Trading</a><a href="#tools">Trading Tools</a><a href="#trade">AI Trading</a><a href="#app">Asset Center</a></div>
-        <div><h4>Support</h4><a href="#finance">Risk Notice</a><a href="#markets">Market Status</a><a href="#finance">System Policy</a><a href="#home">Help Center</a></div>
-        <div><h4>Markets</h4><a href="#markets">BTC/USDT</a><a href="#markets">ETH/USDT</a><a href="#markets">SOL/USDT</a><a href="#markets">XRP/USDT</a></div>
+        <div><h4>Company</h4><Link href="/">About</Link><Link href="/campaigns">Campaigns</Link><Link href="/finance">Security</Link><Link href="/more">App</Link></div>
+        <div><h4>Trade</h4><Link href="/trade/spot">Spot</Link><Link href="/trade/etf">ETF</Link><Link href="/trade/margin">Margin</Link><Link href="/trade/pre-market">Pre-market</Link></div>
+        <div><h4>Zones</h4><Link href="/trade/rwa">RWA Zone</Link><Link href="/trade/mining">Mining Zone</Link><Link href="/futures">Futures</Link><Link href="/tools">Tools</Link></div>
+        <div><h4>Support</h4><Link href="/finance">Risk Notice</Link><Link href="/#markets">Market Status</Link><Link href="/more">Help Center</Link><Link href="/more">API</Link></div>
       </div>
       <div className="footerBottom"><span>© 2026 BITMATE. All rights reserved.</span><span>Risk warning: Digital asset trading may result in loss of principal.</span></div>
     </div></footer>
