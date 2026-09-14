@@ -1,0 +1,2 @@
+import TradeLanding from '@/components/TradeLanding';
+export default function Page(){return <TradeLanding eyebrow="CRYPTO MINING" title="채굴 관련 상품과 수익 구조를 한눈에" description="해시레이트, 예상 채굴량, 운영비용, 정산 주기를 명확히 보여주는 코인 채굴 전용 페이지입니다. 확정 수익을 보장하지 않고 실제 데이터 기반 표시를 원칙으로 합니다." badge="Crypto Mining" stats={[{label:'Hashrate',value:'Live-linked'},{label:'Settlement',value:'Daily'},{label:'Fees',value:'Transparent'},{label:'Base mode',value:'DEMO'}]} bullets={['해시레이트·채굴량 표시','운영비용 및 수수료 분리','일별 정산 흐름','확정수익 표현 금지']}/>}
