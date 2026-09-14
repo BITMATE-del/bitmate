@@ -1,2 +1,2 @@
-import TradeLanding from '@/components/TradeLanding';
-export default function Page(){return <TradeLanding eyebrow="CFD MARGIN" title="레버리지와 위험 한도를 명확하게 관리하는 CFD 마진거래" description="포지션 규모, 증거금, 손절·익절, 레버리지 정보를 한 화면에서 확인하도록 설계한 CFD 마진거래 전용 페이지입니다." badge="CFD Margin" stats={[{label:'Leverage',value:'Up to 20x'},{label:'Margin mode',value:'Isolated'},{label:'Risk tools',value:'SL · TP'},{label:'Base mode',value:'DEMO'}]} bullets={['레버리지와 증거금 분리 표시','손절·익절 주문 흐름','포지션별 청산 위험 표시','리스크 한도 서버 제어']}/>}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/cfd')}
