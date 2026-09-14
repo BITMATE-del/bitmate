@@ -34,6 +34,7 @@ export default function ExchangeHeader(){
   const [aiOpen,setAiOpen]=useState(false);
   const [copyOpen,setCopyOpen]=useState(false);
   const [etfOpen,setEtfOpen]=useState(false);
+  const [moreOpen,setMoreOpen]=useState(false);
   const [searchOpen,setSearchOpen]=useState(false);
   const [query,setQuery]=useState('');
   const [markets,setMarkets]=useState<MarketRow[]>([]);
@@ -41,7 +42,7 @@ export default function ExchangeHeader(){
   const [traderPerf,setTraderPerf]=useState<Record<string,TraderPerf>>({});
   const searchRef=useRef<HTMLDivElement>(null);
 
-  const closeMenus=()=>{setMobileOpen(false);setMiningOpen(false);setAiOpen(false);setCopyOpen(false);setEtfOpen(false)};
+  const closeMenus=()=>{setMobileOpen(false);setMiningOpen(false);setAiOpen(false);setCopyOpen(false);setEtfOpen(false);setMoreOpen(false)};
   const item=(href:string,icon:string,title:string,desc:string)=><Link style={itemStyle} className="tradeMenuItem" href={href} onClick={closeMenus}><span className="tradeIcon">{icon}</span><span style={copyStyle}><b>{title}</b><small style={descStyle}>{desc}</small></span><em>›</em></Link>;
 
   useEffect(()=>{
@@ -93,7 +94,17 @@ export default function ExchangeHeader(){
         <div style={dropdownRightStyle} className={miningOpen?'tradeDropdown open':'tradeDropdown'}>{item('/mining','⛏','Mining Home','채굴기 가동, Mining Power, 오늘 예상 보상 확인')}{item('/my-mining','◫','My Mining','내 Position, 누적 보상, Mining History 확인')}</div>
       </div>
       <Link style={desktopMenuStyle} href="/#markets" onClick={closeMenus}>Markets</Link>
-      <Link style={desktopMenuStyle} href="/more" onClick={closeMenus}>More <span>⌄</span></Link>
+      <div className="navDropdown" onMouseEnter={()=>setMoreOpen(true)} onMouseLeave={()=>setMoreOpen(false)}>
+        <button style={desktopMenuStyle} className={moreOpen?'navDropButton active':'navDropButton'} onClick={()=>setMoreOpen(v=>!v)} aria-expanded={moreOpen}>More <span>⌄</span></button>
+        <div style={{...dropdownRightStyle,width:'390px'}} className={moreOpen?'tradeDropdown open':'tradeDropdown'}>
+          {item('/more/notice','▣','Notice','서비스 공지, 시스템 업데이트 및 점검 안내')}
+          {item('/more/referral','↗','Referral Program','초대 링크, 추천 현황 및 커미션 프로그램')}
+          {item('/more/reward-hub','◆','Reward Hub','레퍼럴 파트너·총판 성과와 리워드 관리')}
+          {item('/more/academy','▤','Academy','플랫폼 사용법, 상품 가이드 및 시작 안내')}
+          {item('/more/mining-boost','⚡','Mining Boost','Mining Power 및 채굴 효율 부스트 프로그램')}
+          {item('/more/lucky-draw','✦','Lucky Draw','이벤트 참여 및 추첨형 프로모션')}
+        </div>
+      </div>
     </nav>
 
     <div className="xtHeaderTools" style={{marginLeft:'auto',flexShrink:0,gap:'14px',height:'100%'}}>
