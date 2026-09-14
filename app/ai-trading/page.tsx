@@ -1,2 +1,2 @@
-import TradeLanding from '@/components/TradeLanding';
-export default function Page(){return <TradeLanding eyebrow="AI TRADING" title="전략을 선택하고 AI 운용 흐름을 체험하세요" description="시장 데이터, 전략 선택, 리스크 설정, 주문 실행 흐름을 분리한 AI 트레이딩 전용 페이지입니다. 현재는 DEMO 우선 구조로 운영합니다." badge="AI Trading" stats={[{label:'Strategies',value:'SAFE · BALANCED · ACTIVE'},{label:'Base mode',value:'DEMO'},{label:'Risk control',value:'Server-side'},{label:'Assets',value:'BTC · ETH · SOL'}]} bullets={['3단계 AI 전략 선택','전략별 리스크 프리셋','실제 이벤트 기반 운용 로그','DEMO와 REAL 계정 분리']}/>}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/ai-core')}
