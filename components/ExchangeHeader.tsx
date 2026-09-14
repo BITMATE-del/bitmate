@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {useState} from 'react';
 
 const coreNav=[
-  {href:'/cfd-margin',label:'CFD Margin'},
+  {href:'/cfd',label:'CFD Margin'},
   {href:'/crypto-etf',label:'Crypto ETF'},
 ];
 
