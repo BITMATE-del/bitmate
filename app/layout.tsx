@@ -2,10 +2,15 @@ import './globals.css';
 import './mobile.css';
 import './hero.css';
 import './mining.css';
+import './brand.css';
 import Link from 'next/link';
 import ExchangeHeader from '@/components/ExchangeHeader';
 
-export const metadata={title:'BITMATE | AI · CFD · ETF · Mining',description:'AI trading, CFD margin, Crypto ETF and Crypto Mining in one digital asset platform'};
+export const metadata={
+  title:'BITMATE | AI · CFD · ETF · Mining',
+  description:'AI trading, CFD margin, Crypto ETF and Crypto Mining in one digital asset platform',
+  icons:{icon:'/bitmate-icon.webp',shortcut:'/bitmate-icon.webp',apple:'/bitmate-icon.webp'}
+};
 
 export default function Layout({children}:{children:React.ReactNode}){
   return <html lang="ko"><body id="top">
