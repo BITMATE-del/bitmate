@@ -9,7 +9,7 @@ import ExchangeHeader from '@/components/ExchangeHeader';
 export const metadata={
   title:'BITMATE | AI · CFD · ETF · Mining',
   description:'AI trading, CFD margin, Crypto ETF and Crypto Mining in one digital asset platform',
-  icons:{icon:'/bitmate-icon.webp',shortcut:'/bitmate-icon.webp',apple:'/bitmate-icon.webp'}
+  icons:{icon:'/bitmate-icon.svg',shortcut:'/bitmate-icon.svg',apple:'/bitmate-icon.svg'}
 };
 
 export default function Layout({children}:{children:React.ReactNode}){
