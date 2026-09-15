@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import styles from './LuckyDraw.module.css';
 
 type Dashboard={season?:{id:string;name:string;starts_at:string;ends_at:string}|null;wallet?:{total_earned?:number;available_balls?:number;used_balls?:number;expired_balls?:number};metrics?:{eligible_deposit?:number;eligible_volume?:number;qualified_referrals?:number;first_deposit_awarded?:boolean;referral_first_awarded?:boolean;volume_10k_awarded?:boolean};today_draws?:number;total_win?:number};
 type Draw={id:string;draw_id:string;prize_amount:number|null;status:string;created_at:string;draw_hash:string|null};
@@ -18,15 +19,47 @@ export default function LuckyDrawClient(){
  async function drawOne(){setBusy(true);setResult(null);setMessage('');const key=`draw:${crypto.randomUUID()}`;const {data,error}=await supabase.rpc('lucky_draw_draw',{p_idempotency_key:key});if(error){setMessage(error.message);setBusy(false);await load();return;}setTimeout(()=>{setResult(data as DrawResult);setBusy(false);load();},1000);}
  async function drawAll(){setBusy(true);setResult(null);setMessage('');const key=`batch:${crypto.randomUUID()}`;const {data,error}=await supabase.rpc('lucky_draw_all',{p_batch_key:key});if(error){setMessage(error.message);setBusy(false);await load();return;}const rows=((data as any)?.results||[]) as DrawResult[];const total=rows.reduce((s,x)=>s+Number(x.prize_amount||0),0);setTimeout(()=>{setResult({draw_id:`${rows.length} DRAWS`,prize_amount:total,reward_status:'PENDING'});setBusy(false);load();},1200);}
  const w=dashboard.wallet||{};const m=dashboard.metrics||{};const dep=Number(m.eligible_deposit||0);const vol=Number(m.eligible_volume||0);const balls=Number(w.available_balls||0);const drawDisabled=busy||balls<1||!published;
- return <main style={{minHeight:'calc(100vh - 72px)',background:'radial-gradient(circle at 50% 16%,rgba(185,255,49,.09),transparent 30%),#090b0c',color:'#f5f7f7',padding:'46px 0 90px'}}><div className="xtShell">
-  <section style={{display:'grid',gridTemplateColumns:'1.05fr .95fr',gap:18,alignItems:'stretch'}}>
-   <div style={{padding:'26px 0 18px'}}><span style={{fontSize:12,fontWeight:900,letterSpacing:'.15em',color:'#b9ff31'}}>LUCKY DRAW</span><h1 style={{fontSize:'clamp(44px,6vw,76px)',lineHeight:.98,letterSpacing:'-.055em',margin:'14px 0 18px'}}>Turn your activity<br/>into a chance.</h1><p style={{maxWidth:650,color:'#9ca4a8',fontSize:16,lineHeight:1.8}}>입금, 거래, 추천 조건을 달성해 Lucky Draw Ball을 획득하고 서버 추첨 결과를 확인하세요. 추첨 결과는 완료 후 변경되지 않습니다.</p><div style={{display:'flex',gap:10,marginTop:26,flexWrap:'wrap'}}><button disabled={drawDisabled} onClick={drawOne} style={{height:48,padding:'0 24px',border:0,borderRadius:10,background:'#b9ff31',color:'#0d1109',fontWeight:900,cursor:'pointer',opacity:drawDisabled?0.45:1}}>1회 추첨</button><button disabled={drawDisabled} onClick={drawAll} style={{height:48,padding:'0 24px',border:'1px solid #353a3d',borderRadius:10,background:'#141719',color:'#fff',fontWeight:800,cursor:'pointer',opacity:drawDisabled?0.45:1}}>전체 추첨</button></div>{!published&&<p style={{marginTop:12,color:'#d6b460',fontSize:12}}>운영 확률 Version이 발행되면 추첨이 활성화됩니다.</p>}{message&&<p style={{marginTop:12,color:'#ff7a88',fontSize:12}}>{message}</p>}</div>
-   <div style={{border:'1px solid #272c2f',background:'linear-gradient(145deg,#15191b,#0d1011)',borderRadius:24,padding:26,position:'relative',overflow:'hidden'}}><div style={{position:'absolute',inset:'15% 18%',border:'1px solid rgba(185,255,49,.24)',borderRadius:'50%',boxShadow:'0 0 80px rgba(185,255,49,.12)'}}/><div style={{position:'relative',display:'grid',placeItems:'center',minHeight:330,textAlign:'center'}}><div><div style={{width:142,height:142,borderRadius:'50%',margin:'0 auto 18px',display:'grid',placeItems:'center',background:'radial-gradient(circle,#c8ff61 0 22%,#2d351e 23% 38%,#151918 39% 100%)',border:'1px solid #46502f',boxShadow:busy?'0 0 70px #b9ff3166':'0 0 35px #b9ff3122',transform:busy?'rotate(180deg)':'none',transition:'1s'}}><b style={{fontSize:34,color:'#0b0f08'}}>B</b></div><small style={{display:'block',color:'#7f888c'}}>MY LUCKY DRAW BALL</small><strong style={{display:'block',fontSize:42,marginTop:5}}>{loading?'—':`${balls} BALL${balls===1?'':'S'}`}</strong><span style={{display:'block',marginTop:9,color:'#9ba3a7',fontSize:12}}>{dashboard.season?.name||'현재 활성 시즌 없음'}</span></div></div></div>
+ const statRows=[['보유 Ball',balls],['오늘 사용 Ball',dashboard.today_draws||0],['누적 획득 Ball',w.total_earned||0],['누적 당첨금',`${fmt(Number(dashboard.total_win||0))} USDT`]];
+ const progressRows:[string,number,string][]= [
+  ['첫 예치 완료',m.first_deposit_awarded?100:dep>0?100:0,m.first_deposit_awarded?'완료':dep>0?'달성':'미달성'],
+  ['누적 입금 5,000 USDT',progress(dep,5000),`${fmt(dep%5000)} / 5,000 USDT`],
+  ['추천인 1명 달성',m.referral_first_awarded?100:Math.min(100,Number(m.qualified_referrals||0)*100),`${m.qualified_referrals||0} / 1`],
+  ['누적 거래량 10,000 USDT',m.volume_10k_awarded?100:Math.min(100,vol/10000*100),`${fmt(Math.min(vol,10000))} / 10,000 USDT`],
+  ['다음 50K 거래량',progress(vol,50000),`${fmt(vol%50000)} / 50,000 USDT`]
+ ];
+ return <main className={styles.page}><div className="xtShell">
+  <section className={styles.hero}>
+   <div className={styles.copy}>
+    <span className={styles.eyebrow}>LUCKY DRAW</span>
+    <h1 className={styles.title}>Turn your activity<br/>into a chance.</h1>
+    <p className={styles.desc}>입금, 거래, 추천 조건을 달성해 Lucky Draw Ball을 획득하고 서버 추첨 결과를 확인하세요. 추첨 결과는 완료 후 변경되지 않습니다.</p>
+    <div className={styles.actions}>
+     <button disabled={drawDisabled} onClick={drawOne} className={styles.assetButton}><img src="/lucky-draw/05-primary-button.svg" alt=""/><span>1회 추첨</span></button>
+     <button disabled={drawDisabled} onClick={drawAll} className={`${styles.assetButton} ${styles.assetButtonSecondary}`}><img src="/lucky-draw/06-secondary-button.svg" alt=""/><span>전체 추첨</span></button>
+    </div>
+    {!published&&<p className={styles.warning}>운영 확률 Version이 발행되면 추첨이 활성화됩니다.</p>}
+    {message&&<p className={styles.error}>{message}</p>}
+   </div>
+
+   <div className={`${styles.heroPanel} ${busy?styles.busy:''}`}>
+    <img className={styles.mainPanel} src="/lucky-draw/01-main-panel.svg" alt=""/>
+    <img className={styles.orbit} src="/lucky-draw/02-orbit-counter.svg" alt=""/>
+    <img className={styles.cornerGlow} src="/lucky-draw/10-corner-glow.svg" alt=""/>
+    <div className={styles.ballBadge}><img src="/lucky-draw/03-ball-badge.svg" alt="Lucky Draw Ball"/><b>B</b></div>
+    <div className={styles.ballCount}><small>MY LUCKY DRAW BALL</small><strong>{loading?'—':`${balls} BALL${balls===1?'':'S'}`}</strong><span>{dashboard.season?.name||'현재 활성 시즌 없음'}</span></div>
+    <div className={styles.statusPill}><img src="/lucky-draw/04-status-pill.svg" alt=""/><span>{busy?'DRAWING IN PROGRESS':'SERVER DRAW READY'}</span></div>
+   </div>
   </section>
-  {result&&<section style={{marginTop:18,border:'1px solid #4d5b24',background:'#151b0f',borderRadius:18,padding:24,textAlign:'center'}}><small style={{color:'#b9ff31',fontWeight:800}}>CONGRATULATIONS</small><h2 style={{fontSize:38,margin:'8px 0'}}>+{fmt(result.prize_amount)} USDT</h2><p style={{color:'#9ca4a8',margin:0}}>Draw ID · {result.draw_id} · 지급 상태 {result.reward_status||'PENDING'}</p></section>}
-  <section style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:10,marginTop:18}}>{[['보유 Ball',balls],['오늘 사용 Ball',dashboard.today_draws||0],['누적 획득 Ball',w.total_earned||0],['누적 당첨금',`${fmt(Number(dashboard.total_win||0))} USDT`]].map(([k,v])=><div key={String(k)} style={{padding:18,border:'1px solid #252a2d',borderRadius:14,background:'#111416'}}><small style={{color:'#778085'}}>{k}</small><b style={{display:'block',fontSize:22,marginTop:6}}>{String(v)}</b></div>)}</section>
-  <section style={{marginTop:28,display:'grid',gridTemplateColumns:'1.15fr .85fr',gap:16}}><div style={{border:'1px solid #252a2d',background:'#101315',borderRadius:18,padding:22}}><h2 style={{margin:'0 0 18px',fontSize:20}}>Ball 획득 Progress</h2>{[['첫 예치 완료',m.first_deposit_awarded?100:dep>0?100:0,m.first_deposit_awarded?'완료':dep>0?'달성':'미달성'],['누적 입금 5,000 USDT',progress(dep,5000),`${fmt(dep%5000)} / 5,000 USDT`],['추천인 1명 달성',m.referral_first_awarded?100:Math.min(100,Number(m.qualified_referrals||0)*100),`${m.qualified_referrals||0} / 1`],['누적 거래량 10,000 USDT',m.volume_10k_awarded?100:Math.min(100,vol/10000*100),`${fmt(Math.min(vol,10000))} / 10,000 USDT`],['다음 50K 거래량',progress(vol,50000),`${fmt(vol%50000)} / 50,000 USDT`]].map(([name,p,label])=><div key={String(name)} style={{marginBottom:16}}><div style={{display:'flex',justifyContent:'space-between',gap:12,fontSize:13}}><b>{String(name)}</b><span style={{color:'#858e92'}}>{String(label)}</span></div><div style={{height:7,borderRadius:999,background:'#22272a',marginTop:9,overflow:'hidden'}}><div style={{height:'100%',width:`${Number(p)}%`,background:'#b9ff31'}}/></div></div>)}</div>
-   <div style={{border:'1px solid #252a2d',background:'#101315',borderRadius:18,padding:22}}><h2 style={{margin:'0 0 18px',fontSize:20}}>최근 Ball 획득</h2><div style={{display:'grid',gap:10}}>{events.length?events.map(e=><div key={e.id} style={{display:'flex',justifyContent:'space-between',padding:'11px 0',borderBottom:'1px solid #202427'}}><span style={{fontSize:12}}>{e.source_type}</span><b style={{color:e.balls_granted>=0?'#b9ff31':'#ff6678'}}>{e.balls_granted>=0?'+':''}{e.balls_granted}</b></div>):<p style={{color:'#777f83',fontSize:13}}>획득 기록이 없습니다.</p>}</div></div></section>
-  <section style={{marginTop:16,border:'1px solid #252a2d',background:'#101315',borderRadius:18,padding:22}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}><h2 style={{margin:0,fontSize:20}}>Lucky Draw History</h2><Link href="/more/lucky-draw" style={{fontSize:12,color:'#98a0a4'}}>이벤트 안내</Link></div><div style={{overflowX:'auto',marginTop:16}}><table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}><thead><tr style={{color:'#798287'}}><th style={{textAlign:'left',padding:'10px 8px'}}>날짜</th><th style={{textAlign:'left',padding:'10px 8px'}}>Draw ID</th><th style={{textAlign:'right',padding:'10px 8px'}}>당첨금</th><th style={{textAlign:'right',padding:'10px 8px'}}>상태</th></tr></thead><tbody>{history.map(h=><tr key={h.id} style={{borderTop:'1px solid #202427'}}><td style={{padding:'12px 8px'}}>{new Date(h.created_at).toLocaleString()}</td><td style={{padding:'12px 8px'}}>{h.draw_id}</td><td style={{padding:'12px 8px',textAlign:'right',color:'#b9ff31'}}>{h.prize_amount==null?'—':`+${fmt(h.prize_amount)} USDT`}</td><td style={{padding:'12px 8px',textAlign:'right'}}>{h.status}</td></tr>)}</tbody></table>{!history.length&&<p style={{color:'#777f83',fontSize:13}}>아직 추첨 기록이 없습니다.</p>}</div></section>
+
+  {result&&<section className={styles.result}><small>CONGRATULATIONS</small><h2>+{fmt(result.prize_amount)} USDT</h2><p>Draw ID · {result.draw_id} · 지급 상태 {result.reward_status||'PENDING'}</p></section>}
+
+  <section className={styles.stats}>{statRows.map(([k,v])=><div key={String(k)} className={styles.statCard}><img src="/lucky-draw/07-mini-stat-card.svg" alt=""/><small>{k}</small><b>{String(v)}</b></div>)}</section>
+
+  <section className={styles.contentGrid}>
+   <div className={styles.panel}><h2>Ball 획득 Progress</h2>{progressRows.map(([name,p,label])=><div key={name} className={styles.progressRow}><div className={styles.progressTop}><b>{name}</b><span>{label}</span></div><div className={styles.track}><div style={{width:`${Number(p)}%`}}/></div></div>)}</div>
+   <div className={styles.panel}><h2>최근 Ball 획득</h2><div>{events.length?events.map(e=><div key={e.id} className={styles.eventRow}><img className={styles.ballIcon} src="/lucky-draw/08-ball-item.svg" alt=""/><span>{e.source_type}</span><b style={{color:e.balls_granted>=0?'#a7ff1a':'#ff6678'}}>{e.balls_granted>=0?'+':''}{e.balls_granted}</b></div>):<p className={styles.empty}>획득 기록이 없습니다.</p>}</div></div>
+  </section>
+
+  <section className={`${styles.panel} ${styles.history}`}><div className={styles.historyTop}><h2>Lucky Draw History</h2><Link href="/more/lucky-draw">이벤트 안내</Link></div><div className={styles.tableWrap}><table className={styles.table}><thead><tr><th>날짜</th><th>Draw ID</th><th className={styles.right}>당첨금</th><th className={styles.right}>상태</th></tr></thead><tbody>{history.map(h=><tr key={h.id}><td>{new Date(h.created_at).toLocaleString()}</td><td>{h.draw_id}</td><td className={styles.win}>{h.prize_amount==null?'—':`+${fmt(h.prize_amount)} USDT`}</td><td className={styles.right}>{h.status}</td></tr>)}</tbody></table>{!history.length&&<p className={styles.empty}>아직 추첨 기록이 없습니다.</p>}</div></section>
  </div></main>
 }
