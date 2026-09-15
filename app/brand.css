@@ -1,0 +1,5 @@
+.xtBrand{width:142px;height:40px;display:inline-flex;align-items:center;justify-content:flex-start;flex-shrink:0;background:url('/bitmate-wordmark.webp') left center/contain no-repeat;overflow:hidden;text-indent:-9999px;gap:0!important}
+.xtBrand .xtLogo,.xtBrand>b{display:none!important}
+.footerTop .xtBrand{width:168px;height:54px}
+@media(max-width:900px){.xtBrand{width:126px;height:36px}.footerTop .xtBrand{width:150px;height:48px}}
+@media(max-width:560px){.xtBrand{width:118px;height:34px}}
