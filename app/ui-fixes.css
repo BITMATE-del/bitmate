@@ -1,0 +1,37 @@
+/* Targeted layout corrections for ETF and Copy Trading hero/action areas. */
+
+/* Crypto ETF: keep the My INDEX action vertically centered with the hero copy. */
+div:has(> a[href="/crypto-etf/portfolio"]) {
+  align-self: center !important;
+  align-items: center !important;
+}
+a[href="/crypto-etf/portfolio"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 112px;
+  white-space: nowrap;
+}
+
+/* Copy Trading: center the My Copy Trading action and give the UID search block more breathing room. */
+div:has(> a[href="/my-copy"]) {
+  align-self: center !important;
+  align-items: center !important;
+}
+a[href="/my-copy"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 134px;
+  white-space: nowrap;
+}
+main:has(a[href="/my-copy"]) > section:has(> div[class*="panel"]) {
+  padding-top: 32px !important;
+}
+
+@media (max-width: 900px) {
+  div:has(> a[href="/crypto-etf/portfolio"]),
+  div:has(> a[href="/my-copy"]) {
+    align-self: flex-start !important;
+  }
+}
