@@ -53,14 +53,16 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,classNames:
       try{
         const t=JSON.parse(ev.data);
         const row:Trade={id:Number(t.a),price:Number(t.p),qty:Number(t.q),time:Number(t.T),buyerMaker:Boolean(t.m)};
-        setTrades(prev=>[row,...prev.filter(x=>x.id!==row.id)].slice(0,28));
+        setTrades(prev=>[row,...prev.filter(x=>x.id!==row.id)].slice(0,18));
       }catch{}
     };
 
     return()=>{book.close();trade.close();bookRef.current=null;tradeRef.current=null};
   },[symbol]);
 
-  const maxQty=useMemo(()=>Math.max(1,...asks.map(x=>x.qty),...bids.map(x=>x.qty)),[asks,bids]);
+  const visibleAsks=useMemo(()=>asks.slice(-7),[asks]);
+  const visibleBids=useMemo(()=>bids.slice(0,7),[bids]);
+  const maxQty=useMemo(()=>Math.max(1,...visibleAsks.map(x=>x.qty),...visibleBids.map(x=>x.qty)),[visibleAsks,visibleBids]);
   const priceDigits=currentPrice>=1000?2:currentPrice>=1?4:6;
 
   if(mode==='recent')return <div className={s.recentList}>
@@ -81,9 +83,9 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,classNames:
 
   return <div className={s.bookBody}>
     <div className={s.bookHead}><span>가격</span><span>수량</span><span>누적</span></div>
-    <div className={s.bookRows}>{asks.length?asks.map((x,i)=>row(x,'ask',i)):Array.from({length:10},(_,i)=><div key={`a-${i}`} className={`${s.bookRow} ${s.askDepth}`}><b>—</b><span>—</span><span>—</span></div>)}</div>
+    <div className={s.bookRows}>{visibleAsks.length?visibleAsks.map((x,i)=>row(x,'ask',i)):Array.from({length:7},(_,i)=><div key={`a-${i}`} className={`${s.bookRow} ${s.askDepth}`}><b>—</b><span>—</span><span>—</span></div>)}</div>
     <div className={s.midPrice}><strong>{fmt(currentPrice,priceDigits)}</strong><span>{connected?'BINANCE LIVE DEPTH':'호가 연결 중'}</span></div>
-    <div className={s.bookRows}>{bids.length?bids.map((x,i)=>row(x,'bid',i)):Array.from({length:10},(_,i)=><div key={`b-${i}`} className={`${s.bookRow} ${s.bidDepth}`}><b>—</b><span>—</span><span>—</span></div>)}</div>
+    <div className={s.bookRows}>{visibleBids.length?visibleBids.map((x,i)=>row(x,'bid',i)):Array.from({length:7},(_,i)=><div key={`b-${i}`} className={`${s.bookRow} ${s.bidDepth}`}><b>—</b><span>—</span><span>—</span></div>)}</div>
     <div className={s.bookStatus}>호가/최근 체결은 Binance 공개 시장데이터 표시용이며 BITMATE 주문 체결 로직과 분리됩니다.</div>
   </div>;
 }
