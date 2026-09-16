@@ -4,15 +4,8 @@ import {useEffect} from 'react';
 
 const normalizeTradingViewSymbol=(raw:string)=>{
   const symbol=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  const map:Record<string,string>={
-    BTCUSDT:'BINANCE:BTCUSDT',
-    ETHUSDT:'BINANCE:ETHUSDT',
-    TRXUSDT:'BINANCE:TRXUSDT',
-    XRPUSDT:'BINANCE:XRPUSDT',
-    DOGEUSDT:'BINANCE:DOGEUSDT',
-    SOLUSDT:'BINANCE:SOLUSDT'
-  };
-  return map[symbol]||'BINANCE:BTCUSDT';
+  if(symbol.endsWith('USDT'))return `BINANCE:${symbol}`;
+  return 'BINANCE:BTCUSDT';
 };
 
 export default function TradingViewCfdInjector(){
@@ -27,10 +20,9 @@ export default function TradingViewCfdInjector(){
     const mount=()=>{
       if(disposed)return;
       const stage=find('chartStage');
-      const symbolNode=document.querySelector('[class*="priceBox"] span') as HTMLElement|null;
-      if(!stage||!symbolNode)return;
+      if(!stage)return;
 
-      const tvSymbol=normalizeTradingViewSymbol(symbolNode.textContent||'BTCUSDT');
+      const tvSymbol=normalizeTradingViewSymbol(stage.dataset.symbol||'BTCUSDT');
       const existing=stage.querySelector('[data-bitmate-tradingview="true"]') as HTMLElement|null;
       if(existing&&activeSymbol===tvSymbol)return;
 
@@ -40,15 +32,7 @@ export default function TradingViewCfdInjector(){
       const overlay=document.createElement('div');
       overlay.dataset.bitmateTradingview='true';
       overlay.className='tradingview-widget-container';
-      Object.assign(overlay.style,{
-        position:'absolute',
-        inset:'0',
-        zIndex:'20',
-        width:'100%',
-        height:'100%',
-        background:'#0b1012',
-        overflow:'hidden'
-      });
+      Object.assign(overlay.style,{position:'absolute',inset:'0',zIndex:'20',width:'100%',height:'100%',background:'#0b1012',overflow:'hidden'});
 
       const widget=document.createElement('div');
       widget.className='tradingview-widget-container__widget';
@@ -83,20 +67,13 @@ export default function TradingViewCfdInjector(){
       });
       overlay.appendChild(script);
       stage.appendChild(overlay);
-
-      const timeframe=find('timeframes');
-      const header=find('chartHeader');
-      const foot=find('chartFoot');
-      if(timeframe)timeframe.style.display='none';
-      if(header)header.style.display='none';
-      if(foot)foot.style.display='none';
     };
 
     const start=()=>{
       mount();
-      timer=setInterval(mount,1000);
+      timer=setInterval(mount,750);
       observer=new MutationObserver(mount);
-      observer.observe(document.body,{subtree:true,childList:true,characterData:true});
+      observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-symbol']});
     };
 
     const raf=requestAnimationFrame(start);
