@@ -3,6 +3,7 @@ import './mobile.css';
 import './hero.css';
 import './mining.css';
 import './brand.css';
+import './ui-fixes.css';
 import Link from 'next/link';
 import ExchangeHeader from '@/components/ExchangeHeader';
 
