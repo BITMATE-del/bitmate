@@ -7,18 +7,12 @@ const normalizeTradingViewSymbol=(raw:string)=>{
   const map:Record<string,string>={
     BTCUSDT:'BINANCE:BTCUSDT',
     ETHUSDT:'BINANCE:ETHUSDT',
+    TRXUSDT:'BINANCE:TRXUSDT',
     XRPUSDT:'BINANCE:XRPUSDT',
-    SOLUSDT:'BINANCE:SOLUSDT',
     DOGEUSDT:'BINANCE:DOGEUSDT',
-    BNBUSDT:'BINANCE:BNBUSDT',
-    XAUUSD:'OANDA:XAUUSD',
-    GOLD:'TVC:GOLD',
-    NASDAQ:'NASDAQ:NDX',
-    NDX:'NASDAQ:NDX',
-    US100:'OANDA:NAS100USD',
-    NAS100:'OANDA:NAS100USD'
+    SOLUSDT:'BINANCE:SOLUSDT'
   };
-  return map[symbol]||`BINANCE:${symbol||'BTCUSDT'}`;
+  return map[symbol]||'BINANCE:BTCUSDT';
 };
 
 export default function TradingViewCfdInjector(){
@@ -45,8 +39,15 @@ export default function TradingViewCfdInjector(){
 
       const overlay=document.createElement('div');
       overlay.dataset.bitmateTradingview='true';
+      overlay.className='tradingview-widget-container';
       Object.assign(overlay.style,{
-        position:'absolute',inset:'0',zIndex:'20',background:'#0b1012',overflow:'hidden'
+        position:'absolute',
+        inset:'0',
+        zIndex:'20',
+        width:'100%',
+        height:'100%',
+        background:'#0b1012',
+        overflow:'hidden'
       });
 
       const widget=document.createElement('div');
@@ -59,7 +60,7 @@ export default function TradingViewCfdInjector(){
       script.type='text/javascript';
       script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
       script.async=true;
-      script.text=JSON.stringify({
+      script.innerHTML=JSON.stringify({
         autosize:true,
         symbol:tvSymbol,
         interval:'15',
@@ -67,7 +68,7 @@ export default function TradingViewCfdInjector(){
         theme:'dark',
         style:'1',
         locale:'kr',
-        backgroundColor:'#0b1012',
+        backgroundColor:'rgba(11, 16, 18, 1)',
         gridColor:'rgba(115, 130, 138, 0.10)',
         allow_symbol_change:false,
         save_image:false,
