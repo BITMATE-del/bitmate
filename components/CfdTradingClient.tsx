@@ -93,7 +93,7 @@ export default function CfdTradingClient(){
 
   <section className={s.terminalGrid}>
    <section className={`${s.panel} ${s.chartPanel}`}>
-    <div className={s.panelTabs}><div><button className={s.tabActive}>차트</button><button>시장 정보</button></div><div className={s.chartTools}><span className={s.liveDot}/><span>LIVE</span><span>{selected?.last_price_at?new Date(selected.last_price_at).toLocaleTimeString():'연결 대기'}</span></div></div>
+    <div className={s.panelTabs}><div><button className={s.tabActive}>차트</button></div><div className={s.chartTools}><span className={s.liveDot}/><span>LIVE</span><span>{selected?.last_price_at?new Date(selected.last_price_at).toLocaleTimeString():'연결 대기'}</span></div></div>
     <div className={s.timeframes}><button>1분</button><button>5분</button><button className={s.timeActive}>실시간</button><button>30분</button><button>1시간</button><button>4시간</button><button>1일</button><span className={s.spacer}/><button>지표</button><button>설정</button></div>
     <div className={s.chartHeader}><div><b>{selected?.display_name||'—'} · CFD</b></div><div><span>Bid <b>{fmt(bid)}</b></span><span>Ask <b>{fmt(ask)}</b></span><span>Spread <b>{spread?spread.toFixed(4):'—'}</b></span></div></div>
     <div className={s.chartStage}>
