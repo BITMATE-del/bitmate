@@ -18,8 +18,8 @@ type Props={
 
 type Tab='ALL'|'HOT'|'GAINERS';
 
-const priceFmt=(v:number)=>v>=1000?v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?v.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}):v.toLocaleString(undefined,{minimumFractionDigits:6,maximumFractionDigits:6});
-const compact=(v:number)=>new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:2}).format(v||0);
+const priceFmt=(v:number)=>!Number.isFinite(v)||v<=0?'—':v>=1000?v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?v.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}):v.toLocaleString(undefined,{minimumFractionDigits:6,maximumFractionDigits:6});
+const compact=(v:number)=>!Number.isFinite(v)||v<=0?'—':new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:2}).format(v);
 
 export default function CfdMarketSelector({products,selected,onSelect,onMarkets}:Props){
   const [open,setOpen]=useState(false);
@@ -49,7 +49,6 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets}
     let ws:WebSocket|null=null;
     let retry:ReturnType<typeof setTimeout>|null=null;
     let dead=false;
-
     const connect=()=>{
       if(dead)return;
       ws=new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
@@ -85,30 +84,32 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets}
   },[]);
 
   const productMap=useMemo(()=>new Map(products.map(p=>[p.symbol,p])),[products]);
-  const baseRows=useMemo(()=>markets.filter(m=>productMap.has(m.symbol)),[markets,productMap]);
+  const marketMap=useMemo(()=>new Map(markets.map(m=>[m.symbol,m])),[markets]);
+  const baseRows=useMemo(()=>products.map(p=>marketMap.get(p.symbol)||({
+    symbol:p.symbol,
+    base:p.symbol.endsWith('USDT')?p.symbol.slice(0,-4):p.symbol,
+    displayName:p.display_name,
+    tradingViewSymbol:`BINANCE:${p.symbol}`,
+    lastPrice:0,priceChange:0,changePct:0,high24h:0,low24h:0,volume:0,quoteVolume:0,bid:0,ask:0
+  } as LiveMarket)),[products,marketMap]);
+
   const rows=useMemo(()=>{
-    const q=query.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
-    let list=baseRows.filter(m=>!q||m.symbol.includes(q)||m.base.includes(q)||m.displayName.replace('/','').includes(q));
-    if(tab==='HOT')list=[...list].sort((a,b)=>b.quoteVolume-a.quoteVolume).slice(0,60);
-    if(tab==='GAINERS')list=[...list].sort((a,b)=>b.changePct-a.changePct).slice(0,60);
+    const q=query.trim().toUpperCase().replace(/[^A-Z0-9가-힣]/g,'');
+    let list=baseRows.filter(m=>!q||m.symbol.toUpperCase().includes(q)||m.base.toUpperCase().includes(q)||m.displayName.toUpperCase().replace('/','').includes(q));
+    if(tab==='HOT')list=[...list].sort((a,b)=>b.quoteVolume-a.quoteVolume).slice(0,80);
+    if(tab==='GAINERS')list=[...list].sort((a,b)=>b.changePct-a.changePct).slice(0,80);
     return list;
   },[baseRows,query,tab]);
 
   return <div className={s.wrap} ref={rootRef}>
     <button type="button" className={s.trigger} onClick={()=>setOpen(v=>!v)} aria-expanded={open}>
       <span className={s.assetBadge}>{(selected?.symbol||'BTCUSDT').replace(/USDT$/,'').slice(0,2)}</span>
-      <span className={s.triggerText}>
-        <b>{selected?.display_name||'BTC/USDT'}</b>
-        <small>현물 기준 CFD</small>
-      </span>
+      <span className={s.triggerText}><b>{selected?.display_name||'BTC/USDT'}</b><small>CFD 종목</small></span>
       <span className={`${s.chevron} ${open?s.open:''}`}>⌄</span>
     </button>
     {open&&<div className={s.panel}>
       <div className={s.panelTop}>
-        <div>
-          <strong>종목 선택</strong>
-          <span>실시간 거래 가능 {baseRows.length.toLocaleString()}개</span>
-        </div>
+        <div><strong>종목 선택</strong><span>등록 거래 가능 {products.length.toLocaleString()}개 · 실시간 시세 {markets.length.toLocaleString()}개 수신</span></div>
         <button type="button" className={s.close} onClick={()=>setOpen(false)}>×</button>
       </div>
       <div className={s.search}><span>⌕</span><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="코인명 또는 심볼 검색"/><kbd>USDT</kbd></div>
@@ -123,11 +124,11 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets}
           const p=productMap.get(m.symbol)!;
           const active=selected?.symbol===m.symbol;
           return <button type="button" className={`${s.row} ${active?s.selected:''}`} key={m.symbol} onClick={()=>{onSelect(p);setOpen(false);setQuery('')}}>
-            <span className={s.pair}><span className={s.coin}>{m.base.slice(0,2)}</span><span className={s.pairText}><b>{m.base}<i>/USDT</i></b><small>{compact(m.quoteVolume)} USDT</small></span></span>
+            <span className={s.pair}><span className={s.coin}>{m.base.slice(0,2)}</span><span className={s.pairText}><b>{m.base}<i>/USDT</i></b><small>{m.quoteVolume>0?`${compact(m.quoteVolume)} USDT`:'시세 연결 확인 중'}</small></span></span>
             <span className={s.price}>{priceFmt(m.lastPrice)}</span>
-            <span className={`${s.change} ${m.changePct>=0?s.up:s.down}`}>{m.changePct>=0?'+':''}{m.changePct.toFixed(2)}%</span>
+            <span className={`${s.change} ${m.changePct>=0?s.up:s.down}`}>{m.lastPrice>0?`${m.changePct>=0?'+':''}${m.changePct.toFixed(2)}%`:'—'}</span>
           </button>
-        }):<div className={s.empty}>조건에 맞는 거래 가능 종목이 없습니다.</div>}
+        }):<div className={s.empty}>검색 결과가 없습니다.</div>}
       </div>
     </div>}
   </div>;
