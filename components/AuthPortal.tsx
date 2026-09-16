@@ -131,7 +131,6 @@ export default function AuthPortal({mode}:Props){
       </form>
 
       <div className={s.switch}>{signup?<>이미 계정이 있나요? <Link href="/login">로그인</Link></>:<>BITMATE가 처음이신가요? <Link href="/signup">회원 가입</Link></>}</div>
-      <div className={s.security}><span>암호화 통신</span><span>세션 보호</span><span>Supabase Auth</span></div>
     </section>
   </main>;
 }
