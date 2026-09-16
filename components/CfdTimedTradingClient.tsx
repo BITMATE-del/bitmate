@@ -108,18 +108,18 @@ export default function CfdTimedTradingClient(){
       <div className={s.metric}><span>지급배율</span><b>WIN 1.95x</b></div>
     </section>
 
-    <section className={s.terminalGrid}>
-      <section className={`${s.panel} ${s.chartPanel}`}>
+    <section className={s.terminalGrid} style={{alignItems:'start',minHeight:500}}>
+      <section className={`${s.panel} ${s.chartPanel}`} style={{minHeight:500}}>
         <div className={s.panelTabs}><div><button className={s.activeTab}>차트</button></div><div className={s.chartTools}><span className={s.liveDot}/><span>LIVE</span><span>{selected?.last_price_at?new Date(selected.last_price_at).toLocaleTimeString('ko-KR',{hour12:false}):'연결 대기'}</span></div></div>
-        <div className={s.chartStage}/>
+        <div className={s.chartStage} style={{minHeight:460}}/>
       </section>
 
-      <section className={s.panel}>
+      <section className={s.panel} style={{alignSelf:'start',height:'auto'}}>
         <div className={s.panelTabs}><div><button onClick={()=>setBookTab('book')} className={bookTab==='book'?s.activeTab:''}>호가</button><button onClick={()=>setBookTab('recent')} className={bookTab==='recent'?s.activeTab:''}>최근 체결</button></div></div>
         {selected?<BinanceMarketDepth symbol={selected.symbol} currentPrice={current} mode={bookTab} classNames={{bookBody:s.bookBody,bookHead:s.bookHead,bookRows:s.bookRows,bookRow:s.bookRow,askDepth:s.askDepth,bidDepth:s.bidDepth,midPrice:s.midPrice,bookStatus:s.bookStatus,recentList:s.recentList,empty:s.empty}}/>:<div className={s.empty}>상품을 선택하세요.</div>}
       </section>
 
-      <section className={`${s.panel} ${s.orderPanel}`}>
+      <section className={`${s.panel} ${s.orderPanel}`} style={{alignSelf:'start',height:'auto',minHeight:0}}>
         <div className={s.directionRow}><button className={direction==='UP'?s.upActive:''} onClick={()=>setDirection('UP')}>▲ UP</button><button className={direction==='DOWN'?s.downActive:''} onClick={()=>setDirection('DOWN')}>▼ DOWN</button></div>
         <span className={s.label}>거래시간</span>
         <div className={s.durationRow}><button className={duration===3?s.durationActive:''} onClick={()=>setDuration(3)}>3분</button><button className={duration===5?s.durationActive:''} onClick={()=>setDuration(5)}>5분</button></div>
