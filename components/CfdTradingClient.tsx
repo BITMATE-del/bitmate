@@ -1,6 +1,7 @@
 'use client';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import BinanceMarketDepth from './BinanceMarketDepth';
 import s from './CfdTrading.module.css';
 
 type Product={id:string;symbol:string;display_name:string;category:string;current_price:number|null;bid:number|null;ask:number|null;available_leverages:number[];maintenance_margin_rate:number;trading_fee:number;status:string;trading_enabled:boolean;last_price_at:string|null};
@@ -72,8 +73,6 @@ export default function CfdTradingClient(){
 
  const fmt=(v:number|null|undefined,d=2)=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
  const selectProduct=(id:string)=>{const p=products.find(x=>x.id===id)||null;setSelected(p);if(p)setLev(p.available_leverages?.[0]||1)};
- const askRows=Array.from({length:8},(_,i)=>i===7?{price:ask}:{price:null as number|null});
- const bidRows=Array.from({length:8},(_,i)=>i===0?{price:bid}:{price:null as number|null});
 
  const renderPositions=()=> <div className={s.tableWrap}><table className={s.table}><thead><tr><th>종목</th><th>방향</th><th>증거금</th><th>진입가</th><th>현재가</th><th>평가손익</th><th>ROI</th><th>청산가</th><th>SL / TP</th><th>관리</th></tr></thead><tbody>{positions.length?positions.map(p=>{const roi=Number(p.remaining_margin)?Number(p.unrealized_pnl)/Number(p.remaining_margin)*100:0;return <tr key={p.id}><td>{p.symbol}</td><td className={p.side==='LONG'?s.pos:s.neg}>{p.side}</td><td>{fmt(p.remaining_margin)} USDT</td><td>{fmt(p.entry_price)}</td><td>{fmt(p.current_price)}</td><td className={Number(p.unrealized_pnl)>=0?s.pos:s.neg}>{fmt(p.unrealized_pnl)} USDT</td><td>{roi.toFixed(2)}%</td><td>{fmt(p.liquidation_price)}</td><td>{p.stop_loss||'—'} / {p.take_profit||'—'}</td><td><div className={s.actions}><button className={s.ghost} onClick={()=>updateStops(p)}>SL/TP</button><button className={s.ghost} onClick={()=>close(p.id,25)}>25%</button><button className={s.ghost} onClick={()=>close(p.id,50)}>50%</button><button className={s.ghost} onClick={()=>close(p.id,100)}>전체청산</button></div></td></tr>}):<tr><td colSpan={10} className={s.empty}>보유 포지션이 없습니다.</td></tr>}</tbody></table></div>;
 
@@ -110,13 +109,7 @@ export default function CfdTradingClient(){
 
    <section className={`${s.panel} ${s.bookPanel}`}>
     <div className={s.panelTabs}><div><button onClick={()=>setBookTab('book')} className={bookTab==='book'?s.tabActive:''}>호가</button><button onClick={()=>setBookTab('recent')} className={bookTab==='recent'?s.tabActive:''}>최근 체결</button></div></div>
-    {bookTab==='book'?<div className={s.bookBody}>
-     <div className={s.bookHead}><span>가격</span><span>수량</span><span>누적</span></div>
-     <div className={s.bookRows}>{askRows.map((r,i)=><div key={`a${i}`} className={`${s.bookRow} ${s.askDepth}`}><b>{r.price?fmt(r.price):'—'}</b><span>—</span><span>—</span></div>)}</div>
-     <div className={s.midPrice}><strong>{fmt(current)}</strong><span>{spread?`Spread ${spread.toFixed(4)}`:'현재가'}</span></div>
-     <div className={s.bookRows}>{bidRows.map((r,i)=><div key={`b${i}`} className={`${s.bookRow} ${s.bidDepth}`}><b>{r.price?fmt(r.price):'—'}</b><span>—</span><span>—</span></div>)}</div>
-     <div className={s.bookStatus}>실제 CFD 데이터 소스의 최우선 Bid / Ask만 표시</div>
-    </div>:<div className={s.recentList}>{executions.slice(0,14).map(x=><div key={x.id}><span>{new Date(x.created_at).toLocaleTimeString()}</span><b>{fmt(x.price)}</b><span>{fmt(x.quantity,4)}</span></div>)}{!executions.length&&<div className={s.empty}>체결 내역이 없습니다.</div>}</div>}
+    {selected?<BinanceMarketDepth symbol={selected.symbol} currentPrice={current} mode={bookTab} classNames={{bookBody:s.bookBody,bookHead:s.bookHead,bookRows:s.bookRows,bookRow:s.bookRow,askDepth:s.askDepth,bidDepth:s.bidDepth,midPrice:s.midPrice,bookStatus:s.bookStatus,recentList:s.recentList,empty:s.empty}}/>:<div className={s.empty}>상품을 선택하세요.</div>}
    </section>
 
    <section className={`${s.panel} ${s.orderPanel}`}>
