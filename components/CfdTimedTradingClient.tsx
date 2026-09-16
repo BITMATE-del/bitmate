@@ -117,7 +117,7 @@ export default function CfdTimedTradingClient(){
     {msg&&<div className={s.toast}>{msg}</div>}
 
     <section className={s.marketBar}>
-      <div className={s.symbolBox}><CfdMarketSelector products={products} selected={selected} onSelect={setSelected} onMarkets={setMarkets}/></div>
+      <div className={s.symbolBox}><CfdMarketSelector products={products} selected={selected} onSelect={p=>setSelected(products.find(x=>x.id===p.id)||null)} onMarkets={setMarkets}/></div>
       <div className={s.priceBox}><strong>{fmtPrice(current)}</strong><span>{liveMarket?.changePct!=null?<span style={{color:liveMarket.changePct>=0?'#56d99b':'#ff6b7a'}}>{liveMarket.changePct>=0?'+':''}{liveMarket.changePct.toFixed(2)}%</span>:'현재가'}</span></div>
       <div className={s.metric}><span>24H Change</span><b style={{color:(liveMarket?.changePct||0)>=0?'#56d99b':'#ff6b7a'}}>{liveMarket?`${liveMarket.priceChange>=0?'+':''}${fmtPrice(liveMarket.priceChange)} · ${liveMarket.changePct>=0?'+':''}${liveMarket.changePct.toFixed(2)}%`:'—'}</b></div>
       <div className={s.metric}><span>24H High</span><b>{fmtPrice(liveMarket?.high24h)}</b></div>
