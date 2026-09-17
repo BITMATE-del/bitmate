@@ -2,51 +2,30 @@ import Link from 'next/link';
 
 const faq=[
  ['1. 레퍼럴 프로그램은 어떻게 이용하나요?','로그인 후 개인 추천 링크 또는 추천 코드를 발급받아 지인을 초대할 수 있습니다. 커미션과 지급 조건은 현재 운영 정책에 따라 적용됩니다.'],
- ['2. 기간 한정 이벤트는 어떻게 확인하나요?','진행 중인 이벤트가 있을 경우 본 페이지의 Limited-time Event 영역에 기간과 참여 조건이 표시됩니다.'],
+ ['2. 추천 회원의 어떤 활동이 인정되나요?','가입, 인증, 첫 입금, 첫 거래 등 운영 중인 캠페인에서 지정한 조건만 인정됩니다. 단계별 인정 기준은 이벤트 카드에 표시됩니다.'],
  ['3. 레퍼럴 커미션은 어떻게 계산되나요?','유효한 추천 관계와 정책상 인정되는 거래·활동을 기준으로 서버에서 계산하며, 임의 수익률이나 임의 보상 수치는 표시하지 않습니다.'],
  ['4. 리워드는 언제 반영되나요?','지급 주기와 확정 시점은 각 프로그램 정책에 따라 달라질 수 있으며, 확정된 내역만 계정에 반영됩니다.'],
- ['5. Reward Hub는 누구나 이용할 수 있나요?','아닙니다. Reward Hub는 별도로 승인된 레퍼럴 파트너 회원만 이용할 수 있습니다.'],
+ ['5. Reward Hub는 누구나 이용할 수 있나요?','Reward Hub는 일반 리워드 영역과 파트너 전용 영역을 분리해 운영할 수 있으며, 파트너 관리 기능은 승인된 계정만 접근합니다.'],
 ];
+const steps=[['가입','추천 링크/코드로 가입'],['인증','운영 정책상 필요한 인증 완료'],['첫 입금','지정 최소 입금 조건 충족'],['첫 거래','지정 거래 상품에서 첫 거래 완료']];
 
 export default function ReferralPage(){
  return <main style={{minHeight:'calc(100vh - 72px)',background:'#050607',color:'#f5f7f8'}}>
   <div className="xtShell" style={{paddingTop:18}}>
-   <div style={{display:'flex',gap:30,borderBottom:'1px solid #202326',fontSize:13}}>
-    <span style={{padding:'0 0 14px',borderBottom:'2px solid #f5f7f8',fontWeight:800}}>Invitation to referral</span>
-    <a href="#events" style={{padding:'0 0 14px',color:'#8e969b'}}>Limited-time Event</a>
-   </div>
+   <div style={{display:'flex',gap:30,borderBottom:'1px solid #202326',fontSize:13}}><span style={{padding:'0 0 14px',borderBottom:'2px solid #f5f7f8',fontWeight:800}}>Referral Dashboard</span><a href="#events" style={{padding:'0 0 14px',color:'#8e969b'}}>Limited-time Event</a><a href="#history" style={{padding:'0 0 14px',color:'#8e969b'}}>History</a></div>
 
-   <section style={{display:'grid',gridTemplateColumns:'minmax(0,1.05fr) minmax(360px,.95fr)',gap:50,alignItems:'center',minHeight:440,padding:'48px 0 54px'}}>
-    <div>
-     <span style={{display:'inline-block',color:'#b9ff31',fontSize:12,fontWeight:800,letterSpacing:'.12em',marginBottom:16}}>BITMATE REFERRAL PROGRAM</span>
-     <h1 style={{fontSize:'clamp(44px,5.4vw,74px)',lineHeight:1.02,letterSpacing:'-.055em',margin:'0 0 22px'}}>Refer friends.<br/>Earn rewards together.</h1>
-     <p style={{maxWidth:700,color:'#9aa2a7',fontSize:16,lineHeight:1.75,margin:0}}>친구를 초대하고, 현재 운영 중인 레퍼럴 정책에 따라 인정된 활동과 거래를 기준으로 리워드를 받을 수 있습니다. 커미션율과 지급 조건은 계정 및 파트너 정책에 따라 적용됩니다.</p>
-     <div style={{display:'flex',gap:12,marginTop:30,alignItems:'center',flexWrap:'wrap'}}>
-      <Link href="/login" style={{minWidth:230,minHeight:48,borderRadius:8,background:'#9bea12',color:'#0d1207',fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>Get referral link</Link>
-      <div style={{width:48,height:48,border:'1px solid #34393d',borderRadius:8,display:'grid',placeItems:'center',color:'#b8c0c4'}}>▦</div>
-     </div>
-     <small style={{display:'block',marginTop:12,color:'#646d72'}}>추천 링크와 추천 코드는 로그인 후 계정에 발급됩니다.</small>
-    </div>
-
-    <div aria-hidden="true" style={{position:'relative',height:320,display:'grid',placeItems:'center'}}>
-     <div style={{position:'absolute',width:300,height:300,borderRadius:'50%',background:'radial-gradient(circle, rgba(166,255,34,.18), rgba(166,255,34,0) 68%)'}}/>
-     <div style={{position:'relative',width:280,height:190,borderRadius:26,border:'1px solid #5f6a56',background:'linear-gradient(145deg,#282c2f,#0e1011 62%)',boxShadow:'0 30px 70px rgba(0,0,0,.45), inset 0 0 32px rgba(185,255,49,.06)',display:'grid',placeItems:'center',transform:'rotate(-3deg)'}}>
-      <div style={{fontSize:66,fontWeight:900,letterSpacing:'-.06em',color:'#e6e9ea'}}>REF</div>
-      <div style={{position:'absolute',bottom:18,right:22,fontSize:12,color:'#b9ff31',fontWeight:800}}>INVITE · TRADE · REWARD</div>
-     </div>
-    </div>
+   <section style={{display:'grid',gridTemplateColumns:'minmax(0,1.05fr) minmax(360px,.95fr)',gap:50,alignItems:'center',minHeight:420,padding:'42px 0 46px'}}>
+    <div><span style={{display:'inline-block',color:'#b9ff31',fontSize:12,fontWeight:800,letterSpacing:'.12em',marginBottom:16}}>BITMATE REFERRAL PROGRAM</span><h1 style={{fontSize:'clamp(44px,5.4vw,74px)',lineHeight:1.02,letterSpacing:'-.055em',margin:'0 0 22px'}}>Invite. Activate.<br/>Earn together.</h1><p style={{maxWidth:700,color:'#9aa2a7',fontSize:16,lineHeight:1.75,margin:0}}>친구를 초대하고 가입·인증·입금·거래 등 운영 중인 단계별 조건을 달성하면 리워드가 확정됩니다. 추천 상태와 지급 이력을 한 화면에서 확인할 수 있도록 구성했습니다.</p><div style={{display:'flex',gap:12,marginTop:30,alignItems:'center',flexWrap:'wrap'}}><Link href="/login" style={{minWidth:230,minHeight:48,borderRadius:8,background:'#9bea12',color:'#0d1207',fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center'}}>Get referral link</Link><div style={{width:48,height:48,border:'1px solid #34393d',borderRadius:8,display:'grid',placeItems:'center',color:'#b8c0c4'}}>QR</div></div><small style={{display:'block',marginTop:12,color:'#646d72'}}>추천 링크와 추천 코드는 로그인 후 계정에 발급됩니다.</small></div>
+    <div style={{border:'1px solid #2a2e31',background:'#111315',borderRadius:18,padding:24}}><small style={{color:'#737c81',fontWeight:900,letterSpacing:'.12em'}}>MY REFERRAL SUMMARY</small><div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginTop:16}}>{[['총 초대','—'],['가입 완료','—'],['첫 입금','—'],['첫 거래','—'],['지급 확정','—'],['내 리워드','—']].map(([k,v])=><div key={k} style={{padding:'16px 14px',borderRadius:10,background:'#191c1e',border:'1px solid #24282b'}}><small style={{display:'block',color:'#747c81',marginBottom:6}}>{k}</small><b style={{fontSize:20}}>{v}</b></div>)}</div><p style={{fontSize:12,color:'#6f777c',lineHeight:1.6,margin:'14px 0 0'}}>로그인 후 서버에서 확정된 추천 관계와 실적만 표시됩니다.</p></div>
    </section>
 
-   <section style={{border:'1px solid #25292c',background:'#0d0f10',borderRadius:12,padding:'28px 24px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:18,marginBottom:58}}>
-    {[['1','Invite friend(s) to sign up','추천 링크 또는 코드로 친구를 초대합니다.'],['2','Trade','초대된 회원의 정책상 인정되는 거래·활동을 집계합니다.'],['3','Reward','확정된 조건을 충족한 리워드를 계정에 반영합니다.']].map(([n,t,d])=><div key={n} style={{padding:'6px 18px',textAlign:'center'}}><div style={{display:'flex',gap:10,justifyContent:'center',alignItems:'center',fontWeight:900,fontSize:18}}><span style={{width:25,height:25,borderRadius:'50%',display:'grid',placeItems:'center',background:'#b9ff31',color:'#101308',fontSize:12}}>{n}</span>{t}</div><p style={{color:'#8f979c',lineHeight:1.6,fontSize:13,margin:'20px 0 0'}}>{d}</p></div>)}
-   </section>
+   <section style={{border:'1px solid #25292c',background:'#0d0f10',borderRadius:12,padding:'26px 22px',display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:12,marginBottom:38}}>{steps.map(([t,d],i)=><div key={t} style={{padding:'8px 14px'}}><div style={{display:'flex',gap:10,alignItems:'center',fontWeight:900}}><span style={{width:25,height:25,borderRadius:'50%',display:'grid',placeItems:'center',background:'#b9ff31',color:'#101308',fontSize:12}}>{i+1}</span>{t}</div><p style={{color:'#8f979c',lineHeight:1.6,fontSize:13,margin:'16px 0 0'}}>{d}</p></div>)}</section>
 
-   <section id="events" style={{padding:'10px 0 58px'}}>
-    <div style={{display:'flex',justifyContent:'space-between',alignItems:'end',gap:16,marginBottom:18}}><div><span style={{fontSize:12,color:'#778086',letterSpacing:'.12em',fontWeight:800}}>LIMITED-TIME EVENT</span><h2 style={{fontSize:30,margin:'8px 0 0'}}>Referral Events</h2></div><Link href="/more/notice" style={{color:'#b9ff31',fontSize:13,fontWeight:800}}>View notices ›</Link></div>
-    <div style={{minHeight:150,border:'1px solid #25292c',borderRadius:12,background:'#0d0f10',padding:26,display:'flex',alignItems:'center',justifyContent:'space-between',gap:20}}><div><b style={{fontSize:18}}>현재 공개된 기간 한정 이벤트가 없습니다.</b><p style={{margin:'8px 0 0',color:'#7f888d',fontSize:14}}>이벤트가 등록되면 기간, 참여 조건, 리워드 지급 기준이 이 영역에 표시됩니다.</p></div><span style={{padding:'8px 12px',borderRadius:999,border:'1px solid #343a3d',color:'#7e878c',fontSize:12}}>No active event</span></div>
-   </section>
+   <section id="events" style={{padding:'8px 0 40px'}}><div style={{display:'flex',justifyContent:'space-between',alignItems:'end',gap:16,marginBottom:18}}><div><span style={{fontSize:12,color:'#778086',letterSpacing:'.12em',fontWeight:800}}>CAMPAIGNS</span><h2 style={{fontSize:30,margin:'8px 0 0'}}>Referral Missions</h2></div><Link href="/more/notice" style={{color:'#b9ff31',fontSize:13,fontWeight:800}}>View notices ›</Link></div><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(250px,1fr))',gap:14}}>{[['첫 추천 완료','가입 + 기본 인증 완료','보상 정책 활성화 시 지급'],['첫 입금 추천','초대 회원이 지정 입금 조건 달성','캠페인별 최소 금액 적용'],['첫 거래 추천','초대 회원이 지정 거래 상품 이용','유효 거래량 기준 적용'],['Milestone','누적 추천 인원 구간 달성','단계별 추가 리워드']].map(([t,d,r])=><article key={t} style={{minHeight:160,border:'1px solid #25292c',background:'#111315',borderRadius:12,padding:20}}><small style={{color:'#b9ff31',fontWeight:900}}>MISSION</small><h3 style={{fontSize:18,margin:'9px 0'}}>{t}</h3><p style={{color:'#858d92',fontSize:13,lineHeight:1.6,margin:'0 0 10px'}}>{d}</p><span style={{fontSize:11,color:'#6f787d'}}>{r}</span></article>)}</div></section>
 
-   <section style={{padding:'10px 0 90px'}}><h2 style={{fontSize:30,margin:'0 0 24px'}}>FAQ</h2><div style={{display:'grid',gap:12}}>{faq.map(([q,a])=><details key={q} style={{border:'1px solid #25292c',borderRadius:9,background:'#0d0f10',padding:'0 22px'}}><summary style={{cursor:'pointer',listStyle:'none',padding:'22px 0',fontWeight:800,fontSize:16}}>{q}</summary><p style={{margin:'0 0 22px',color:'#8f979c',fontSize:14,lineHeight:1.7}}>{a}</p></details>)}</div></section>
+   <section id="history" style={{display:'grid',gridTemplateColumns:'1.15fr .85fr',gap:16,padding:'8px 0 42px'}}><div style={{border:'1px solid #25292c',borderRadius:12,background:'#0d0f10',padding:22}}><h2 style={{fontSize:22,margin:'0 0 16px'}}>Referral History</h2><div style={{display:'grid',gridTemplateColumns:'1.2fr .8fr .8fr .8fr',fontSize:11,color:'#6f787d',padding:'0 4px 10px'}}><span>회원</span><span>가입</span><span>진행단계</span><span style={{textAlign:'right'}}>리워드</span></div><div style={{padding:'34px 0',textAlign:'center',color:'#697176',borderTop:'1px solid #1f2325'}}>로그인 후 추천 회원 진행상태가 표시됩니다.</div></div><div style={{border:'1px solid #25292c',borderRadius:12,background:'#0d0f10',padding:22}}><h2 style={{fontSize:22,margin:'0 0 16px'}}>Reward History</h2>{[['Pending','조건 검증 중'],['Confirmed','지급 확정'],['Paid','계정 반영 완료']].map(([a,b])=><div key={a} style={{display:'flex',justifyContent:'space-between',padding:'13px 0',borderBottom:'1px solid #1f2325',fontSize:13}}><b>{a}</b><span style={{color:'#7a8388'}}>{b}</span></div>)}</div></section>
+
+   <section style={{padding:'8px 0 90px'}}><h2 style={{fontSize:30,margin:'0 0 24px'}}>FAQ</h2><div style={{display:'grid',gap:12}}>{faq.map(([q,a])=><details key={q} style={{border:'1px solid #25292c',borderRadius:9,background:'#0d0f10',padding:'0 22px'}}><summary style={{cursor:'pointer',listStyle:'none',padding:'22px 0',fontWeight:800,fontSize:16}}>{q}</summary><p style={{margin:'0 0 22px',color:'#8f979c',fontSize:14,lineHeight:1.7}}>{a}</p></details>)}</div></section>
   </div>
  </main>
 }
