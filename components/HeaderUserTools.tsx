@@ -30,7 +30,14 @@ const walletItems=[
   ['▣','Order','/account?view=order'],
 ] as const;
 const memberItems=[
-  ['▦','Overview','/account?view=overview'],['▣','Order','/account?view=order'],['◆','KYC Verification','/account?view=verification'],['◉','Security Center','/account'],['↗','API Management','/account'],['⚙','Settings','/account'],['▣','Referral Rewards','/more/referral'],['▤','My Vouchers','/more/reward-hub'],['◉','Sub-account','/account'],
+  ['▦','Overview','/member?view=overview'],
+  ['◆','Identity Verification','/member?view=verification'],
+  ['◉','Security Center','/member?view=security'],
+  ['↗','API Management','/member?view=api'],
+  ['⚙','Setting','/member?view=setting'],
+  ['▣','Referral Rewards','/member?view=referral'],
+  ['▤','My Vouchers','/member?view=vouchers'],
+  ['●','Sub-account','/member?view=subaccount'],
 ] as const;
 
 function maskEmail(email:string){const [name,domain='']=email.split('@');if(!domain)return email;return `${name.slice(0,2)}***@${domain}`}
