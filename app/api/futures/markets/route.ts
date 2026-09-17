@@ -8,7 +8,7 @@ type Ticker={symbol:string;lastPrice:string;priceChangePercent:string;highPrice:
 type Premium={symbol:string;markPrice:string;indexPrice:string;lastFundingRate:string;nextFundingTime:number};
 type Book={symbol:string;bidPrice:string;askPrice:string};
 
-const bases=['https://fapi.binance.com','https://fapi1.binance.com','https://fapi2.binance.com','https://fapi3.binance.com','https://fapi4.binance.com'];
+const bases=['https://www.binance.com','https://fapi.binance.com','https://fapi1.binance.com','https://fapi2.binance.com','https://fapi3.binance.com','https://fapi4.binance.com'];
 
 async function getJson<T>(path:string):Promise<{data:T;source:string}>{
   const errors:string[]=[];
