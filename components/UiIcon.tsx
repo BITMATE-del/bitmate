@@ -5,7 +5,9 @@ export type UiIconName =
   | 'security' | 'api' | 'settings' | 'referral' | 'voucher' | 'subaccount'
   | 'mail' | 'phone' | 'passkey' | 'withdraw' | 'password' | 'phishing' | 'link' | 'delete'
   | 'edit' | 'avatar' | 'language' | 'notification' | 'wallet' | 'user' | 'bell' | 'download' | 'globe'
-  | 'campaign' | 'listing' | 'bot' | 'priceAlert';
+  | 'campaign' | 'listing' | 'bot' | 'priceAlert'
+  | 'search' | 'external' | 'chevronDown' | 'chevronRight' | 'history' | 'mining' | 'etf' | 'loan' | 'market'
+  | 'membership' | 'academy' | 'boost' | 'lucky' | 'fire' | 'menu' | 'gift';
 
 type Props={name:UiIconName;size?:number;className?:string};
 
@@ -49,6 +51,22 @@ export default function UiIcon({name,size=18,className}:Props){
     listing:<><path d="M5 5h14v14H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></>,
     bot:<><rect x="5" y="7" width="14" height="12" rx="3"/><path d="M12 3v4M9 12h.01M15 12h.01M9 16h6"/></>,
     priceAlert:<><path d="M6.5 9.8a5.5 5.5 0 0 1 11 0c0 5 2.1 5.2 2.1 6.7H4.4c0-1.5 2.1-1.7 2.1-6.7Z"/><path d="M9.7 19a2.6 2.6 0 0 0 4.6 0"/><path d="M18 5l2-2"/></>,
+    search:<><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 4 4"/></>,
+    external:<><path d="M13 5h6v6"/><path d="M19 5 10 14"/><path d="M16 13v6H5V8h6"/></>,
+    chevronDown:<><path d="m7 9 5 5 5-5"/></>,
+    chevronRight:<><path d="m9 6 6 6-6 6"/></>,
+    history:<><path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 5v5h5"/><path d="M12 8v4l3 2"/></>,
+    mining:<><path d="m6 5 5 5"/><path d="m8.5 2.5 8 8"/><path d="M5 19 15.5 8.5"/><path d="M3 21h5"/><path d="m14 4 4-2 4 4-2 4"/></>,
+    etf:<><path d="M5 6h14v12H5z"/><path d="M8 15v-4M12 15V8M16 15v-6"/></>,
+    loan:<><rect x="4" y="7" width="16" height="11" rx="2"/><path d="M7 11h10M7 14h5"/><path d="M8 7V5h8v2"/></>,
+    market:<><path d="M4 18V8M9 18V12M14 18V5M19 18v-8"/><path d="M3 18h18"/></>,
+    membership:<><path d="M12 3l3 4 5 .8-3.6 3.5.9 5-5.3-2.4-5.3 2.4.9-5L4 7.8 9 7z"/><path d="M8 20h8"/></>,
+    academy:<><path d="M4 6.5 12 3l8 3.5-8 3.5-8-3.5Z"/><path d="M7 9v5c2.8 2 7.2 2 10 0V9"/><path d="M20 7v6"/></>,
+    boost:<><path d="m13 2-7 11h6l-1 9 7-12h-6z"/></>,
+    lucky:<><path d="m12 3 2.2 5.1L20 9l-4 3.9.9 5.6L12 16l-4.9 2.5.9-5.6L4 9l5.8-.9z"/></>,
+    fire:<><path d="M13.5 3.5c.7 3-1.7 4.3-1.1 6.4.5 1.6 2.4 1.9 2.7.2.3-1.4-.2-2.7.8-4 2.2 1.7 3.7 4.2 3.3 7.2-.5 4.1-3.7 6.7-7.4 6.7S5 17.5 5 13.8c0-2.6 1.3-4.8 3.8-7 .2 2.2.9 3.6 2.1 4.3-.7-3.2.8-5.4 2.6-7.6Z"/></>,
+    menu:<><path d="M5 7h14M5 12h14M5 17h14"/></>,
+    gift:<><rect x="4" y="10" width="16" height="10" rx="1.5"/><path d="M12 10v10M4 13h16"/><path d="M12 10H8.5a2.5 2.5 0 1 1 2-4L12 8.5 13.5 6a2.5 2.5 0 1 1 2 4H12Z"/></>,
   };
   return <svg {...common}>{icon[name]}</svg>;
 }
