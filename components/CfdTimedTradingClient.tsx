@@ -79,7 +79,6 @@ export default function CfdTimedTradingClient(){
   const current=Number(liveMarket?.lastPrice||selected?.current_price||0);
   const bid=Number(liveMarket?.bid||selected?.bid||selected?.current_price||0);
   const ask=Number(liveMarket?.ask||selected?.ask||selected?.current_price||0);
-  const spread=ask&&bid?Math.max(0,ask-bid):0;
   const activeTrade=trades.find(t=>t.status==='ACTIVE')||null;
   const settled=trades.filter(t=>t.status==='SETTLED');
   const amountNum=Number(amount)||0;
@@ -111,7 +110,8 @@ export default function CfdTimedTradingClient(){
   }
 
   const resultClass=(r:TimedTrade['result'])=>r==='WIN'?s.win:r==='LOSS'?s.loss:s.draw;
-  const hotMarkets=markets.slice(0,6);
+  const tickerMarkets=useMemo(()=>[...markets].filter(m=>Number.isFinite(m.lastPrice)&&m.lastPrice>0).sort((a,b)=>b.quoteVolume-a.quoteVolume).slice(0,30),[markets]);
+  const tickerLoop=tickerMarkets.length?[...tickerMarkets,...tickerMarkets]:[];
 
   return <main className={s.page}>
     {msg&&<div className={s.toast}>{msg}</div>}
@@ -161,6 +161,11 @@ export default function CfdTimedTradingClient(){
       {bottomTab==='ledger'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>시간</th><th>유형</th><th>금액</th><th>Available 전</th><th>Available 후</th><th>Hold 전</th><th>Hold 후</th><th>설명</th></tr></thead><tbody>{ledger.length?ledger.map(l=><tr key={l.id}><td>{new Date(l.created_at).toLocaleString()}</td><td>{l.transaction_type}</td><td>{fmt(l.amount)}</td><td>{fmt(l.available_before)}</td><td>{fmt(l.available_after)}</td><td>{fmt(l.trade_hold_before)}</td><td>{fmt(l.trade_hold_after)}</td><td>{l.description||'—'}</td></tr>):<tr><td colSpan={8} className={s.empty}>원장 내역이 없습니다.</td></tr>}</tbody></table></div>}
     </section>
 
-    <div className={s.ticker}><span>● 서버 자동 정산 활성</span>{hotMarkets.map(m=><span key={m.symbol}><b>{m.displayName}</b> {fmtPrice(m.lastPrice)} <i style={{fontStyle:'normal',color:m.changePct>=0?'#56d99b':'#ff6b7a'}}>{m.changePct>=0?'+':''}{m.changePct.toFixed(2)}%</i></span>)}</div>
+    <div className={s.ticker}>
+      <div className={s.tickerStatus}><span className={s.statusBars}>▥</span><b>실시간 시세</b><span>{tickerMarkets.length.toLocaleString()}개 연결</span></div>
+      <div className={s.tickerViewport}>
+        {tickerLoop.length?<div className={s.tickerTrack}>{tickerLoop.map((m,i)=><button type="button" key={`${m.symbol}-${i}`} className={s.tickerItem} onClick={()=>{const p=products.find(x=>x.symbol===m.symbol);if(p)setSelected(p)}}><b>{m.displayName}</b><span className={m.changePct>=0?s.tickerUp:s.tickerDown}>{m.changePct>=0?'+':''}{m.changePct.toFixed(2)}%</span><em>{fmtPrice(m.lastPrice)}</em></button>)}</div>:<div className={s.tickerEmpty}>실시간 시세 연결 중…</div>}
+      </div>
+    </div>
   </main>;
 }
