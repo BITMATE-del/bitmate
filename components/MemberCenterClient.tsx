@@ -3,19 +3,20 @@
 import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import UiIcon,{type UiIconName} from './UiIcon';
 import s from './MemberCenter.module.css';
 
 type View='overview'|'verification'|'security'|'api'|'setting'|'referral'|'vouchers'|'subaccount';
 
-const nav:[View,string,string][]=[
- ['overview','▦','Overview'],
- ['verification','◆','Identity Verification'],
- ['security','◉','Security Center'],
- ['api','↗','API Management'],
- ['setting','⚙','Setting'],
- ['referral','▣','Referral Rewards'],
- ['vouchers','▤','My Vouchers'],
- ['subaccount','●','Sub-account'],
+const nav:[View,UiIconName,string][]=[
+ ['overview','overview','Overview'],
+ ['verification','verification','Identity Verification'],
+ ['security','security','Security Center'],
+ ['api','api','API Management'],
+ ['setting','settings','Setting'],
+ ['referral','referral','Referral Rewards'],
+ ['vouchers','voucher','My Vouchers'],
+ ['subaccount','subaccount','Sub-account'],
 ];
 
 const maskEmail=(email:string)=>{const [n,d='']=email.split('@');return d?`${n.slice(0,2)}***@${d}`:email};
@@ -38,7 +39,7 @@ export default function MemberCenterClient(){
  const shortUid=useMemo(()=>uid?uid.replaceAll('-','').slice(0,14):'—',[uid]);
  const changeNick=async()=>{const next=prompt('새 닉네임을 입력하세요.',nickname)?.trim();if(!next)return;const {error}=await supabase.auth.updateUser({data:{nickname:next}});if(!error)setNickname(next)};
  return <main className={s.page}><div className={s.shell}>
-  <aside className={s.side}>{nav.map(([key,icon,label])=><button key={key} className={view===key?s.active:''} onClick={()=>go(key)}><span>{icon}</span><b>{label}</b></button>)}</aside>
+  <aside className={s.side}>{nav.map(([key,icon,label])=><button key={key} className={view===key?s.active:''} onClick={()=>go(key)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></button>)}</aside>
   <section className={s.content}>
    {view==='overview'&&<>
     <section className={s.profileBar}>
@@ -50,7 +51,7 @@ export default function MemberCenterClient(){
      <div><small>Last Login</small><b>Current session</b></div>
     </section>
     <div className={s.steps}>
-     <article><small>Step1</small><h2>Sign up</h2><div className={s.stepDone}>✓ Completed</div></article>
+     <article><small>Step1</small><h2>Sign up</h2><div className={s.stepDone}><UiIcon name="verification" size={15}/> Completed</div></article>
      <article className={s.focus}><small>Step2</small><h2>First Deposit ≥20 USDT</h2><p>Get Up To <strong>200 USDT</strong></p><Link href="/deposit">Deposit</Link></article>
      <article><small>Step3</small><h2>First Trade ≥20 USDT</h2><p>Get Up To <strong>200 USDT</strong></p><button disabled>To Be Unlocked</button></article>
     </div>
@@ -64,7 +65,7 @@ export default function MemberCenterClient(){
 
    {view==='verification'&&<section className={s.plain}>
     <div className={s.pageTitle}><h2>Personal Verification</h2><span>Unverified</span></div>
-    <div className={s.country}>Country/Region <strong>🇰🇷 South Korea (대한민국)</strong></div>
+    <div className={s.country}>Country/Region <strong>South Korea (대한민국)</strong></div>
     <h3>Identity Verification</h3>
     <ul className={s.notes}><li>Photo and video authentication</li><li>Account security and identity checks</li><li>Review period: typically within 2 days after submission</li></ul>
     <button className={s.green}>Verify Now</button>
@@ -73,14 +74,14 @@ export default function MemberCenterClient(){
 
    {view==='security'&&<section className={s.plain}>
     <div className={s.pageTitle}><h2>Identity Two-factor Authentication</h2><span>Security Level · Standard</span></div>
-    <SecurityRow icon="G" title="Google Authenticator (Recommended)" state="Not enabled" action="Connect" desc="Used for security verification while logging in, withdrawing assets, retrieving your password, and managing security settings."/>
-    <SecurityRow icon="✉" title="Email Address" state="Activated" action="Change" desc={email?maskEmail(email):'Email security verification'}/>
-    <SecurityRow icon="▣" title="Phone Number" state="Not enabled" action="Connect" desc="Used as an additional account verification method."/>
-    <SecurityRow icon="⌘" title="Passkey" state="Not enabled" action="Setting" desc="Use a device passkey for login and withdrawal verification."/>
-    <h3 className={s.sectionTitle}>Withdrawal Settings</h3><SecurityRow icon="↗" title="Quick Withdrawal" action="Setting" desc="Configure trusted addresses and withdrawal verification preferences."/>
-    <h3 className={s.sectionTitle}>Password Setting</h3><SecurityRow icon="▣" title="Login Password" state="Password strength: High" action="Change" desc="Used for signing in and protecting account settings."/>
-    <SecurityRow icon="◇" title="Anti-Phishing Code" action="Setting" desc="Add a code to official account emails to help identify fraudulent messages."/>
-    <h3 className={s.sectionTitle}>Account Management</h3><SecurityRow icon="▤" title="Third-party Account" action="View" desc="Review linked sign-in providers."/><SecurityRow icon="◉" title="Delete Account" action="Delete" desc="Account deletion requires identity and security verification."/>
+    <SecurityRow icon="security" title="Google Authenticator (Recommended)" state="Not enabled" action="Connect" desc="Used for security verification while logging in, withdrawing assets, retrieving your password, and managing security settings."/>
+    <SecurityRow icon="mail" title="Email Address" state="Activated" action="Change" desc={email?maskEmail(email):'Email security verification'}/>
+    <SecurityRow icon="phone" title="Phone Number" state="Not enabled" action="Connect" desc="Used as an additional account verification method."/>
+    <SecurityRow icon="passkey" title="Passkey" state="Not enabled" action="Setting" desc="Use a device passkey for login and withdrawal verification."/>
+    <h3 className={s.sectionTitle}>Withdrawal Settings</h3><SecurityRow icon="withdraw" title="Quick Withdrawal" action="Setting" desc="Configure trusted addresses and withdrawal verification preferences."/>
+    <h3 className={s.sectionTitle}>Password Setting</h3><SecurityRow icon="password" title="Login Password" state="Password strength: High" action="Change" desc="Used for signing in and protecting account settings."/>
+    <SecurityRow icon="phishing" title="Anti-Phishing Code" action="Setting" desc="Add a code to official account emails to help identify fraudulent messages."/>
+    <h3 className={s.sectionTitle}>Account Management</h3><SecurityRow icon="link" title="Third-party Account" action="View" desc="Review linked sign-in providers."/><SecurityRow icon="delete" title="Delete Account" action="Delete" desc="Account deletion requires identity and security verification."/>
     <div className={s.log}><h3>Login Log</h3><div className={s.logHead}><span>Time</span><span>Action Type</span><span>Operating Terminal</span><span>Result</span></div><div className={s.logRow}><span>Current session</span><span>Log In</span><span>web</span><span>Success</span></div></div>
    </section>}
 
@@ -88,14 +89,14 @@ export default function MemberCenterClient(){
 
    {view==='setting'&&<section className={s.plain}>
     <h2>My Profile</h2>
-    <SettingRow icon="✎" title="Nickname" desc="Set a custom nickname for your profile." value={nickname} action="Change" onClick={changeNick}/>
-    <SettingRow icon="●" title="Avatar" desc="Select an avatar to personalize your account." value="Default" action="Change"/>
-    <SettingRow icon="▣" title="Superior Referral Code" desc="Your upstream referral information." value="—"/>
+    <SettingRow icon="edit" title="Nickname" desc="Set a custom nickname for your profile." value={nickname} action="Change" onClick={changeNick}/>
+    <SettingRow icon="avatar" title="Avatar" desc="Select an avatar to personalize your account." value="Default" action="Change"/>
+    <SettingRow icon="referral" title="Superior Referral Code" desc="Your upstream referral information." value="—"/>
     <h3 className={s.sectionTitle}>Notification Settings</h3>
-    <SettingRow icon="●" title="Notification Language" desc="Select the language used for account notifications." value="한국어 / English" action="Change"/>
-    <ToggleRow title="Marketing Emails" desc="Receive promotional and service marketing emails." value={marketing} setValue={setMarketing}/>
-    <ToggleRow title="Deposit Confirmation Email" desc="Receive an email after a deposit is credited." value={depositMail} setValue={setDepositMail}/>
-    <ToggleRow title="Withdrawal Success Email" desc="Receive an email after a withdrawal completes." value={withdrawMail} setValue={setWithdrawMail}/>
+    <SettingRow icon="language" title="Notification Language" desc="Select the language used for account notifications." value="한국어 / English" action="Change"/>
+    <ToggleRow icon="mail" title="Marketing Emails" desc="Receive promotional and service marketing emails." value={marketing} setValue={setMarketing}/>
+    <ToggleRow icon="wallet" title="Deposit Confirmation Email" desc="Receive an email after a deposit is credited." value={depositMail} setValue={setDepositMail}/>
+    <ToggleRow icon="notification" title="Withdrawal Success Email" desc="Receive an email after a withdrawal completes." value={withdrawMail} setValue={setWithdrawMail}/>
    </section>}
 
    {view==='referral'&&<section className={s.plain}><div className={s.pageTitle}><h2>Referral Rewards</h2><Link className={s.greenLink} href="/more/referral">Open Referral Center</Link></div><div className={s.stat3}><div><span>Total referrals</span><strong>0</strong></div><div><span>Pending rewards</span><strong>0 USDT</strong></div><div><span>Claimed rewards</span><strong>0 USDT</strong></div></div><div className={s.empty}>No referral activity yet</div></section>}
@@ -105,6 +106,6 @@ export default function MemberCenterClient(){
  </div></main>
 }
 
-function SecurityRow({icon,title,state,action,desc}:{icon:string,title:string,state?:string,action:string,desc:string}){return <div className={s.securityRow}><i>{icon}</i><div><div><b>{title}</b>{state&&<em>{state}</em>}</div><p>{desc}</p></div><button>{action}</button></div>}
-function SettingRow({icon,title,desc,value,action,onClick}:{icon:string,title:string,desc:string,value:string,action?:string,onClick?:()=>void}){return <div className={s.settingRow}><i>{icon}</i><div><b>{title}</b><p>{desc}</p></div><span>{value}</span>{action&&<button onClick={onClick}>{action}</button>}</div>}
-function ToggleRow({title,desc,value,setValue}:{title:string,desc:string,value:boolean,setValue:(v:boolean)=>void}){return <div className={s.settingRow}><i>●</i><div><b>{title}</b><p>{desc}</p></div><button className={`${s.toggle} ${value?s.on:''}`} onClick={()=>setValue(!value)} aria-label={`${title} toggle`}><span/></button></div>}
+function SecurityRow({icon,title,state,action,desc}:{icon:UiIconName,title:string,state?:string,action:string,desc:string}){return <div className={s.securityRow}><i><UiIcon name={icon} size={20}/></i><div><div><b>{title}</b>{state&&<em>{state}</em>}</div><p>{desc}</p></div><button>{action}</button></div>}
+function SettingRow({icon,title,desc,value,action,onClick}:{icon:UiIconName,title:string,desc:string,value:string,action?:string,onClick?:()=>void}){return <div className={s.settingRow}><i><UiIcon name={icon} size={20}/></i><div><b>{title}</b><p>{desc}</p></div><span>{value}</span>{action&&<button onClick={onClick}>{action}</button>}</div>}
+function ToggleRow({icon,title,desc,value,setValue}:{icon:UiIconName,title:string,desc:string,value:boolean,setValue:(v:boolean)=>void}){return <div className={s.settingRow}><i><UiIcon name={icon} size={20}/></i><div><b>{title}</b><p>{desc}</p></div><button className={`${s.toggle} ${value?s.on:''}`} onClick={()=>setValue(!value)} aria-label={`${title} toggle`}><span/></button></div>}
