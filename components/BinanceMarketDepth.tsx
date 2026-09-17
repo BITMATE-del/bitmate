@@ -29,7 +29,7 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,marketType=
     if(!sym)return;
     setAsks([]);setBids([]);setTrades([]);setConnected(false);
     const effectiveType=futures||marketType==='futures'||window.location.pathname.startsWith('/futures')?'futures':'spot';
-    const base=effectiveType==='futures'?'wss://fstream.binance.com/ws':'wss://stream.binance.com:9443/ws';
+    const base=effectiveType==='futures'?'wss://fstream.binance.com/public/ws':'wss://stream.binance.com:9443/ws';
     const book=new WebSocket(`${base}/${sym}@depth10@1000ms`);
     const trade=new WebSocket(`${base}/${sym}@aggTrade`);
     bookRef.current=book;tradeRef.current=trade;
@@ -37,7 +37,6 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,marketType=
     book.onmessage=(ev)=>{
       try{
         const data=JSON.parse(ev.data);
-        // Binance Spot partial book uses bids/asks while USD-M Futures uses b/a.
         const askRows=(data.asks||data.a||[]) as [string,string][];
         const bidRows=(data.bids||data.b||[]) as [string,string][];
         const map=(rows:[string,string][],reverse=false)=>{
