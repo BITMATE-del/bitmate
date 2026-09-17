@@ -34,7 +34,21 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,marketType=
     const trade=new WebSocket(`${base}/${sym}@aggTrade`);
     bookRef.current=book;tradeRef.current=trade;
     book.onopen=()=>setConnected(true);
-    book.onmessage=(ev)=>{try{const data=JSON.parse(ev.data);const map=(rows:[string,string][],reverse=false)=>{let total=0;const out=rows.map(([p,q])=>{const qty=Number(q);total+=qty;return {price:Number(p),qty,total};});return reverse?out.reverse():out;};setAsks(map((data.asks||[]) as [string,string][],true));setBids(map((data.bids||[]) as [string,string][]));}catch{}};
+    book.onmessage=(ev)=>{
+      try{
+        const data=JSON.parse(ev.data);
+        // Binance Spot partial book uses bids/asks while USD-M Futures uses b/a.
+        const askRows=(data.asks||data.a||[]) as [string,string][];
+        const bidRows=(data.bids||data.b||[]) as [string,string][];
+        const map=(rows:[string,string][],reverse=false)=>{
+          let total=0;
+          const out=rows.map(([p,q])=>{const qty=Number(q);total+=qty;return {price:Number(p),qty,total};});
+          return reverse?out.reverse():out;
+        };
+        if(askRows.length)setAsks(map(askRows,true));
+        if(bidRows.length)setBids(map(bidRows));
+      }catch{}
+    };
     book.onerror=()=>setConnected(false);book.onclose=()=>setConnected(false);
     trade.onmessage=(ev)=>{try{const t=JSON.parse(ev.data);const row:Trade={id:Number(t.a),price:Number(t.p),qty:Number(t.q),time:Number(t.T),buyerMaker:Boolean(t.m)};setTrades(prev=>[row,...prev.filter(x=>x.id!==row.id)].slice(0,18));}catch{}};
     return()=>{book.close();trade.close();bookRef.current=null;tradeRef.current=null};
