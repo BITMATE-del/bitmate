@@ -3,42 +3,44 @@
 import Link from 'next/link';
 import {useEffect,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import UiIcon,{type UiIconName} from './UiIcon';
 import s from './HeaderUserTools.module.css';
 
 type Panel='wallet'|'account'|'notifications'|'download'|null;
-type IconName='wallet'|'user'|'bell'|'download'|'globe';
 
-function Icon({name}:{name:IconName}){
-  const common={width:18,height:18,viewBox:'0 0 24 24',fill:'none',stroke:'currentColor',strokeWidth:1.9,strokeLinecap:'round' as const,strokeLinejoin:'round' as const,'aria-hidden':true};
-  if(name==='wallet')return <svg {...common}><path d="M4 7.5h13.5A2.5 2.5 0 0 1 20 10v7a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17V7.5Z"/><path d="M4 8V6.5A2.5 2.5 0 0 1 6.5 4H17"/><path d="M15 13.5h5"/><circle cx="15" cy="13.5" r=".8" fill="currentColor" stroke="none"/></svg>;
-  if(name==='user')return <svg {...common}><circle cx="12" cy="8" r="3.3"/><path d="M5.5 19c.9-3.4 3.2-5.2 6.5-5.2s5.6 1.8 6.5 5.2"/></svg>;
-  if(name==='bell')return <svg {...common}><path d="M6.5 9.8a5.5 5.5 0 0 1 11 0c0 5 2.1 5.2 2.1 6.7H4.4c0-1.5 2.1-1.7 2.1-6.7Z"/><path d="M9.7 19a2.6 2.6 0 0 0 4.6 0"/></svg>;
-  if(name==='download')return <svg {...common}><path d="M12 4v10"/><path d="m8.5 10.5 3.5 3.5 3.5-3.5"/><path d="M5 19h14"/></svg>;
-  return <svg {...common}><circle cx="12" cy="12" r="8.5"/><path d="M3.8 12h16.4"/><path d="M12 3.5c2.2 2.4 3.3 5.2 3.3 8.5S14.2 18.1 12 20.5"/><path d="M12 3.5C9.8 5.9 8.7 8.7 8.7 12s1.1 6.1 3.3 8.5"/></svg>;
-}
+const walletItems:[UiIconName,string,string][]=[
+  ['overview','Overview','/account?view=overview'],
+  ['spot','Spot Account','/account?view=spot'],
+  ['margin','Margin Account','/account?view=margin'],
+  ['futures','Futures Account','/account?view=futures'],
+  ['earn','Earn Account','/account?view=earn'],
+  ['copy','Copy trading','/account?view=copy'],
+  ['strategy','Strategy Account','/account?view=strategy'],
+  ['insurance','Insurance Account','/account?view=insurance'],
+  ['verification','Verification','/account?view=verification'],
+  ['order','Order','/account?view=order'],
+];
+const memberItems:[UiIconName,string,string][]=[
+  ['overview','Overview','/member?view=overview'],
+  ['verification','Identity Verification','/member?view=verification'],
+  ['security','Security Center','/member?view=security'],
+  ['api','API Management','/member?view=api'],
+  ['settings','Setting','/member?view=setting'],
+  ['referral','Referral Rewards','/member?view=referral'],
+  ['voucher','My Vouchers','/member?view=vouchers'],
+  ['subaccount','Sub-account','/member?view=subaccount'],
+];
 
-const walletItems=[
-  ['▦','Overview','/account?view=overview'],
-  ['◉','Spot Account','/account?view=spot'],
-  ['↗','Margin Account','/account?view=margin'],
-  ['▤','Futures Account','/account?view=futures'],
-  ['♙','Earn Account','/account?view=earn'],
-  ['▧','Copy trading','/account?view=copy'],
-  ['⚙','Strategy Account','/account?view=strategy'],
-  ['◈','Insurance Account','/account?view=insurance'],
-  ['✓','Verification','/account?view=verification'],
-  ['▣','Order','/account?view=order'],
-] as const;
-const memberItems=[
-  ['▦','Overview','/member?view=overview'],
-  ['◆','Identity Verification','/member?view=verification'],
-  ['◉','Security Center','/member?view=security'],
-  ['↗','API Management','/member?view=api'],
-  ['⚙','Setting','/member?view=setting'],
-  ['▣','Referral Rewards','/member?view=referral'],
-  ['▤','My Vouchers','/member?view=vouchers'],
-  ['●','Sub-account','/member?view=subaccount'],
-] as const;
+const notificationItems:[UiIconName,string,string,string,string][]=[
+  ['notification','System Notification','1','New Task Unlocked','2026-09-17 15:45:11'],
+  ['listing','New Listings','','No updates at the moment',''],
+  ['campaign','Hot Campaigns','','No updates at the moment',''],
+  ['bell','Important Notices','','No updates at the moment',''],
+  ['copy','Copy Trading Notification','','No updates at the moment',''],
+  ['bot','Bot Notification','','No updates at the moment',''],
+  ['wallet','Smart Money Notification','','No updates at the moment',''],
+  ['priceAlert','Price Alerts','','No updates at the moment',''],
+];
 
 function maskEmail(email:string){const [name,domain='']=email.split('@');if(!domain)return email;return `${name.slice(0,2)}***@${domain}`}
 
@@ -56,35 +58,33 @@ export default function HeaderUserTools(){
     <Link className={s.deposit} href="/deposit">Deposit</Link>
 
     <div className={s.rel} onMouseEnter={()=>setPanel('wallet')} onMouseLeave={()=>setPanel(v=>v==='wallet'?null:v)}>
-      <button className={`${s.icon} ${panel==='wallet'?s.active:''}`} onClick={()=>toggle('wallet')} aria-label="Wallet"><Icon name="wallet"/></button>
+      <button className={`${s.icon} ${panel==='wallet'?s.active:''}`} onClick={()=>toggle('wallet')} aria-label="Wallet"><UiIcon name="wallet" size={18}/></button>
       {panel==='wallet'&&<div className={`${s.panel} ${s.walletPanel}`}>
-        <div className={s.promo}><small>Unlocking rewards</small><span>First deposit ≥ 20 USDT, get up to</span><strong>200 USDT</strong><Link href="/deposit">▣ &nbsp; Deposit Now</Link></div>
-        <div className={s.accountList}>{walletItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span>{icon}</span><b>{label}</b></Link>)}</div>
+        <div className={s.promo}><small>Unlocking rewards</small><span>First deposit ≥ 20 USDT, get up to</span><strong>200 USDT</strong><Link href="/deposit"><UiIcon name="wallet" size={16}/> <span>Deposit Now</span></Link></div>
+        <div className={s.accountList}>{walletItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></Link>)}</div>
       </div>}
     </div>
 
     <div className={s.rel} onMouseEnter={()=>setPanel('account')} onMouseLeave={()=>setPanel(v=>v==='account'?null:v)}>
-      <button className={`${s.icon} ${panel==='account'?s.active:''}`} onClick={()=>toggle('account')} aria-label="Account"><Icon name="user"/></button>
+      <button className={`${s.icon} ${panel==='account'?s.active:''}`} onClick={()=>toggle('account')} aria-label="Account"><UiIcon name="user" size={18}/></button>
       {panel==='account'&&<div className={`${s.panel} ${s.memberPanel}`}>
-        <div className={s.memberHead}><div className={s.avatar}>●</div><div className={s.memberIdentity}><b>{email?maskEmail(email):'Member'}</b><span>UID: {uid?uid.slice(0,16):'—'} <small>▣</small></span><div><em>Unverified</em><strong>VIP 0</strong></div></div></div>
-        <div className={s.memberList}>{memberItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span>{icon}</span><b>{label}</b></Link>)}</div>
+        <div className={s.memberHead}><div className={s.avatar}><UiIcon name="user" size={22}/></div><div className={s.memberIdentity}><b>{email?maskEmail(email):'Member'}</b><span>UID: {uid?uid.slice(0,16):'—'}</span><div><em>Unverified</em><strong>VIP 0</strong></div></div></div>
+        <div className={s.memberList}>{memberItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></Link>)}</div>
         <button className={s.logout} onClick={logout}>Log Out</button>
       </div>}
     </div>
 
     <div className={s.rel}>
-      <button className={`${s.icon} ${panel==='notifications'?s.active:''}`} onClick={()=>toggle('notifications')} aria-label="Notifications"><Icon name="bell"/><i/></button>
+      <button className={`${s.icon} ${panel==='notifications'?s.active:''}`} onClick={()=>toggle('notifications')} aria-label="Notifications"><UiIcon name="bell" size={18}/><i/></button>
       {panel==='notifications'&&<div className={`${s.panel} ${s.notificationPanel}`}>
         <div className={s.noticeTop}><b>You've <em>1</em> unread notification</b><Link href="/more/notice">More ›</Link></div>
-        {[
-          ['◖','System Notification','1','New Task Unlocked','2026-09-17 15:45:11'],['◆','New Listings','','No updates at the moment',''],['♨','Hot Campaigns','','No updates at the moment',''],['●','Important Notices','','No updates at the moment',''],['◎','Copy Trading Notification','','No updates at the moment',''],['⚙','Bot Notification','','No updates at the moment',''],['▦','Smart Money Notification','','No updates at the moment',''],['♟','Price Alerts','','No updates at the moment',''],
-        ].map(([icon,title,badge,text,time])=><div className={s.noticeRow} key={title}><div className={s.noticeTitle}><span>{icon}</span><b>{title}</b>{badge&&<em>{badge}</em>}</div><strong>{text}</strong>{time&&<small>{time}</small>}</div>)}
+        {notificationItems.map(([icon,title,badge,text,time])=><div className={s.noticeRow} key={title}><div className={s.noticeTitle}><span><UiIcon name={icon} size={17}/></span><b>{title}</b>{badge&&<em>{badge}</em>}</div><strong>{text}</strong>{time&&<small>{time}</small>}</div>)}
       </div>}
     </div>
     <div className={s.rel}>
-      <button className={`${s.icon} ${panel==='download'?s.active:''}`} onClick={()=>toggle('download')} aria-label="Download app"><Icon name="download"/></button>
-      {panel==='download'&&<div className={`${s.panel} ${s.downloadPanel}`}><div className={s.qr} aria-label="App QR placeholder"><div className={s.qrGrid}>▦</div></div><b>Scan to Download the<br/>BITMATE APP</b><button className={s.moreOptions}>More Options</button></div>}
+      <button className={`${s.icon} ${panel==='download'?s.active:''}`} onClick={()=>toggle('download')} aria-label="Download app"><UiIcon name="download" size={18}/></button>
+      {panel==='download'&&<div className={`${s.panel} ${s.downloadPanel}`}><div className={s.qr} aria-label="App QR placeholder"><div className={s.qrGrid}><UiIcon name="overview" size={54}/></div></div><b>Scan to Download the<br/>BITMATE APP</b><button className={s.moreOptions}>More Options</button></div>}
     </div>
-    <span className={s.lang} aria-label="Language"><Icon name="globe"/></span>
+    <span className={s.lang} aria-label="Language"><UiIcon name="globe" size={18}/></span>
   </div>
 }
