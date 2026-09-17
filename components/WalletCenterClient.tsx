@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useState} from 'react';
+import UiIcon,{type UiIconName} from './UiIcon';
 import s from './WalletCenter.module.css';
 
 type View='overview'|'spot'|'margin'|'futures'|'earn'|'copy'|'strategy'|'insurance'|'verification'|'order';
 
-const items:[View,string,string][]=[
- ['overview','▦','Overview'],['spot','◉','Spot Account'],['margin','↗','Margin Account'],['futures','▤','Futures Account'],['earn','♙','Earn Account'],['copy','▧','Copy trading'],['strategy','⚙','Strategy Account'],['insurance','◈','Insurance Account'],['verification','✓','Verification'],['order','▣','Order'],
+const items:[View,UiIconName,string][]=[
+ ['overview','overview','Overview'],['spot','spot','Spot Account'],['margin','margin','Margin Account'],['futures','futures','Futures Account'],['earn','earn','Earn Account'],['copy','copy','Copy trading'],['strategy','strategy','Strategy Account'],['insurance','insurance','Insurance Account'],['verification','verification','Verification'],['order','order','Order'],
 ];
 
 const assets=[['BTC','Bitcoin'],['ETH','Ethereum'],['USDT','Tether'],['TRX','TRON'],['SOL','Solana']];
@@ -15,13 +16,12 @@ const assets=[['BTC','Bitcoin'],['ETH','Ethereum'],['USDT','Tether'],['TRX','TRO
 export default function WalletCenterClient(){
  const [view,setView]=useState<View>('overview');
  useEffect(()=>{const q=new URLSearchParams(location.search).get('view') as View|null;if(q&&items.some(x=>x[0]===q))setView(q)},[]);
- const activeLabel=useMemo(()=>items.find(x=>x[0]===view)?.[2]||'Overview',[view]);
  const go=(v:View)=>{setView(v);history.replaceState(null,'',`/account?view=${v}`)};
  return <main className={s.page}><div className={s.shell}>
-  <aside className={s.side}>{items.map(([key,icon,label])=><button key={key} onClick={()=>go(key)} className={view===key?s.active:''}><span>{icon}</span><b>{label}</b>{key==='order'&&<em>›</em>}</button>)}</aside>
+  <aside className={s.side}>{items.map(([key,icon,label])=><button key={key} onClick={()=>go(key)} className={view===key?s.active:''}><span><UiIcon name={icon} size={17}/></span><b>{label}</b>{key==='order'&&<em>›</em>}</button>)}</aside>
   <section className={s.content}>
    {view==='overview'&&<>
-    <section className={s.hero}><div><small>To Be Unlocked</small><h1>First Deposit ≥ 20 USDT, Get Up to <strong>200 USDT</strong></h1><div className={s.actions}><Link href="/deposit">Deposit Now</Link><Link className={s.secondary} href="/more/reward-hub">Rewards Hub</Link></div></div><div className={s.gift}>◈</div></section>
+    <section className={s.hero}><div><small>To Be Unlocked</small><h1>First Deposit ≥ 20 USDT, Get Up to <strong>200 USDT</strong></h1><div className={s.actions}><Link href="/deposit">Deposit Now</Link><Link className={s.secondary} href="/more/reward-hub">Rewards Hub</Link></div></div><div className={s.gift}><UiIcon name="referral" size={36}/></div></section>
     <div className={s.tileGrid}>{[['Join the New User Challenge','New-user benefits and onboarding rewards.'],['100% Reserve Plan','Reserve and transparency information.'],['New User Guide','How to deposit and use BITMATE.'],['Customer Support','Help and support resources.']].map(([a,b])=><article className={s.tile} key={a}><div><b>{a}</b><p>{b}</p></div><span>→</span></article>)}</div>
     <section className={s.card}><h2>Popular Products</h2><div className={s.table}><div className={s.th}><span>Coins</span><span>Est. APR</span><span>Type</span><span>Duration</span><span>Action</span></div>{[['USDT','Flexible','Multiple','Flexible/Fixed'],['BTC','—','Spot','Flexible'],['ETH','—','Spot','Flexible']].map(r=><div className={s.tr} key={r[0]}><span><b>{r[0]}</b></span><span>{r[1]}</span><span>{r[2]}</span><span>{r[3]}</span><span><Link href="/deposit">Deposit</Link></span></div>)}</div></section>
    </>}
