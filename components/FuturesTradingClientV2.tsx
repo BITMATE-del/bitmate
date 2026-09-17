@@ -25,16 +25,21 @@ export default function FuturesTradingClientV2(){
  const [orderType,setOrderType]=useState<OrderType>('MARKET'),[marginMode,setMarginMode]=useState<'CROSS'|'ISOLATED'>('ISOLATED'),[leverage,setLeverage]=useState(10),[qty,setQty]=useState('0.001'),[price,setPrice]=useState(''),[trigger,setTrigger]=useState(''),[tp,setTp]=useState(''),[sl,setSl]=useState(''),[reduceOnly,setReduceOnly]=useState(false),[postOnly,setPostOnly]=useState(false);
  const [now,setNow]=useState(Date.now());
  const lm=live.find(x=>x.symbol===symbol)||live[0]||null; const em=engine.markets.find(x=>x.symbol===symbol)||null;
- const pDigits=lm?.pricePrecision??em?.price_precision??2, qDigits=lm?.quantityPrecision??em?.quantity_precision??3;
+ const pDigits=em?.price_precision??lm?.pricePrecision??2, qDigits=em?.quantity_precision??lm?.quantityPrecision??3;
  const canTrade=!!(loggedIn&&engine.settings?.enabled&&em&&!em.stale&&em.enabled&&em.trading_status==='ACTIVE');
  const activeOrders=(snapshot?.orders||[]).filter((o:any)=>['OPEN','PARTIALLY_FILLED','TRIGGER_WAITING','TRIGGERED'].includes(o.status));
  const fundingMs=Math.max(0,(lm?.nextFundingTime||0)-now); const fundingText=`${String(Math.floor(fundingMs/3600000)).padStart(2,'0')}:${String(Math.floor((fundingMs%3600000)/60000)).padStart(2,'0')}:${String(Math.floor((fundingMs%60000)/1000)).padStart(2,'0')}`;
  const historyRows:any[]=bottom==='open'?activeOrders:bottom==='orders'?(snapshot?.orders||[]):bottom==='fills'?(snapshot?.fills||[]):snapshot?.funding||[];
 
- async function loadLive(){try{const r=await fetch('/api/futures/markets',{cache:'no-store'});if(!r.ok)return;const j=await r.json();setLive(j.markets||[])}catch{}}
  async function loadEngine(){const {data,error}=await supabase.rpc('futures_markets');if(!error&&data)setEngine({settings:data.settings,markets:Array.isArray(data.markets)?data.markets:[]})}
  async function loadSnapshot(){const {data:{user}}=await supabase.auth.getUser();setLoggedIn(!!user);if(!user){setSnapshot(null);return}const {data,error}=await supabase.rpc('futures_action',{p_action:'snapshot',p_payload:{}});if(!error&&data)setSnapshot(data as Snapshot)}
- useEffect(()=>{loadLive();loadEngine();loadSnapshot();const a=setInterval(loadLive,30000),b=setInterval(loadEngine,2000),c=setInterval(loadSnapshot,2500),d=setInterval(()=>setNow(Date.now()),1000);return()=>{clearInterval(a);clearInterval(b);clearInterval(c);clearInterval(d)}},[]);
+ useEffect(()=>{loadEngine();loadSnapshot();const b=setInterval(loadEngine,2000),c=setInterval(loadSnapshot,2500),d=setInterval(()=>setNow(Date.now()),1000);return()=>{clearInterval(b);clearInterval(c);clearInterval(d)}},[]);
+
+ useEffect(()=>{
+  let ws:WebSocket|null=null;let retry:ReturnType<typeof setTimeout>|null=null;let dead=false;
+  const connect=()=>{if(dead)return;ws=new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');ws.onmessage=(ev)=>{try{const data=JSON.parse(ev.data);if(!Array.isArray(data))return;setLive(prev=>{const old=new Map(prev.map(x=>[x.symbol,x]));return data.filter((x:any)=>typeof x?.s==='string'&&x.s.endsWith('USDT')&&!x.s.includes('_')).map((x:any)=>{const last=Number(x.c);const prior=old.get(x.s);return {symbol:x.s,base:x.s.slice(0,-4),displayName:`${x.s.slice(0,-4)}/USDT`,lastPrice:last,changePct:Number(x.P),high24h:Number(x.h),low24h:Number(x.l),volume:Number(x.v),quoteVolume:Number(x.q),markPrice:prior?.markPrice||last,indexPrice:prior?.indexPrice||last,fundingRate:prior?.fundingRate||0,nextFundingTime:prior?.nextFundingTime||0,bid:Number(x.b||last),ask:Number(x.a||last),pricePrecision:digits(last),quantityPrecision:3}}).sort((a:LiveMarket,b:LiveMarket)=>b.quoteVolume-a.quoteVolume)})}catch{}};ws.onclose=()=>{if(!dead)retry=setTimeout(connect,1800)};ws.onerror=()=>ws?.close()};connect();return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()}
+ },[]);
+ useEffect(()=>{if(!symbol)return;const ws=new WebSocket(`wss://fstream.binance.com/ws/${symbol.toLowerCase()}@markPrice@1s`);ws.onmessage=(ev)=>{try{const x=JSON.parse(ev.data);setLive(prev=>prev.map(m=>m.symbol===symbol?{...m,markPrice:Number(x.p)||m.markPrice,indexPrice:Number(x.i)||m.indexPrice,fundingRate:Number(x.r)||0,nextFundingTime:Number(x.T)||m.nextFundingTime}:m))}catch{}};return()=>ws.close()},[symbol]);
  useEffect(()=>{if(!lm)return;if(orderType==='LIMIT'&&!price)setPrice(String(lm.lastPrice.toFixed(pDigits)));if(orderType==='TRIGGER'&&!trigger)setTrigger(String(lm.lastPrice.toFixed(pDigits)));if(orderType==='TRAILING_STOP'){setReduceOnly(true);setPostOnly(false)}},[symbol,orderType,lm?.lastPrice]);
 
  const rows=useMemo(()=>{let a=live.filter(x=>!query||x.symbol.includes(query.toUpperCase())||x.base.includes(query.toUpperCase()));if(tab==='HOT')a=[...a].sort((x,y)=>y.quoteVolume-x.quoteVolume);if(tab==='GAINERS')a=[...a].sort((x,y)=>y.changePct-x.changePct);return a},[live,query,tab]);
