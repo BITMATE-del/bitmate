@@ -7,105 +7,100 @@ import UiIcon,{type UiIconName} from './UiIcon';
 import s from './MemberCenter.module.css';
 
 type View='overview'|'verification'|'security'|'api'|'setting'|'referral'|'vouchers'|'subaccount';
+type ApiCredential={id:string,label:string,key_prefix:string,permissions:string[],status:string,created_at:string};
+type SubAccount={id:string,name:string,status:string,created_at:string};
 
 const nav:[View,UiIconName,string][]=[
- ['overview','overview','Overview'],
- ['verification','verification','Identity Verification'],
- ['security','security','Security Center'],
- ['api','api','API Management'],
- ['setting','settings','Setting'],
- ['referral','referral','Referral Rewards'],
- ['vouchers','voucher','My Vouchers'],
- ['subaccount','subaccount','Sub-account'],
+ ['overview','overview','Overview'],['verification','verification','Identity Verification'],['security','security','Security Center'],['api','api','API Management'],['setting','settings','Setting'],['referral','referral','Referral Rewards'],['vouchers','voucher','My Vouchers'],['subaccount','subaccount','Sub-account'],
 ];
-
 const maskEmail=(email:string)=>{const [n,d='']=email.split('@');return d?`${n.slice(0,2)}***@${d}`:email};
+const randomToken=(bytes=24)=>{const a=new Uint8Array(bytes);crypto.getRandomValues(a);return Array.from(a,b=>b.toString(16).padStart(2,'0')).join('')};
+const sha256=async(value:string)=>{const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(buf),b=>b.toString(16).padStart(2,'0')).join('')};
 
 export default function MemberCenterClient(){
  const supabase=createBrowserSupabase();
  const [view,setView]=useState<View>('overview');
- const [email,setEmail]=useState('');
- const [uid,setUid]=useState('');
- const [nickname,setNickname]=useState('BITMATE User');
- const [marketing,setMarketing]=useState(true);
- const [depositMail,setDepositMail]=useState(true);
- const [withdrawMail,setWithdrawMail]=useState(true);
+ const [email,setEmail]=useState(''); const [phone,setPhone]=useState(''); const [uid,setUid]=useState('');
+ const [nickname,setNickname]=useState('BITMATE User'); const [avatarUrl,setAvatarUrl]=useState('');
+ const [marketing,setMarketing]=useState(true); const [depositMail,setDepositMail]=useState(true); const [withdrawMail,setWithdrawMail]=useState(true); const [language,setLanguage]=useState('ko');
+ const [mfaEnabled,setMfaEnabled]=useState(false); const [antiPhishing,setAntiPhishing]=useState(''); const [quickWithdrawal,setQuickWithdrawal]=useState(false); const [trustedAddress,setTrustedAddress]=useState('');
+ const [kycStatus,setKycStatus]=useState('UNVERIFIED'); const [apiKeys,setApiKeys]=useState<ApiCredential[]>([]); const [subs,setSubs]=useState<SubAccount[]>([]); const [refCode,setRefCode]=useState('—');
+ const [identityProviders,setIdentityProviders]=useState<string[]>([]);
+
  useEffect(()=>{
-  const q=new URLSearchParams(location.search).get('view') as View|null;
-  if(q&&nav.some(x=>x[0]===q))setView(q);
-  supabase.auth.getUser().then(({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'');setNickname((user.user_metadata?.nickname as string)||`BITMATE-${user.id.slice(0,8)}`)}});
+  const q=new URLSearchParams(location.search).get('view') as View|null;if(q&&nav.some(x=>x[0]===q))setView(q);
+  (async()=>{
+   const {data:{user}}=await supabase.auth.getUser(); if(!user)return;
+   setEmail(user.email||'');setPhone(user.phone||'');setUid(user.id);setNickname((user.user_metadata?.nickname as string)||`BITMATE-${user.id.slice(0,8)}`);setAvatarUrl((user.user_metadata?.avatar_url as string)||'');setIdentityProviders((user.identities||[]).map(i=>i.provider));
+   const [{data:prefs},{data:kyc},{data:keys},{data:subRows},{data:ref},{data:factors}]=await Promise.all([
+    supabase.from('member_preferences').select('*').eq('user_id',user.id).maybeSingle(),
+    supabase.from('kyc_requests').select('status').eq('user_id',user.id).maybeSingle(),
+    supabase.from('api_credentials').select('id,label,key_prefix,permissions,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}),
+    supabase.from('sub_accounts').select('id,name,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}),
+    supabase.from('referral_codes').select('code').eq('user_id',user.id).maybeSingle(),
+    supabase.auth.mfa.listFactors(),
+   ]);
+   if(prefs){setMarketing(prefs.marketing_emails);setDepositMail(prefs.deposit_emails);setWithdrawMail(prefs.withdrawal_emails);setLanguage(prefs.notification_language||'ko');setAntiPhishing(prefs.anti_phishing_code||'');setQuickWithdrawal(prefs.quick_withdrawal_enabled);setTrustedAddress(prefs.trusted_withdrawal_address||'')}
+   if(kyc?.status)setKycStatus(kyc.status); setApiKeys((keys||[]) as ApiCredential[]); setSubs((subRows||[]) as SubAccount[]); if(ref?.code)setRefCode(ref.code);
+   setMfaEnabled(!!factors?.totp?.some((f:any)=>f.status==='verified'));
+  })();
  },[]);
+
  const go=(v:View)=>{setView(v);history.replaceState(null,'',`/member?view=${v}`)};
  const shortUid=useMemo(()=>uid?uid.replaceAll('-','').slice(0,14):'—',[uid]);
- const changeNick=async()=>{const next=prompt('새 닉네임을 입력하세요.',nickname)?.trim();if(!next)return;const {error}=await supabase.auth.updateUser({data:{nickname:next}});if(!error)setNickname(next)};
+ const savePrefs=async(patch:Record<string,unknown>)=>{if(!uid)return false;const {error}=await supabase.from('member_preferences').upsert({user_id:uid,...patch,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){alert(error.message);return false}return true};
+ const changeNick=async()=>{const next=prompt('새 닉네임을 입력하세요.',nickname)?.trim();if(!next)return;const {error}=await supabase.auth.updateUser({data:{nickname:next}});if(error)return alert(error.message);setNickname(next)};
+ const changeAvatar=async()=>{const next=prompt('프로필 이미지 URL을 입력하세요. 비우면 기본 아바타로 돌아갑니다.',avatarUrl)?.trim();if(next===undefined)return;const {error}=await supabase.auth.updateUser({data:{avatar_url:next}});if(error)return alert(error.message);setAvatarUrl(next);alert('아바타가 변경되었습니다.')};
+ const changeEmail=async()=>{const next=prompt('변경할 이메일 주소를 입력하세요.',email)?.trim();if(!next||next===email)return;const {error}=await supabase.auth.updateUser({email:next});if(error)return alert(error.message);alert('새 이메일로 확인 메일을 보냈습니다. 확인이 끝나면 이메일이 변경됩니다.')};
+ const changePhone=async()=>{const next=prompt('국가번호를 포함한 전화번호를 입력하세요. 예: +821012345678',phone||'+82')?.trim();if(!next)return;const {error}=await supabase.auth.updateUser({phone:next});if(error)return alert(error.message);setPhone(next);alert('전화번호 등록 요청을 완료했습니다. SMS 인증이 설정된 프로젝트에서는 확인 절차가 이어집니다.')};
+ const changePassword=async()=>{const next=prompt('새 비밀번호를 입력하세요. (최소 8자)')||'';if(next.length<8)return alert('비밀번호는 8자 이상이어야 합니다.');const again=prompt('새 비밀번호를 한 번 더 입력하세요.')||'';if(next!==again)return alert('비밀번호가 일치하지 않습니다.');const {error}=await supabase.auth.updateUser({password:next});if(error)return alert(error.message);alert('로그인 비밀번호가 변경되었습니다.')};
+ const setupTotp=async()=>{if(mfaEnabled)return alert('Google Authenticator가 이미 활성화되어 있습니다.');const {data,error}=await supabase.auth.mfa.enroll({factorType:'totp',friendlyName:'BITMATE Authenticator'});if(error||!data)return alert(error?.message||'2FA 등록을 시작할 수 없습니다.');const secret=data.totp.secret;alert(`Google Authenticator에서 다음 비밀키를 등록하세요.\n\n${secret}\n\n등록 후 확인 코드 6자리를 입력합니다.`);const code=prompt('Authenticator의 6자리 코드를 입력하세요.')?.trim();if(!code)return;const {error:verifyError}=await supabase.auth.mfa.challengeAndVerify({factorId:data.id,code});if(verifyError)return alert(verifyError.message);setMfaEnabled(true);alert('Google Authenticator 2단계 인증이 활성화되었습니다.')};
+ const setupPasskey=async()=>{if(!window.PublicKeyCredential)return alert('이 브라우저는 Passkey/WebAuthn을 지원하지 않습니다.');try{const challenge=crypto.getRandomValues(new Uint8Array(32));const userId=new TextEncoder().encode(uid.slice(0,32));const cred=await navigator.credentials.create({publicKey:{challenge,rp:{name:'BITMATE'},user:{id:userId,name:email||uid,displayName:nickname},pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],authenticatorSelection:{residentKey:'preferred',userVerification:'preferred'},timeout:60000,attestation:'none'}}) as PublicKeyCredential|null;if(!cred)return;await supabase.auth.updateUser({data:{passkey_credential_id:cred.id,passkey_registered_at:new Date().toISOString()}});alert('이 기기의 Passkey 등록 정보를 저장했습니다. 현재 BITMATE 로그인 인증에는 Google Authenticator/이메일 인증이 우선 적용됩니다.')}catch(e:any){alert(e?.message||'Passkey 등록을 완료하지 못했습니다.')}};
+ const setQuickWithdrawal=async()=>{const address=prompt('신뢰할 출금 주소를 입력하세요.',trustedAddress)?.trim();if(!address)return;const ok=await savePrefs({quick_withdrawal_enabled:true,trusted_withdrawal_address:address});if(ok){setTrustedAddress(address);setQuickWithdrawal(true);alert('Quick Withdrawal 신뢰 주소가 저장되었습니다. 실제 출금 시 추가 위험검사가 적용되어야 합니다.')}};
+ const setAntiCode=async()=>{const code=prompt('공식 메일에서 확인할 Anti-Phishing Code를 입력하세요. (4~20자 영문/숫자)','')?.trim();if(!code)return;if(!/^[A-Za-z0-9]{4,20}$/.test(code))return alert('영문/숫자 4~20자로 입력하세요.');if(await savePrefs({anti_phishing_code:code})){setAntiPhishing(code);alert('Anti-Phishing Code가 저장되었습니다.')}};
+ const viewThirdParty=()=>alert(identityProviders.length?`현재 연결된 로그인 제공자:\n${identityProviders.join('\n')}`:'연결된 제3자 로그인 계정이 없습니다.');
+ const requestDeletion=async()=>{if(!confirm('계정 삭제 요청을 제출할까요? 즉시 삭제하지 않고 관리자 검토 대기 상태로 등록됩니다.'))return;const reason=prompt('삭제 사유를 입력하세요. (선택)')||'';const {error}=await supabase.from('account_deletion_requests').insert({user_id:uid,reason});if(error)return alert(error.message);alert('계정 삭제 요청이 접수되었습니다. 검토 전까지 계정은 정상 유지됩니다.')};
+ const startKyc=async()=>{const fullName=prompt('신원확인에 사용할 실명을 입력하세요.')?.trim();if(!fullName)return;const {error}=await supabase.from('kyc_requests').upsert({user_id:uid,country:'KR',full_name:fullName,status:'PENDING',submitted_at:new Date().toISOString()},{onConflict:'user_id'});if(error)return alert(error.message);setKycStatus('PENDING');alert('신원확인 신청이 접수되었습니다. 관리자 검토 후 상태가 갱신됩니다.')};
+ const createApi=async()=>{const label=prompt('API 키 이름을 입력하세요.','My API')?.trim();if(!label)return;const perm=(prompt('권한을 입력하세요. 예: READ 또는 READ,TRADE','READ')||'READ').toUpperCase().split(',').map(x=>x.trim()).filter(x=>['READ','TRADE'].includes(x));const secret=`bm_${randomToken(6)}_${randomToken(24)}`;const hash=await sha256(secret);const prefix=secret.slice(0,14);const {data,error}=await supabase.from('api_credentials').insert({user_id:uid,label,key_prefix:prefix,key_hash:hash,permissions:perm.length?perm:['READ']}).select('id,label,key_prefix,permissions,status,created_at').single();if(error)return alert(error.message);setApiKeys(v=>[data as ApiCredential,...v]);alert(`API KEY는 지금 한 번만 표시됩니다. 안전한 곳에 보관하세요.\n\n${secret}`)};
+ const revokeApi=async(id:string)=>{if(!confirm('이 API 키를 폐기할까요?'))return;const {error}=await supabase.from('api_credentials').update({status:'REVOKED'}).eq('id',id).eq('user_id',uid);if(error)return alert(error.message);setApiKeys(v=>v.map(k=>k.id===id?{...k,status:'REVOKED'}:k))};
+ const createSub=async()=>{const name=prompt('Sub-account 이름을 입력하세요.','Strategy 1')?.trim();if(!name)return;const {data,error}=await supabase.from('sub_accounts').insert({user_id:uid,name}).select('id,name,status,created_at').single();if(error)return alert(error.message);setSubs(v=>[data as SubAccount,...v])};
+ const changeLanguage=async()=>{const next=(prompt('알림 언어를 입력하세요: ko 또는 en',language)||'').toLowerCase();if(!['ko','en'].includes(next))return alert('ko 또는 en만 입력하세요.');if(await savePrefs({notification_language:next})){setLanguage(next);alert('알림 언어가 변경되었습니다.')}};
+ const togglePref=async(key:string,value:boolean,setter:(v:boolean)=>void)=>{if(await savePrefs({[key]:value}))setter(value)};
+ const ensureReferralCode=async()=>{if(refCode!=='—')return refCode;const code=`BM${randomToken(4).toUpperCase()}`;const {data,error}=await supabase.from('referral_codes').insert({user_id:uid,code}).select('code').single();if(error){alert(error.message);return '—'}setRefCode(data.code);return data.code};
+
  return <main className={s.page}><div className={s.shell}>
   <aside className={s.side}>{nav.map(([key,icon,label])=><button key={key} className={view===key?s.active:''} onClick={()=>go(key)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></button>)}</aside>
   <section className={s.content}>
    {view==='overview'&&<>
-    <section className={s.profileBar}>
-     <div className={s.avatar}/><div><strong>{nickname}</strong><span>UID: {shortUid}</span></div>
-     <div><small>Sign Up</small><b>{email?maskEmail(email):'—'}</b></div>
-     <div><small>Identity Verification</small><em>Unverified</em></div>
-     <div><small>VIP Level</small><em>VIP 0</em></div>
-     <div><small>Security</small><b>Standard</b></div>
-     <div><small>Last Login</small><b>Current session</b></div>
-    </section>
-    <div className={s.steps}>
-     <article><small>Step1</small><h2>Sign up</h2><div className={s.stepDone}><UiIcon name="verification" size={15}/> Completed</div></article>
-     <article className={s.focus}><small>Step2</small><h2>First Deposit ≥20 USDT</h2><p>Get Up To <strong>200 USDT</strong></p><Link href="/deposit">Deposit</Link></article>
-     <article><small>Step3</small><h2>First Trade ≥20 USDT</h2><p>Get Up To <strong>200 USDT</strong></p><button disabled>To Be Unlocked</button></article>
-    </div>
-    <div className={s.overviewGrid}>
-     <section className={s.balanceCard}><span>Est. Total Value</span><strong>0 <small>BTC</small></strong><p>≈ $0.00</p><p>Today's PNL <em>$0.00(0%)</em></p><div className={s.actions}><Link href="/deposit">Deposit</Link><Link href="/#markets">Buy</Link><button>Withdraw</button><button>Transfer</button></div></section>
-     <section className={s.sideCard}><h3>Your VIP 0 benefits</h3><div><span>Low Rate</span><span>High Return</span><span>VIP Support</span></div></section>
-     <section className={s.marketCard}><div className={s.cardTitle}><h2>Markets</h2><Link href="/markets">View ›</Link></div><div className={s.tabs}><span>Holding Coins</span><span>Fav</span><b>Hot</b><span>New Coin</span><span>Top Gainers</span></div>{[['BTC/USDT','76,526.10','+0.77%'],['ETH/USDT','2,499.00','+0.42%'],['SOL/USDT','100.49','+1.18%']].map(r=><div className={s.marketRow} key={r[0]}><b>{r[0]}</b><span>{r[1]}</span><em>{r[2]}</em><Link href="/futures">Trade</Link></div>)}</section>
-     <section className={s.sideCard}><h3>Referral Rewards</h3><p>Invite friends and review your referral activity.</p><button onClick={()=>go('referral')}>View Rewards</button></section>
-    </div>
+    <section className={s.profileBar}><div className={s.avatar} style={avatarUrl?{backgroundImage:`url(${avatarUrl})`,backgroundSize:'cover',backgroundPosition:'center'}:undefined}/><div><strong>{nickname}</strong><span>UID: {shortUid}</span></div><div><small>Sign Up</small><b>{email?maskEmail(email):'—'}</b></div><div><small>Identity Verification</small><em>{kycStatus}</em></div><div><small>VIP Level</small><em>VIP 0</em></div><div><small>Security</small><b>{mfaEnabled?'2FA Enabled':'Standard'}</b></div><div><small>Last Login</small><b>Current session</b></div></section>
+    <div className={s.steps}><article><small>Step1</small><h2>Sign up</h2><div className={s.stepDone}><UiIcon name="verification" size={15}/> Completed</div></article><article className={s.focus}><small>Step2</small><h2>First Deposit ≥20 USDT</h2><p>Get Up To <strong>200 USDT</strong></p><Link href="/deposit">Deposit</Link></article><article><small>Step3</small><h2>First Trade ≥20 USDT</h2><p>Get Up To <strong>200 USDT</strong></p><Link href="/futures">Start Trading</Link></article></div>
+    <div className={s.overviewGrid}><section className={s.balanceCard}><span>Est. Total Value</span><strong>0 <small>BTC</small></strong><p>≈ $0.00</p><p>Today's PNL <em>$0.00(0%)</em></p><div className={s.actions}><Link href="/deposit">Deposit</Link><Link href="/#markets">Buy</Link><button onClick={()=>alert('출금 주소/네트워크/수량 검증이 필요한 출금 화면은 Wallet Center에서 연결됩니다.')}>Withdraw</button><button onClick={()=>alert('계정 간 Transfer는 지갑 원장 연결 후 Spot/Futures/CFD 간 이동으로 처리됩니다.')}>Transfer</button></div></section><section className={s.sideCard}><h3>Your VIP 0 benefits</h3><div><span>Low Rate</span><span>High Return</span><span>VIP Support</span></div></section><section className={s.marketCard}><div className={s.cardTitle}><h2>Markets</h2><Link href="/markets">View ›</Link></div><div className={s.tabs}><span>Holding Coins</span><span>Fav</span><b>Hot</b><span>New Coin</span><span>Top Gainers</span></div>{[['BTC/USDT','76,526.10','+0.77%'],['ETH/USDT','2,499.00','+0.42%'],['SOL/USDT','100.49','+1.18%']].map(r=><div className={s.marketRow} key={r[0]}><b>{r[0]}</b><span>{r[1]}</span><em>{r[2]}</em><Link href="/futures">Trade</Link></div>)}</section><section className={s.sideCard}><h3>Referral Rewards</h3><p>Invite friends and review your referral activity.</p><button onClick={()=>go('referral')}>View Rewards</button></section></div>
    </>}
 
-   {view==='verification'&&<section className={s.plain}>
-    <div className={s.pageTitle}><h2>Personal Verification</h2><span>Unverified</span></div>
-    <div className={s.country}>Country/Region <strong>South Korea (대한민국)</strong></div>
-    <h3>Identity Verification</h3>
-    <ul className={s.notes}><li>Photo and video authentication</li><li>Account security and identity checks</li><li>Review period: typically within 2 days after submission</li></ul>
-    <button className={s.green}>Verify Now</button>
-    <div className={s.limitGrid}><div><b>Fiat</b><span>Deposit: No Limit</span><span>Withdraw: 500,000 USD/Day</span></div><div><b>Cryptocurrency</b><span>Deposit: No Limit</span><span>Withdraw: 10,000,000 USDT/Day</span></div></div>
-   </section>}
+   {view==='verification'&&<section className={s.plain}><div className={s.pageTitle}><h2>Personal Verification</h2><span>{kycStatus}</span></div><div className={s.country}>Country/Region <strong>South Korea (대한민국)</strong></div><h3>Identity Verification</h3><ul className={s.notes}><li>Photo and video authentication</li><li>Account security and identity checks</li><li>Review period: typically within 2 days after submission</li></ul><button className={s.green} onClick={startKyc}>{kycStatus==='PENDING'?'Submitted':'Verify Now'}</button><div className={s.limitGrid}><div><b>Fiat</b><span>Deposit: No Limit</span><span>Withdraw: 500,000 USD/Day</span></div><div><b>Cryptocurrency</b><span>Deposit: No Limit</span><span>Withdraw: 10,000,000 USDT/Day</span></div></div></section>}
 
-   {view==='security'&&<section className={s.plain}>
-    <div className={s.pageTitle}><h2>Identity Two-factor Authentication</h2><span>Security Level · Standard</span></div>
-    <SecurityRow icon="security" title="Google Authenticator (Recommended)" state="Not enabled" action="Connect" desc="Used for security verification while logging in, withdrawing assets, retrieving your password, and managing security settings."/>
-    <SecurityRow icon="mail" title="Email Address" state="Activated" action="Change" desc={email?maskEmail(email):'Email security verification'}/>
-    <SecurityRow icon="phone" title="Phone Number" state="Not enabled" action="Connect" desc="Used as an additional account verification method."/>
-    <SecurityRow icon="passkey" title="Passkey" state="Not enabled" action="Setting" desc="Use a device passkey for login and withdrawal verification."/>
-    <h3 className={s.sectionTitle}>Withdrawal Settings</h3><SecurityRow icon="withdraw" title="Quick Withdrawal" action="Setting" desc="Configure trusted addresses and withdrawal verification preferences."/>
-    <h3 className={s.sectionTitle}>Password Setting</h3><SecurityRow icon="password" title="Login Password" state="Password strength: High" action="Change" desc="Used for signing in and protecting account settings."/>
-    <SecurityRow icon="phishing" title="Anti-Phishing Code" action="Setting" desc="Add a code to official account emails to help identify fraudulent messages."/>
-    <h3 className={s.sectionTitle}>Account Management</h3><SecurityRow icon="link" title="Third-party Account" action="View" desc="Review linked sign-in providers."/><SecurityRow icon="delete" title="Delete Account" action="Delete" desc="Account deletion requires identity and security verification."/>
+   {view==='security'&&<section className={s.plain}><div className={s.pageTitle}><h2>Identity Two-factor Authentication</h2><span>Security Level · {mfaEnabled?'Enhanced':'Standard'}</span></div>
+    <SecurityRow icon="security" title="Google Authenticator (Recommended)" state={mfaEnabled?'Activated':'Not enabled'} action={mfaEnabled?'Enabled':'Connect'} desc="Used for security verification while logging in, withdrawing assets, retrieving your password, and managing security settings." onClick={setupTotp}/>
+    <SecurityRow icon="mail" title="Email Address" state="Activated" action="Change" desc={email?maskEmail(email):'Email security verification'} onClick={changeEmail}/>
+    <SecurityRow icon="phone" title="Phone Number" state={phone?'Connected':'Not enabled'} action={phone?'Change':'Connect'} desc={phone||'Used as an additional account verification method.'} onClick={changePhone}/>
+    <SecurityRow icon="passkey" title="Passkey" state="Device registration" action="Setting" desc="Register a device passkey. Google Authenticator and email remain the primary enforced factors on BITMATE." onClick={setupPasskey}/>
+    <h3 className={s.sectionTitle}>Withdrawal Settings</h3><SecurityRow icon="withdraw" title="Quick Withdrawal" state={quickWithdrawal?'Configured':'Not enabled'} action="Setting" desc={trustedAddress?`Trusted address: ${trustedAddress}`:'Configure trusted addresses and withdrawal verification preferences.'} onClick={setQuickWithdrawal}/>
+    <h3 className={s.sectionTitle}>Password Setting</h3><SecurityRow icon="password" title="Login Password" state="Password strength: High" action="Change" desc="Used for signing in and protecting account settings." onClick={changePassword}/><SecurityRow icon="phishing" title="Anti-Phishing Code" state={antiPhishing?'Configured':'Not enabled'} action="Setting" desc="Add a code to official account emails to help identify fraudulent messages." onClick={setAntiCode}/>
+    <h3 className={s.sectionTitle}>Account Management</h3><SecurityRow icon="link" title="Third-party Account" action="View" desc="Review linked sign-in providers." onClick={viewThirdParty}/><SecurityRow icon="delete" title="Delete Account" action="Delete" desc="Account deletion requires identity and security verification." onClick={requestDeletion}/>
     <div className={s.log}><h3>Login Log</h3><div className={s.logHead}><span>Time</span><span>Action Type</span><span>Operating Terminal</span><span>Result</span></div><div className={s.logRow}><span>Current session</span><span>Log In</span><span>web</span><span>Success</span></div></div>
    </section>}
 
-   {view==='api'&&<section className={s.plain}><div className={s.pageTitle}><h2>API Management</h2><button className={s.green}>Create API</button></div><p className={s.muted}>API keys for trading integrations will be displayed here. Secret keys are shown only once when created.</p><div className={s.empty}>No API keys</div></section>}
+   {view==='api'&&<section className={s.plain}><div className={s.pageTitle}><h2>API Management</h2><button className={s.green} onClick={createApi}>Create API</button></div><p className={s.muted}>API keys are hashed at rest. The full key is shown only once when created. Use READ permission by default and add TRADE only when required.</p>{apiKeys.length?apiKeys.map(k=><div className={s.settingRow} key={k.id}><i><UiIcon name="api" size={20}/></i><div><b>{k.label}</b><p>{k.key_prefix}… · {k.permissions.join(', ')} · {k.status}</p></div><span>{new Date(k.created_at).toLocaleDateString()}</span>{k.status==='ACTIVE'&&<button onClick={()=>revokeApi(k.id)}>Revoke</button>}</div>):<div className={s.empty}>No API keys</div>}</section>}
 
-   {view==='setting'&&<section className={s.plain}>
-    <h2>My Profile</h2>
-    <SettingRow icon="edit" title="Nickname" desc="Set a custom nickname for your profile." value={nickname} action="Change" onClick={changeNick}/>
-    <SettingRow icon="avatar" title="Avatar" desc="Select an avatar to personalize your account." value="Default" action="Change"/>
-    <SettingRow icon="referral" title="Superior Referral Code" desc="Your upstream referral information." value="—"/>
-    <h3 className={s.sectionTitle}>Notification Settings</h3>
-    <SettingRow icon="language" title="Notification Language" desc="Select the language used for account notifications." value="한국어 / English" action="Change"/>
-    <ToggleRow icon="mail" title="Marketing Emails" desc="Receive promotional and service marketing emails." value={marketing} setValue={setMarketing}/>
-    <ToggleRow icon="wallet" title="Deposit Confirmation Email" desc="Receive an email after a deposit is credited." value={depositMail} setValue={setDepositMail}/>
-    <ToggleRow icon="notification" title="Withdrawal Success Email" desc="Receive an email after a withdrawal completes." value={withdrawMail} setValue={setWithdrawMail}/>
-   </section>}
+   {view==='setting'&&<section className={s.plain}><h2>My Profile</h2><SettingRow icon="edit" title="Nickname" desc="Set a custom nickname for your profile." value={nickname} action="Change" onClick={changeNick}/><SettingRow icon="avatar" title="Avatar" desc="Set a profile image URL or return to the default avatar." value={avatarUrl?'Custom':'Default'} action="Change" onClick={changeAvatar}/><SettingRow icon="referral" title="Superior Referral Code" desc="Your referral code for inviting new members." value={refCode} action={refCode==='—'?'Create':'Copy'} onClick={async()=>{const code=await ensureReferralCode();if(code!=='—'){await navigator.clipboard?.writeText(code);alert(`추천 코드: ${code}\n클립보드에 복사했습니다.`)}}}/><h3 className={s.sectionTitle}>Notification Settings</h3><SettingRow icon="language" title="Notification Language" desc="Select the language used for account notifications." value={language==='ko'?'한국어':'English'} action="Change" onClick={changeLanguage}/><ToggleRow icon="mail" title="Marketing Emails" desc="Receive promotional and service marketing emails." value={marketing} setValue={v=>togglePref('marketing_emails',v,setMarketing)}/><ToggleRow icon="wallet" title="Deposit Confirmation Email" desc="Receive an email after a deposit is credited." value={depositMail} setValue={v=>togglePref('deposit_emails',v,setDepositMail)}/><ToggleRow icon="notification" title="Withdrawal Success Email" desc="Receive an email after a withdrawal completes." value={withdrawMail} setValue={v=>togglePref('withdrawal_emails',v,setWithdrawMail)}/></section>}
 
-   {view==='referral'&&<section className={s.plain}><div className={s.pageTitle}><h2>Referral Rewards</h2><Link className={s.greenLink} href="/more/referral">Open Referral Center</Link></div><div className={s.stat3}><div><span>Total referrals</span><strong>0</strong></div><div><span>Pending rewards</span><strong>0 USDT</strong></div><div><span>Claimed rewards</span><strong>0 USDT</strong></div></div><div className={s.empty}>No referral activity yet</div></section>}
+   {view==='referral'&&<section className={s.plain}><div className={s.pageTitle}><h2>Referral Rewards</h2><Link className={s.greenLink} href="/more/referral">Open Referral Center</Link></div><div className={s.stat3}><div><span>Referral code</span><strong>{refCode}</strong></div><div><span>Pending rewards</span><strong>0 USDT</strong></div><div><span>Claimed rewards</span><strong>0 USDT</strong></div></div><div className={s.actions}><button onClick={async()=>{const code=await ensureReferralCode();if(code!=='—'){await navigator.clipboard?.writeText(`${location.origin}/auth?ref=${code}`);alert('추천 링크를 복사했습니다.')}}}>Copy Invite Link</button></div></section>}
    {view==='vouchers'&&<section className={s.plain}><div className={s.pageTitle}><h2>My Vouchers</h2><Link className={s.greenLink} href="/more/reward-hub">Rewards Hub</Link></div><div className={s.stat3}><div><span>Available</span><strong>0</strong></div><div><span>Used</span><strong>0</strong></div><div><span>Expired</span><strong>0</strong></div></div><div className={s.empty}>No vouchers</div></section>}
-   {view==='subaccount'&&<section className={s.plain}><div className={s.pageTitle}><h2>Sub-account</h2><button className={s.green}>Create Sub-account</button></div><p className={s.muted}>Create isolated account profiles for strategy or operational separation. Asset transfers remain subject to account permissions.</p><div className={s.empty}>No sub-accounts</div></section>}
+   {view==='subaccount'&&<section className={s.plain}><div className={s.pageTitle}><h2>Sub-account</h2><button className={s.green} onClick={createSub}>Create Sub-account</button></div><p className={s.muted}>Create isolated account profiles for strategy or operational separation. Asset transfers remain subject to account permissions.</p>{subs.length?subs.map(a=><div className={s.settingRow} key={a.id}><i><UiIcon name="subaccount" size={20}/></i><div><b>{a.name}</b><p>Created {new Date(a.created_at).toLocaleDateString()}</p></div><span>{a.status}</span></div>):<div className={s.empty}>No sub-accounts</div>}</section>}
   </section>
  </div></main>
 }
 
-function SecurityRow({icon,title,state,action,desc}:{icon:UiIconName,title:string,state?:string,action:string,desc:string}){return <div className={s.securityRow}><i><UiIcon name={icon} size={20}/></i><div><div><b>{title}</b>{state&&<em>{state}</em>}</div><p>{desc}</p></div><button>{action}</button></div>}
+function SecurityRow({icon,title,state,action,desc,onClick}:{icon:UiIconName,title:string,state?:string,action:string,desc:string,onClick?:()=>void}){return <div className={s.securityRow}><i><UiIcon name={icon} size={20}/></i><div><div><b>{title}</b>{state&&<em>{state}</em>}</div><p>{desc}</p></div><button onClick={onClick}>{action}</button></div>}
 function SettingRow({icon,title,desc,value,action,onClick}:{icon:UiIconName,title:string,desc:string,value:string,action?:string,onClick?:()=>void}){return <div className={s.settingRow}><i><UiIcon name={icon} size={20}/></i><div><b>{title}</b><p>{desc}</p></div><span>{value}</span>{action&&<button onClick={onClick}>{action}</button>}</div>}
 function ToggleRow({icon,title,desc,value,setValue}:{icon:UiIconName,title:string,desc:string,value:boolean,setValue:(v:boolean)=>void}){return <div className={s.settingRow}><i><UiIcon name={icon} size={20}/></i><div><b>{title}</b><p>{desc}</p></div><button className={`${s.toggle} ${value?s.on:''}`} onClick={()=>setValue(!value)} aria-label={`${title} toggle`}><span/></button></div>}
