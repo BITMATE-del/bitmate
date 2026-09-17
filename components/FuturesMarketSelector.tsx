@@ -35,7 +35,7 @@ export default function FuturesMarketSelector({markets,selectedSymbol,onSelect}:
     let dead=false;
     const connect=()=>{
       if(dead)return;
-      ws=new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');
+      ws=new WebSocket('wss://fstream.binance.com/market/ws/!ticker@arr');
       ws.onmessage=(ev)=>{
         try{
           const arr=JSON.parse(ev.data) as any[];
@@ -65,7 +65,7 @@ export default function FuturesMarketSelector({markets,selectedSymbol,onSelect}:
 
   useEffect(()=>{
     if(!selectedSymbol)return;
-    const ws=new WebSocket(`wss://fstream.binance.com/ws/${selectedSymbol.toLowerCase()}@markPrice@1s`);
+    const ws=new WebSocket(`wss://fstream.binance.com/market/ws/${selectedSymbol.toLowerCase()}@markPrice@1s`);
     ws.onmessage=(ev)=>{try{const x=JSON.parse(ev.data);setLiveMarkets(prev=>prev.map(m=>m.symbol===selectedSymbol?{...m,markPrice:Number(x.p)||m.markPrice,indexPrice:Number(x.i)||m.indexPrice,fundingRate:Number(x.r)||0,nextFundingTime:Number(x.T)||m.nextFundingTime}:m))}catch{}};
     return()=>ws.close();
   },[selectedSymbol]);
