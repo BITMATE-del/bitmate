@@ -30,7 +30,8 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,marketType=
     if(!sym)return;
     setAsks([]);setBids([]);setTrades([]);setConnected(false);
 
-    const base=marketType==='futures'?'wss://fstream.binance.com/ws':'wss://stream.binance.com:9443/ws';
+    const effectiveType=marketType==='futures'||window.location.pathname.startsWith('/futures')?'futures':'spot';
+    const base=effectiveType==='futures'?'wss://fstream.binance.com/ws':'wss://stream.binance.com:9443/ws';
     const book=new WebSocket(`${base}/${sym}@depth10@1000ms`);
     const trade=new WebSocket(`${base}/${sym}@aggTrade`);
     bookRef.current=book;tradeRef.current=trade;
@@ -83,10 +84,11 @@ export default function BinanceMarketDepth({symbol,currentPrice,mode,marketType=
     </div>;
   };
 
+  const effectiveLabel=marketType==='futures'||(typeof window!=='undefined'&&window.location.pathname.startsWith('/futures'))?'FUTURES':'SPOT';
   return <div className={s.bookBody}>
     <div className={s.bookHead}><span>가격</span><span>수량</span><span>누적</span></div>
     <div className={s.bookRows}>{visibleAsks.length?visibleAsks.map((x,i)=>row(x,'ask',i)):Array.from({length:7},(_,i)=><div key={`a-${i}`} className={`${s.bookRow} ${s.askDepth}`}><b>—</b><span>—</span><span>—</span></div>)}</div>
-    <div className={s.midPrice}><strong>{fmt(currentPrice,priceDigits)}</strong><span>{connected?`BINANCE ${marketType==='futures'?'FUTURES':'SPOT'} LIVE DEPTH`:'호가 연결 중'}</span></div>
+    <div className={s.midPrice}><strong>{fmt(currentPrice,priceDigits)}</strong><span>{connected?`BINANCE ${effectiveLabel} LIVE DEPTH`:'호가 연결 중'}</span></div>
     <div className={s.bookRows}>{visibleBids.length?visibleBids.map((x,i)=>row(x,'bid',i)):Array.from({length:7},(_,i)=><div key={`b-${i}`} className={`${s.bookRow} ${s.bidDepth}`}><b>—</b><span>—</span><span>—</span></div>)}</div>
     <div className={s.bookStatus}>호가/최근 체결은 Binance 공개 시장데이터 표시용이며 BITMATE 주문 체결 로직과 분리됩니다.</div>
   </div>;
