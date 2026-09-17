@@ -2,10 +2,10 @@
 
 import {useEffect} from 'react';
 
-const normalizeTradingViewSymbol=(raw:string)=>{
+const normalizeTradingViewSymbol=(raw:string,perpetual:boolean)=>{
   const symbol=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  if(symbol.endsWith('USDT'))return `BINANCE:${symbol}`;
-  return 'BINANCE:BTCUSDT';
+  if(symbol.endsWith('USDT'))return perpetual?`BINANCE:${symbol}.P`:`BINANCE:${symbol}`;
+  return perpetual?'BINANCE:BTCUSDT.P':'BINANCE:BTCUSDT';
 };
 
 export default function TradingViewCfdInjector(){
@@ -22,7 +22,8 @@ export default function TradingViewCfdInjector(){
       const stage=find('chartStage');
       if(!stage)return;
 
-      const tvSymbol=normalizeTradingViewSymbol(stage.dataset.symbol||'BTCUSDT');
+      const perpetual=window.location.pathname.startsWith('/futures');
+      const tvSymbol=normalizeTradingViewSymbol(stage.dataset.symbol||'BTCUSDT',perpetual);
       const existing=stage.querySelector('[data-bitmate-tradingview="true"]') as HTMLElement|null;
       if(existing&&activeSymbol===tvSymbol)return;
 
