@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import {useEffect,useMemo,useRef,useState,type CSSProperties} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import HeaderUserTools from './HeaderUserTools';
 
 const desktopMenuStyle={whiteSpace:'nowrap',flexShrink:0} as const;
 const dropdownStyle={width:'360px',maxWidth:'calc(100vw - 24px)',boxSizing:'border-box',padding:'14px'} as const;
@@ -137,10 +138,12 @@ export default function ExchangeHeader(){
           {filteredLinks.length===0&&filteredMarkets.length===0&&filteredTraders.length===0&&<div style={{padding:'32px 8px',textAlign:'center',color:'#7e868b',fontSize:'13px'}}>검색 결과가 없습니다.</div>}
         </div>}
       </div>
-      <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
-      <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
-      <button className="iconBtn" aria-label="Download app" style={{width:'30px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter"/></svg></button>
-      <button className="iconBtn" aria-label="Language" style={{width:'32px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M3.5 12h17M12 3c2.1 2.3 3.2 5.3 3.2 9S14.1 18.7 12 21M12 3C9.9 5.3 8.8 8.3 8.8 12S9.9 18.7 12 21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg></button>
+      {isLoggedIn?<HeaderUserTools/>:<>
+        <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
+        <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
+        <button className="iconBtn" aria-label="Download app" style={{width:'30px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 19h14" stroke="currentColor" strokeWidth="2.2" strokeLinecap="square" strokeLinejoin="miter"/></svg></button>
+        <button className="iconBtn" aria-label="Language" style={{width:'32px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><svg width="21" height="21" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2"/><path d="M3.5 12h17M12 3c2.1 2.3 3.2 5.3 3.2 9S14.1 18.7 12 21M12 3C9.9 5.3 8.8 8.3 8.8 12S9.9 18.7 12 21" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round"/></svg></button>
+      </>}
     </div>
   </div></header>
 }
