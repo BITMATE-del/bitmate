@@ -1,5 +1,5 @@
 import type {Metadata} from 'next';
-import FuturesTradingClientV2 from '@/components/FuturesTradingClientV2';
+import FuturesTradingClient from '@/components/FuturesTradingClient';
 import TradingViewCfdInjector from '@/components/TradingViewCfdInjector';
 
 export const metadata: Metadata = {
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function FuturesPage(){
   return <>
-    <FuturesTradingClientV2/>
+    <FuturesTradingClient/>
     <TradingViewCfdInjector/>
   </>;
 }
