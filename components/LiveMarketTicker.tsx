@@ -16,7 +16,7 @@ export default function LiveMarketTicker({marketType,label}:Props){
     let ws:WebSocket|null=null;
     let retry:ReturnType<typeof setTimeout>|null=null;
     let dead=false;
-    const url=marketType==='futures'?'wss://fstream.binance.com/ws/!ticker@arr':'wss://stream.binance.com:9443/ws/!ticker@arr';
+    const url=marketType==='futures'?'wss://fstream.binance.com/market/ws/!ticker@arr':'wss://stream.binance.com:9443/ws/!ticker@arr';
     const connect=()=>{
       if(dead)return;
       ws=new WebSocket(url);
