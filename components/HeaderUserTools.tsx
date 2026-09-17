@@ -77,7 +77,7 @@ export default function HeaderUserTools(){
     <div className={s.rel}>
       <button className={`${s.icon} ${panel==='notifications'?s.active:''}`} onClick={()=>toggle('notifications')} aria-label="Notifications"><UiIcon name="bell" size={18}/><i/></button>
       {panel==='notifications'&&<div className={`${s.panel} ${s.notificationPanel}`}>
-        <div className={s.noticeTop}><b>You've <em>1</em> unread notification</b><Link href="/more/notice">More ›</Link></div>
+        <div className={s.noticeTop}><b>You've <em>1</em> unread notification</b><Link href="/more/notice" style={{display:'inline-flex',alignItems:'center',gap:4}}>More <UiIcon name="chevronRight" size={13}/></Link></div>
         {notificationItems.map(([icon,title,badge,text,time])=><div className={s.noticeRow} key={title}><div className={s.noticeTitle}><span><UiIcon name={icon} size={17}/></span><b>{title}</b>{badge&&<em>{badge}</em>}</div><strong>{text}</strong>{time&&<small>{time}</small>}</div>)}
       </div>}
     </div>
