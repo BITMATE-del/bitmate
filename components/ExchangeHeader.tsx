@@ -85,6 +85,7 @@ export default function ExchangeHeader(){
     <Link className="xtBrand" href="/" onClick={closeMenus} style={{flexShrink:0}}><span className="xtLogo">B</span><b>BITMATE</b></Link>
     <button className="mobileToggle" onClick={()=>setMobileOpen(v=>!v)} aria-label="Toggle menu">☰</button>
     <nav className={mobileOpen?'mobileOpen':''} style={{flex:'0 1 auto',flexWrap:'nowrap',minWidth:0}}>
+      <Link style={desktopMenuStyle} href="/futures" onClick={closeMenus}>Futures</Link>
       <Link style={desktopMenuStyle} href="/cfd" onClick={closeMenus}>CFD Margin</Link>
 
       <div className="navDropdown" onMouseEnter={()=>setAiOpen(true)} onMouseLeave={()=>setAiOpen(false)}>
