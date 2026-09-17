@@ -18,10 +18,19 @@ function Icon({name}:{name:IconName}){
 }
 
 const walletItems=[
-  ['▦','Overview','/account'],['◉','Spot','/account'],['↗','Margin','/cfd'],['▤','Futures','/futures'],['♙','Earn','/mining'],['▧','Copy Trading','/my-copy'],['⚙','Strategy','/ai-core'],['◈','Insurance Account','/account'],['✓','Verification','/account'],
+  ['▦','Overview','/account?view=overview'],
+  ['◉','Spot Account','/account?view=spot'],
+  ['↗','Margin Account','/account?view=margin'],
+  ['▤','Futures Account','/account?view=futures'],
+  ['♙','Earn Account','/account?view=earn'],
+  ['▧','Copy trading','/account?view=copy'],
+  ['⚙','Strategy Account','/account?view=strategy'],
+  ['◈','Insurance Account','/account?view=insurance'],
+  ['✓','Verification','/account?view=verification'],
+  ['▣','Order','/account?view=order'],
 ] as const;
 const memberItems=[
-  ['▦','Overview','/account'],['▣','Order','/account'],['◆','KYC Verification','/account'],['◉','Security Center','/account'],['↗','API Management','/account'],['⚙','Settings','/account'],['▣','Referral Rewards','/more/referral'],['▤','My Vouchers','/more/reward-hub'],['◉','Sub-account','/account'],
+  ['▦','Overview','/account?view=overview'],['▣','Order','/account?view=order'],['◆','KYC Verification','/account?view=verification'],['◉','Security Center','/account'],['↗','API Management','/account'],['⚙','Settings','/account'],['▣','Referral Rewards','/more/referral'],['▤','My Vouchers','/more/reward-hub'],['◉','Sub-account','/account'],
 ] as const;
 
 function maskEmail(email:string){const [name,domain='']=email.split('@');if(!domain)return email;return `${name.slice(0,2)}***@${domain}`}
