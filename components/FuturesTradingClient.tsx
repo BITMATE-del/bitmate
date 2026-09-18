@@ -101,7 +101,7 @@ export default function FuturesTradingClient(){
   const setRatio=(ratio:number)=>{if(!snapshot?.account)return;const ref=orderType==='LIMIT'?num(price):num(tradeSide==='BUY'?(ask||lastPrice):(bid||lastPrice));if(ref<=0)return;const q=(num(snapshot.account.available_balance)*ratio*leverage/ref);const scale=Math.pow(10,qtyDigits);setQuantity(String(Math.max(0,Math.floor(q*scale)/scale)))};
 
   async function submit(side:TradeSide){
-    setTradeSide(side);setMessage('');if(!loggedIn){setMessage('로그인 후 선물거래를 이용할 수 있습니다.');return}if(!settingsEnabled){setMessage('현재 선물 신규 거래가 관리자 설정에서 비활성화되어 있습니다.');return}if(!engineMarket){setMessage('이 종목은 실시간 시세/차트는 지원하지만 아직 BITMATE Futures 주문 엔진에는 등록되지 않았습니다.');return}if(!engineReady){setMessage('현재 이 종목은 주문할 수 없는 상태입니다.');return}const q=Number(quantity);if(!Number.isFinite(q)||q<=0){setMessage('주문 수량을 확인하세요.');return}
+    setTradeSide(side);setMessage('');if(!loggedIn){setMessage('로그인 후 선물거래를 이용할 수 있습니다.');return}if(!settingsEnabled){setMessage('현재 선물 신규 주문이 일시 중지되어 있습니다.');return}if(!engineMarket){setMessage('현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.');return}if(!engineReady){setMessage('현재 이 종목은 주문할 수 없는 상태입니다.');return}const q=Number(quantity);if(!Number.isFinite(q)||q<=0){setMessage('주문 수량을 확인하세요.');return}
     const positionSide=positionMode==='HEDGE'?(reduceOnly?(side==='BUY'?'SHORT':'LONG'):(side==='BUY'?'LONG':'SHORT')):'BOTH';
     const payload:any={symbol:engineMarket.symbol,side,positionSide,orderType,marginMode,leverage,quantity:q,clientOrderId:`web-${crypto.randomUUID()}`,reduceOnly:orderType==='TRAILING_STOP'?true:reduceOnly,postOnly:orderType==='LIMIT'?postOnly:false,timeInForce:orderType==='LIMIT'?(postOnly?'POST_ONLY':timeInForce):'GTC',triggerBy};
     if(orderType==='LIMIT')payload.price=Number(price);
@@ -157,7 +157,7 @@ export default function FuturesTradingClient(){
         <div className={s.orderFooter}>
           <div className={s.preview}><div><span>Order Value</span><b>{priceFmt(preview?.order_value||totalValue,2)}</b></div><div><span>Required Margin</span><b>{priceFmt(preview?.required_margin,2)}</b></div><div><span>Estimated Fee</span><b>{priceFmt(preview?.estimated_fee,4)}</b></div><div><span>Est. Liq. Price</span><b>{priceFmt(preview?.estimated_liquidation_price,priceDigits)}</b></div></div>
           <div className={s.tradeButtons}><button disabled={busy||!canTrade} className={tradeSide==='BUY'?s.longBtn:s.shortBtn} style={{gridColumn:'1 / -1'}} onClick={()=>submit(tradeSide)}>{tradeSide==='BUY'?`Long ${baseAsset}`:`Short ${baseAsset}`}</button></div>
-          <p className={s.orderNote}>{engineMarket?'수수료·증거금·PNL·청산가격·체결은 서버 Futures Engine이 최종 확정합니다.':'이 종목은 시세/차트 포워딩 전용입니다. 주문 엔진 등록 후 Long/Short가 활성화됩니다.'}</p>
+          <p className={s.orderNote}>{engineMarket?'주문 전 예상 증거금과 수수료를 확인하세요. 체결 결과에 따라 실제 값은 달라질 수 있습니다.':'현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.'}</p>
         </div>
       </section>
     </section>
