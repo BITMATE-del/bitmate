@@ -84,7 +84,7 @@ export default function MiningGame(){
     const {error}=await supabase.rpc('start_demo_mining',{p_amount:selectedAmount,p_idempotency_key:key,p_terms_version:'v1'});
     setPending(false);setConfirming(false);
     if(error){
-      setNotice(error.message.includes('INSUFFICIENT_DEMO_USDT_BALANCE')?'USDT 사용 가능 잔액이 부족합니다. Mining 참여금액은 서버 잔액에서만 차감됩니다.':error.message);
+      setNotice(error.message.includes('INSUFFICIENT_DEMO_USDT_BALANCE')?'USDT 사용 가능 잔액이 부족합니다.':error.message);
       return;
     }
     setNotice('채굴기가 가동되었습니다. Position 생성 및 잔액 잠금이 완료됐습니다.');
@@ -97,7 +97,7 @@ export default function MiningGame(){
       <div className="miningIntro">
         <span className="miningKicker">BITMATE DIGITAL MINING</span>
         <h1>{active?'MINING ACTIVE':'YOUR MINING CORE'}</h1>
-        <p>{active?'채굴기는 정상 가동 중입니다. 서버 정산이 완료된 보상만 잔액에 반영됩니다.':'금액을 선택하고 채굴기를 켜세요. 복잡한 설정 없이 매일 Mining Reward 기록을 확인할 수 있습니다.'}</p>
+        <p>{active?'채굴기가 정상 가동 중입니다. 확정된 보상은 정산 내역과 잔액에 반영됩니다.':'금액을 선택하고 채굴기를 켜세요. 복잡한 설정 없이 매일 Mining Reward 기록을 확인할 수 있습니다.'}</p>
         <div className="miningKpis">
           <div><span>내 Mining Power</span><b>{money(game?.mining_power||0)} TH/s</b></div>
           <div><span>오늘 보상</span><b>{money(game?.today_reward||0)} USDT</b></div>
@@ -127,7 +127,7 @@ export default function MiningGame(){
       <div><span>정산 기준</span><b>09:05 KST</b></div>
     </section>
 
-    {!active&&<section className="xtShell miningSteps"><div className="sectionTitle"><span>START IN 3 STEPS</span><h2>채굴은 세 단계면 됩니다.</h2></div><div className="stepGrid"><article><b>01</b><h3>채굴 금액 선택</h3><p>원하는 참여금액을 고릅니다.</p></article><article><b>02</b><h3>채굴기 가동</h3><p>등급과 현재 적용률을 확인합니다.</p></article><article><b>03</b><h3>매일 보상 확인</h3><p>서버 정산 완료 후 History에 기록됩니다.</p></article></div></section>}
+    {!active&&<section className="xtShell miningSteps"><div className="sectionTitle"><span>START IN 3 STEPS</span><h2>채굴은 세 단계면 됩니다.</h2></div><div className="stepGrid"><article><b>01</b><h3>채굴 금액 선택</h3><p>원하는 참여금액을 고릅니다.</p></article><article><b>02</b><h3>채굴기 가동</h3><p>등급과 현재 적용률을 확인합니다.</p></article><article><b>03</b><h3>매일 보상 확인</h3><p>확정된 보상은 History에서 확인할 수 있습니다.</p></article></div></section>}
 
     <section className="miningControl"><div className="xtShell miningControlGrid">
       <div>
