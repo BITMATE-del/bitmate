@@ -28,6 +28,7 @@ const modules:Module[]=[
   {title:'공지사항 관리',description:'서비스 공지, 점검, 시스템 업데이트 및 사용자 노출 공지 관리.',href:'/admin/notices',icon:'listing',group:'콘텐츠·성장',status:'ACTIVE'},
   {title:'랜딩 이미지 관리',description:'홈 히어로와 제품 프리뷰 등 랜딩 미디어 슬롯 업로드 및 교체.',href:'/admin/landing-media',icon:'campaign',group:'콘텐츠·성장',status:'ACTIVE'},
   {title:'Referral / Reward Hub',description:'현재 운영 화면을 확인하고 다음 관리 확장 대상에 포함합니다.',href:'/more/reward-hub',icon:'referral',group:'콘텐츠·성장',status:'VIEW'},
+  {title:'회원 · 자산 · 운영 관리',description:'회원 검색, VIP/프로필, KYC 승인, 삭제 요청, DEMO 잔액/원장, 시스템 스위치 관리.',href:'/admin/operations',icon:'user',group:'운영·계정',status:'ACTIVE'},
   {title:'회원 센터',description:'회원 프로필, 인증, 보안, API, 알림 및 설정 화면 확인.',href:'/member',icon:'user',group:'운영·계정',status:'VIEW'},
   {title:'지갑 / 자산 센터',description:'Spot, Margin, Futures, Earn, Copy, Strategy, Insurance 계정 화면 확인.',href:'/account',icon:'wallet',group:'운영·계정',status:'VIEW'},
   {title:'입금 시스템',description:'BTC, ETH, USDT, SOL, TRX 및 네트워크 선택형 입금 화면 확인.',href:'/deposit',icon:'wallet',group:'운영·계정',status:'VIEW'},
@@ -49,9 +50,10 @@ export default function AdminControlCenter(){
     supabase.auth.getUser().then(({data:{user}})=>{
       if(!alive)return;
       const r=String(user?.app_metadata?.role||'').toLowerCase();
-      setRole(r||'user');
+      const superadmin=user?.app_metadata?.superadmin===true;
+      setRole(superadmin?'superadmin':r||'user');
       setEmail(user?.email||'');
-      setAllowed(r==='admin'||r==='superadmin');
+      setAllowed(r==='admin'||r==='superadmin'||superadmin);
     });
     return()=>{alive=false};
   },[supabase]);
@@ -66,7 +68,7 @@ export default function AdminControlCenter(){
   return <main className={s.page}><div className={s.shell}>
     <section className={s.top}>
       <div><div className={s.eyebrow}>BITMATE OPERATIONS</div><h1>Admin Control Center</h1><p>현재 BITMATE에 구현된 거래, 상품, 랜딩, 공지, 회원·자산 관련 기능을 한 곳에서 점검하고 관리하는 통합 운영 허브입니다. 기존 개별 관리자 페이지는 유지하고 이 화면에서 전체 기능으로 진입합니다.</p></div>
-      <div className={s.topActions}><Link className={s.btnGhost} href="/">사이트 보기</Link><Link className={s.btn} href="/admin/landing-media">랜딩 관리</Link></div>
+      <div className={s.topActions}><Link className={s.btnGhost} href="/">사이트 보기</Link><Link className={s.btn} href="/admin/operations">회원·운영 관리</Link></div>
     </section>
 
     <section className={s.stats}>
@@ -87,6 +89,6 @@ export default function AdminControlCenter(){
       return <section className={s.section} key={group}><div className={s.sectionHead}><h2>{group}</h2><span>{rows.length} modules</span></div><div className={s.grid}>{rows.map(m=><Link className={s.card} href={m.href} key={m.title}><div className={s.cardTop}><span className={s.icon}><UiIcon name={m.icon} size={20}/></span><span className={`${s.pill} ${m.status==='ACTIVE'?s.pillActive:''}`}>{m.status==='ACTIVE'?'MANAGE':'VIEW'}</span></div><h3>{m.title}</h3><p>{m.description}</p><div className={s.cardFoot}><span>{m.group}</span><strong>{m.status==='ACTIVE'?'관리 열기':'화면 확인'} →</strong></div></Link>)}</div></section>
     })}
 
-    <section className={s.coverage}><h2>관리 범위 상태</h2><div className={s.coverageRows}><div className={s.coverageRow}><span>거래 핵심 엔진</span><b>Futures / CFD / AI / Copy 관리 연결</b></div><div className={s.coverageRow}><span>상품 운영</span><b>ETF / Mining / Loan / Membership 연결</b></div><div className={s.coverageRow}><span>콘텐츠 운영</span><b>공지 / 랜딩 이미지 / Lucky Draw 연결</b></div><div className={s.coverageRow}><span>회원·지갑 운영</span><b>현재 사용자 화면 연결 · 전용 관리자 기능 확장 대상</b></div></div></section>
+    <section className={s.coverage}><h2>관리 범위 상태</h2><div className={s.coverageRows}><div className={s.coverageRow}><span>거래 핵심 엔진</span><b>Futures / CFD / AI / Copy 관리 연결</b></div><div className={s.coverageRow}><span>상품 운영</span><b>ETF / Mining / Loan / Membership 연결</b></div><div className={s.coverageRow}><span>콘텐츠 운영</span><b>공지 / 랜딩 이미지 / Lucky Draw 연결</b></div><div className={s.coverageRow}><span>회원·지갑 운영</span><b>회원/KYC/삭제요청/DEMO 원장/시스템 스위치 관리 연결</b></div></div></section>
   </div></main>;
 }
