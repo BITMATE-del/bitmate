@@ -1,6 +1,7 @@
 'use client';
 
 import {useEffect,useMemo,useRef,useState} from 'react';
+import UiIcon from './UiIcon';
 import s from './CfdMarketSelector.module.css';
 
 export type LiveMarket={
@@ -105,14 +106,14 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets}
     <button type="button" className={s.trigger} onClick={()=>setOpen(v=>!v)} aria-expanded={open}>
       <span className={s.assetBadge}>{(selected?.symbol||'BTCUSDT').replace(/USDT$/,'').slice(0,2)}</span>
       <span className={s.triggerText}><b>{selected?.display_name||'BTC/USDT'}</b><small>CFD 종목</small></span>
-      <span className={`${s.chevron} ${open?s.open:''}`}>⌄</span>
+      <span className={`${s.chevron} ${open?s.open:''}`}><UiIcon name="chevronDown" size={14}/></span>
     </button>
     {open&&<div className={s.panel}>
       <div className={s.panelTop}>
         <div><strong>종목 선택</strong><span>등록 거래 가능 {products.length.toLocaleString()}개 · 실시간 시세 {markets.length.toLocaleString()}개 수신</span></div>
         <button type="button" className={s.close} onClick={()=>setOpen(false)}>×</button>
       </div>
-      <div className={s.search}><span>⌕</span><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="코인명 또는 심볼 검색"/><kbd>USDT</kbd></div>
+      <div className={s.search}><span><UiIcon name="search" size={15}/></span><input autoFocus value={query} onChange={e=>setQuery(e.target.value)} placeholder="코인명 또는 심볼 검색"/><kbd>USDT</kbd></div>
       <div className={s.tabs}>
         <button className={tab==='ALL'?s.active:''} onClick={()=>setTab('ALL')}>전체</button>
         <button className={tab==='HOT'?s.active:''} onClick={()=>setTab('HOT')}>거래량 상위</button>
