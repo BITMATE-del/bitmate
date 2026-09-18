@@ -5,6 +5,9 @@ on:
     paths:
       - '.hero/bitmate-hero-visual.part0'
       - '.hero/bitmate-hero-visual.part1'
+      - '.hero/bitmate-hero-visual.part2'
+      - '.hero/bitmate-hero-visual.part3'
+      - '.hero/bitmate-hero-visual.part4'
 permissions:
   contents: write
 jobs:
@@ -15,9 +18,8 @@ jobs:
       - name: Restore BITMATE hero image
         shell: bash
         run: |
-          test -f .hero/bitmate-hero-visual.part0
-          test -f .hero/bitmate-hero-visual.part1
-          cat .hero/bitmate-hero-visual.part0 .hero/bitmate-hero-visual.part1 | base64 -d > public/assets/bitmate-hero-visual.webp
+          for n in 0 1 2 3 4; do test -f ".hero/bitmate-hero-visual.part$n"; done
+          cat .hero/bitmate-hero-visual.part{0,1,2,3,4} | base64 -d > public/assets/bitmate-hero-visual.webp
           test "$(wc -c < public/assets/bitmate-hero-visual.webp)" -eq 25108
           test "$(git hash-object public/assets/bitmate-hero-visual.webp)" = "82fc2c88e085480f2de5733f4d487fcded5245db"
       - name: Commit restored asset
