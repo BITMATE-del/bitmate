@@ -32,7 +32,7 @@ export default function LuckyDrawClient(){
    <div className={styles.copy}>
     <span className={styles.eyebrow}>LUCKY DRAW</span>
     <h1 className={styles.title}>활동할수록 쌓이는<br/>Lucky Draw 기회</h1>
-    <p className={styles.desc}>입금, 거래, 추천 조건을 달성해 Lucky Draw Ball을 획득하고 서버 추첨 결과를 확인하세요. 완료된 추첨 결과는 변경되지 않습니다.</p>
+    <p className={styles.desc}>입금, 거래, 추천 조건을 달성해 Lucky Draw Ball을 획득하고 추첨 결과를 확인하세요. 완료된 추첨 결과는 변경되지 않습니다.</p>
     <div className={styles.actions}>
      <button disabled={drawDisabled} onClick={drawOne} className={styles.assetButton}><img src="/lucky-draw/05-primary-button.svg" alt=""/><span>1회 추첨</span></button>
      <button disabled={drawDisabled} onClick={drawAll} className={`${styles.assetButton} ${styles.assetButtonSecondary}`}><img src="/lucky-draw/06-secondary-button.svg" alt=""/><span>전체 Ball 추첨</span></button>
