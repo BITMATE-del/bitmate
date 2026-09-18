@@ -31,6 +31,7 @@ const modules:Module[]=[
   {title:'회원 · 자산 · 운영 관리',description:'회원 검색, VIP/프로필, KYC 승인, 삭제 요청, DEMO 잔액/원장, 시스템 스위치 관리.',href:'/admin/operations',icon:'user',group:'운영·계정',status:'ACTIVE'},
   {title:'회원 서비스 · 리워드 관리',description:'API Key, Sub-account, Referral Code, Referral Reward, 관리자 Audit Log 관리.',href:'/admin/services',icon:'security',group:'운영·계정',status:'ACTIVE'},
   {title:'입금 · 출금 · 네트워크 관리',description:'BTC/ETH/USDT/TRX/SOL 체인 정책, 확인 수, 최소 수량, 수수료, 출금 요청 상태 관리.',href:'/admin/wallet-ops',icon:'wallet',group:'운영·계정',status:'ACTIVE'},
+  {title:'P2P Markets 관리',description:'P2P 광고 노출, 주문 상태, 결제 확인, 분쟁 및 취소 상태 관리.',href:'/admin/p2p',icon:'market',group:'운영·계정',status:'ACTIVE'},
   {title:'회원 센터',description:'회원 프로필, 인증, 보안, API, 알림 및 설정 화면 확인.',href:'/member',icon:'user',group:'운영·계정',status:'VIEW'},
   {title:'지갑 / 자산 센터',description:'Spot, Margin, Futures, Earn, Copy, Strategy, Insurance 계정 화면 확인.',href:'/account',icon:'wallet',group:'운영·계정',status:'VIEW'},
   {title:'입금 시스템',description:'BTC, ETH, USDT, SOL, TRX 및 네트워크 선택형 입금 화면 확인.',href:'/deposit',icon:'wallet',group:'운영·계정',status:'VIEW'},
