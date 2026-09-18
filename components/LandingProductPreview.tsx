@@ -19,7 +19,7 @@ export function DesktopTradingPreview(){
       <div className={s.chartPanel}>
         <div className={s.chartToolbar}><b>차트</b><span>1분</span><span>15분</span><span>1시간</span><span className={s.active}>15분</span><span>지표</span></div>
         <div className={s.chartArea}>
-          <div className={s.ohlc}>Bitcoin / TetherUS · 15 · Binance <span>O 76,438.12 H 76,560.22 L 76,401.90 C 76,526.10</span></div>
+          <div className={s.ohlc}>Bitcoin / TetherUS · 15 · BITMATE <span>O 76,438.12 H 76,560.22 L 76,401.90 C 76,526.10</span></div>
           <div className={s.gridLines}/>
           <div className={s.candles}>{candles.map((c,i)=>{const up=i%3!==1;return <span key={i} className={up?s.candleUp:s.candleDown} style={{height:`${c[1]}px`,transform:`translateY(${78-c[0]/2}px)`}}><i style={{height:`${c[1]+16}px`}}/></span>})}</div>
           <div className={s.priceLine}><span>76,526.10</span></div>
