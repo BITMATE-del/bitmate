@@ -29,7 +29,7 @@ function authMessage(message:string){
   if(m.includes('invalid login credentials'))return '로그인 정보가 올바르지 않습니다.';
   if(m.includes('user already registered'))return '이미 가입된 계정입니다.';
   if(m.includes('password should be'))return '비밀번호 조건을 확인해주세요.';
-  if(m.includes('phone provider is disabled'))return '휴대폰 가입이 아직 활성화되지 않았습니다. 관리자에게 문의해주세요.';
+  if(m.includes('phone provider is disabled'))return '현재 휴대폰 가입을 이용할 수 없습니다. 이메일 가입을 이용하거나 고객센터에 문의해주세요.';
   if(m.includes('email rate limit'))return '이메일 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
   if(m.includes('sms')&&m.includes('rate'))return '인증번호 요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
   return message;
