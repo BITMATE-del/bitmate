@@ -29,6 +29,7 @@ const modules:Module[]=[
   {title:'랜딩 이미지 관리',description:'홈 히어로와 제품 프리뷰 등 랜딩 미디어 슬롯 업로드 및 교체.',href:'/admin/landing-media',icon:'campaign',group:'콘텐츠·성장',status:'ACTIVE'},
   {title:'Referral / Reward Hub',description:'현재 운영 화면을 확인하고 다음 관리 확장 대상에 포함합니다.',href:'/more/reward-hub',icon:'referral',group:'콘텐츠·성장',status:'VIEW'},
   {title:'회원 · 자산 · 운영 관리',description:'회원 검색, VIP/프로필, KYC 승인, 삭제 요청, DEMO 잔액/원장, 시스템 스위치 관리.',href:'/admin/operations',icon:'user',group:'운영·계정',status:'ACTIVE'},
+  {title:'회원 서비스 · 리워드 관리',description:'API Key, Sub-account, Referral Code, Referral Reward, 관리자 Audit Log 관리.',href:'/admin/services',icon:'security',group:'운영·계정',status:'ACTIVE'},
   {title:'회원 센터',description:'회원 프로필, 인증, 보안, API, 알림 및 설정 화면 확인.',href:'/member',icon:'user',group:'운영·계정',status:'VIEW'},
   {title:'지갑 / 자산 센터',description:'Spot, Margin, Futures, Earn, Copy, Strategy, Insurance 계정 화면 확인.',href:'/account',icon:'wallet',group:'운영·계정',status:'VIEW'},
   {title:'입금 시스템',description:'BTC, ETH, USDT, SOL, TRX 및 네트워크 선택형 입금 화면 확인.',href:'/deposit',icon:'wallet',group:'운영·계정',status:'VIEW'},
