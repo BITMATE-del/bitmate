@@ -124,7 +124,7 @@ export default function ExchangeHeader(){
           {item('/more/reward-hub','gift','Reward Hub','레퍼럴 파트너·총판 성과와 리워드 관리')}
           {item('/more/academy','academy','Academy','플랫폼 사용법, 상품 가이드 및 시작 안내')}
           {item('/more/mining-boost','boost','Mining Boost','Mining Power 및 채굴 효율 부스트 프로그램')}
-          {item('/lucky-draw','lucky','Lucky Draw','행운볼 획득, 서버 추첨 및 보상 내역')}
+          {item('/lucky-draw','lucky','Lucky Draw','행운볼 획득, 추첨 결과 및 보상 내역')}
           {item('/crypto-loan','loan','Crypto Loan','보유 암호화폐를 담보로 하는 자산담보 대출')}
           {isLoggedIn&&item('/more/btmt-membership','membership','BTMT Membership','BTMT 스테이킹 등급과 거래금액 리워드')}
         </div>
