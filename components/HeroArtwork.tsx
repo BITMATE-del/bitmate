@@ -1,14 +1,13 @@
-import LandingMediaOverlay from './LandingMediaOverlay';
-
 export default function HeroArtwork(){
   return (
-    <div className="heroArtworkWrap" aria-label="BITMATE Xplore modular hero visual" style={{position:'relative',overflow:'hidden'}}>
+    <div className="heroArtworkWrap" aria-label="BITMATE trading hero visual">
       <img
         className="heroArtworkImage"
-        src="/xplore/hero-modular.webp?v=11f5a3b"
-        alt="BITMATE Xplore modular trading artwork"
+        src="/assets/bitmate-hero-visual.webp"
+        alt="BITMATE trading app with digital asset market visual"
+        loading="eager"
+        fetchPriority="high"
       />
-      <LandingMediaOverlay slotKey="home_hero_art" alt="BITMATE home hero artwork"/>
     </div>
   );
 }
