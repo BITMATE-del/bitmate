@@ -86,7 +86,7 @@ export default function DepositClient(){
 
       <div className={`${s.step} ${!token?s.disabled:network?s.done:s.active}`}><i>2</i><div><b>Select Network</b>{token&&<div className={s.networks}>{nets.map(n=><button key={n.id} onClick={()=>setNetwork(n.id)} className={network===n.id?s.selectedCard:''}><strong>{n.name}</strong><small>{n.confirmations} confirmations{n.minDeposit>0?` · Min ${n.minDeposit}`:''}</small></button>)}</div>}</div></div>
 
-      <div className={`${s.step} ${!network?s.disabled:s.active}`}><i>3</i><div><b>Deposit Address</b>{network&&<div className={s.addressCard}><small>{token} · {network}</small><strong>Deposit address assignment pending</strong><p>지원 네트워크는 관리자 설정과 연동되어 있습니다. 실제 입금 주소는 지갑/커스터디 공급자 연동 후 사용자별로 발급되며, 유효한 주소가 발급되기 전에는 자산을 전송하지 마세요.</p></div>}</div></div>
+      <div className={`${s.step} ${!network?s.disabled:s.active}`}><i>3</i><div><b>Deposit Address</b>{network&&<div className={s.addressCard}><small>{token} · {network}</small><strong>Deposit address unavailable</strong><p>현재 선택한 네트워크에서 입금 주소를 사용할 수 없습니다. 주소가 표시되기 전에는 자산을 전송하지 마세요.</p></div>}</div></div>
     </section>
 
     <aside className={s.faq}><h3>FAQ</h3><a>How to deposit crypto?</a><a>Why Hasn't My Deposit Been Credited?</a><a>FAQ on Incorrect Deposits</a><a>Fees for Incorrect Deposit and Delisted Coins</a><button>Buy Crypto →</button></aside>
