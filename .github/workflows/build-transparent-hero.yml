@@ -1,0 +1,89 @@
+name: Build transparent hero asset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/build-transparent-hero.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  cutout:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install background removal tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "rembg[cpu]>=2.0.60,<3" pillow onnxruntime
+
+      - name: Create true-alpha BITMATE hero PNG
+        shell: python
+        run: |
+          from pathlib import Path
+          from PIL import Image
+          from rembg import remove, new_session
+
+          src = Path("public/assets/bitmate-hero-visual.webp")
+          dst = Path("public/assets/bitmate-hero-transparent.png")
+
+          if not src.exists():
+              raise SystemExit(f"Missing source hero asset: {src}")
+
+          image = Image.open(src).convert("RGBA")
+          session = new_session("u2net")
+          result = remove(
+              image,
+              session=session,
+              alpha_matting=True,
+              alpha_matting_foreground_threshold=240,
+              alpha_matting_background_threshold=12,
+              alpha_matting_erode_size=8,
+          ).convert("RGBA")
+
+          # Minimum source width required for the production hero asset.
+          target_width = 1800
+          target_height = round(result.height * target_width / result.width)
+          result = result.resize((target_width, target_height), Image.Resampling.LANCZOS)
+
+          alpha = result.getchannel("A")
+          lo, hi = alpha.getextrema()
+          transparent = sum(1 for px in alpha.getdata() if px == 0)
+          total = result.width * result.height
+          ratio = transparent / total
+
+          if lo != 0 or hi != 255:
+              raise SystemExit(f"Invalid alpha range: {(lo, hi)}")
+          if ratio < 0.08:
+              raise SystemExit(f"Background removal insufficient: transparent_ratio={ratio:.4f}")
+          if result.width < 1600:
+              raise SystemExit(f"Hero width too small: {result.width}")
+
+          dst.parent.mkdir(parents=True, exist_ok=True)
+          result.save(dst, "PNG", optimize=True, compress_level=9)
+
+          print(f"saved={dst}")
+          print(f"size={result.size}")
+          print(f"mode={result.mode}")
+          print(f"alpha_range={(lo, hi)}")
+          print(f"transparent_ratio={ratio:.4f}")
+
+      - name: Commit transparent asset
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/assets/bitmate-hero-transparent.png
+          if git diff --cached --quiet; then
+            echo "No asset changes."
+            exit 0
+          fi
+          git commit -m "Add transparent BITMATE hero asset"
+          git push
