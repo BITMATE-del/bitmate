@@ -1,4 +1,5 @@
 import LandingMediaOverlay from './LandingMediaOverlay';
+import UiIcon from './UiIcon';
 import QrFloatingCard from './QrFloatingCard';
 import { mobilePromo } from '@/lib/mobilePromo';
 import s from './LandingProductPreview.module.css';
@@ -105,42 +106,66 @@ export function DesktopTradingPreview(){
 }
 
 function PhoneMockup(){
+  const assets=[
+    {symbol:'BTC',name:'Bitcoin',amount:'0.0421',value:'₩4,216,000',change:'+2.18%',tone:'btc'},
+    {symbol:'ETH',name:'Ethereum',amount:'0.82',value:'₩2,941,000',change:'+1.67%',tone:'eth'},
+    {symbol:'SOL',name:'Solana',amount:'18.4',value:'₩1,844,000',change:'+3.21%',tone:'sol'}
+  ];
   return (
     <div className={s.phone}>
       <div className={s.phoneHeader}>
-        <b>BITMATE</b>
-        <span>● Live</span>
+        <div className={s.phoneBrand}><span className={s.phoneLogo}>B</span><b>BITMATE</b></div>
+        <button className={s.phoneIconButton} aria-label="Notifications"><UiIcon name="bell" size={14}/><i/></button>
       </div>
 
-      <div className={s.balance}>
+      <section className={s.balance}>
         <small>Total Assets</small>
         <strong>₩10,000,000</strong>
-        <span>+2.18% today</span>
-      </div>
+        <span>+2.18%</span>
+      </section>
 
-      <div className={s.miniMarket}>
-        <div className={s.marketTop}>
-          <div><small>BTC/USDT</small><strong>76,526.10</strong></div>
+      <section className={s.mobileMarketCard}>
+        <div className={s.mobileMarketHead}>
+          <div>
+            <small>BTC / USDT</small>
+            <strong>76,526.10</strong>
+          </div>
           <span>+2.19%</span>
         </div>
-        <div className={s.spark}>
-          {[18,22,20,29,26,35,31,42,39,49,46,55].map((h,i)=><i key={i} style={{height:h}}/> )}
+        <svg className={s.mobileSparkline} viewBox="0 0 240 72" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="bitmateMobileSpark" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#b9ff31" stopOpacity=".22"/>
+              <stop offset="100%" stopColor="#b9ff31" stopOpacity="0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0 58 C18 54 24 49 38 52 S61 61 75 45 S98 26 112 34 S136 52 151 36 S177 18 194 24 S218 16 240 8 L240 72 L0 72 Z" fill="url(#bitmateMobileSpark)"/>
+          <path d="M0 58 C18 54 24 49 38 52 S61 61 75 45 S98 26 112 34 S136 52 151 36 S177 18 194 24 S218 16 240 8" fill="none" stroke="#b9ff31" strokeWidth="2.2" strokeLinecap="round"/>
+        </svg>
+        <div className={s.mobileMarketActions}>
+          <button>Buy</button>
+          <button>Trade</button>
         </div>
-      </div>
+      </section>
 
-      <div className={s.statusStrip}>
-        <span><small>Position</small><b>1 Open</b></span>
-        <span><small>Mining</small><b>Active</b></span>
-        <span><small>Reward</small><b>3</b></span>
-      </div>
+      <section className={s.mobileAssets}>
+        <div className={s.mobileAssetsHead}><b>Assets</b><span>Portfolio</span></div>
+        {assets.map(asset=>(
+          <div className={s.mobileAssetRow} key={asset.symbol}>
+            <span className={s.assetCoin} data-tone={asset.tone}>{asset.symbol.slice(0,1)}</span>
+            <div className={s.assetIdentity}><b>{asset.symbol}</b><small>{asset.name}</small></div>
+            <div className={s.assetAmount}><b>{asset.amount}</b><small>{asset.change}</small></div>
+            <strong>{asset.value}</strong>
+          </div>
+        ))}
+      </section>
 
-      <div className={s.assets}>
-        <span><b><i className={s.assetDot}>₿</i>BTC</b><em>0.0421</em><strong>₩4,216,000</strong></span>
-        <span><b><i className={s.assetDot}>Ξ</i>ETH</b><em>0.82</em><strong>₩2,941,000</strong></span>
-        <span><b><i className={s.assetDot}>S</i>SOL</b><em>18.4</em><strong>₩1,844,000</strong></span>
-      </div>
-
-      <div className={s.mobileNav}><b>Home</b><span>Markets</span><span>Trade</span><span>Assets</span></div>
+      <nav className={s.mobileNav}>
+        <span className={s.mobileNavActive}><UiIcon name="overview" size={14}/><small>Home</small></span>
+        <span><UiIcon name="market" size={14}/><small>Markets</small></span>
+        <span><UiIcon name="futures" size={14}/><small>Trade</small></span>
+        <span><UiIcon name="wallet" size={14}/><small>Assets</small></span>
+      </nav>
     </div>
   );
 }
