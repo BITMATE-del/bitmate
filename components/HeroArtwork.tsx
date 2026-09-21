@@ -4,9 +4,9 @@ export default function HeroArtwork(){
       <img
         className="heroArtworkImage"
         src="/assets/bitmate-hero-transparent.png"
-        alt="BITMATE hero"
+        alt="BITMATE Hero"
         width={1800}
-        height={1200}
+        height={1400}
         loading="eager"
         fetchPriority="high"
       />
