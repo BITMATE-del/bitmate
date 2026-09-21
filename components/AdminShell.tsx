@@ -17,6 +17,7 @@ const nav=[
   ['/admin/cfd','margin','CFD'],
   ['/admin/notices','listing','Notice'],
   ['/admin/landing-media','campaign','Media'],
+  ['/admin/angeltoggle','security','엔젤토글'],
 ] as const;
 
 export default function AdminShell({children}:{children:React.ReactNode}){
