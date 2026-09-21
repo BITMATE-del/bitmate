@@ -11,21 +11,22 @@
 .marketHeader{
   min-height:72px;
   display:grid;
-  grid-template-columns:1.25fr .95fr repeat(6,minmax(72px,1fr));
+  grid-template-columns:112px 128px repeat(6,minmax(0,1fr));
   align-items:center;
   background:#091113;
   border-bottom:1px solid #243036;
+  overflow:hidden;
 }
-.symbolBlock{display:flex;align-items:center;gap:9px;padding:0 12px;min-width:0}
+.symbolBlock{display:flex;align-items:center;gap:8px;padding:0 10px;min-width:0;overflow:hidden}
 .coin{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f7931a;color:#fff;font-weight:900;font-size:14px;flex:0 0 auto}
-.symbolBlock b{display:block;font-size:12px;white-space:nowrap}
+.symbolBlock b{display:block;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .symbolBlock small{display:block;color:#607178;font-size:7px;margin-top:3px;white-space:nowrap}
-.lastPrice{padding:0 10px;min-width:0}
-.lastPrice strong{display:block;color:#22d7a8;font-size:21px;letter-spacing:-.035em;white-space:nowrap}
-.lastPrice span{display:block;color:#23cda3;font-size:7px;margin-top:4px;white-space:nowrap}
-.headerMetric{min-width:0;border-left:1px solid #1d282d;padding:0 9px}
-.headerMetric small{display:block;color:#53656d;font-size:6.5px;margin-bottom:4px;white-space:nowrap}
-.headerMetric b{display:block;font-size:7.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lastPrice{padding:0 10px;min-width:0;overflow:hidden;border-left:1px solid #1d282d}
+.lastPrice strong{display:block;color:#22d7a8;font-size:18px;line-height:1.05;letter-spacing:-.03em;white-space:nowrap}
+.lastPrice span{display:block;color:#23cda3;font-size:6px;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.headerMetric{min-width:0;overflow:hidden;border-left:1px solid #1d282d;padding:0 7px}
+.headerMetric small{display:block;color:#53656d;font-size:5.8px;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.headerMetric b{display:block;font-size:6.8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .headerMetric:last-child b{color:#7dff3e}
 .workspaceBody{display:grid;grid-template-columns:minmax(0,58fr) minmax(118px,17fr) minmax(166px,25fr);min-height:430px}
 .chartPanel{min-width:0;background:#071012;border-right:1px solid #243036}
