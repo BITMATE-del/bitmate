@@ -119,8 +119,8 @@ function PhoneMockup(){
 
 function MobileVisualGroup(){
   return (
-    <div className={s.mobileStage}>
-      <div className={s.phoneVisual}>
+    <div className={s.mobileVisualGroup}>
+      <div className={s.phoneMockup}>
         <PhoneMockup/>
         <LandingMediaOverlay slotKey="home_mobile_preview" alt="BITMATE mobile product preview"/>
       </div>
