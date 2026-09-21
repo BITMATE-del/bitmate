@@ -1,2 +1,2 @@
-import TradeLanding from '@/components/TradeLanding';
-export default function Page(){return <TradeLanding eyebrow="SPOT TRADING" title="현물 시장을 가장 직관적으로" description="주요 디지털자산을 실시간 시세와 함께 확인하고, 간단한 주문 흐름으로 거래하는 Spot 전용 페이지입니다." badge="Spot" stats={[{label:'Markets',value:'120+'},{label:'Base mode',value:'DEMO'},{label:'Order types',value:'Market · Limit'},{label:'Settlement',value:'Instant'}]} bullets={['BTC·ETH·SOL·XRP 등 주요 마켓','시장가·지정가 주문 구조','실시간 가격·거래량 확인','DEMO 우선 주문 흐름']}/>}
+import SpotTradingClient from '@/components/SpotTradingClient';
+export default function Page(){return <SpotTradingClient/>}
