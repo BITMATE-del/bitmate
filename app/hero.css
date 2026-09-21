@@ -10,6 +10,7 @@
   isolation:isolate;
   overflow:visible;
   pointer-events:none;
+  background:radial-gradient(circle at 50% 50%,rgba(164,255,0,.055) 0%,rgba(164,255,0,.025) 36%,transparent 72%);
 }
 .heroArtworkWrap:before{
   content:'';
@@ -20,7 +21,8 @@
     radial-gradient(circle at 54% 48%,rgba(185,255,49,.22) 0,rgba(135,205,35,.10) 34%,rgba(75,110,24,.035) 54%,transparent 73%),
     radial-gradient(circle at 70% 58%,rgba(185,255,49,.08),transparent 58%);
   filter:blur(34px);
-  z-index:-2;
+  z-index:0;
+  pointer-events:none;
 }
 .heroArtworkWrap:after{
   content:'';
@@ -32,19 +34,32 @@
   background:radial-gradient(ellipse at center,rgba(185,255,49,.105),rgba(185,255,49,.025) 42%,transparent 72%);
   filter:blur(26px);
   opacity:.9;
-  z-index:-1;
+  z-index:0;
+  pointer-events:none;
 }
 .heroArtworkImage{
   display:block;
-  width:100%;
-  max-width:780px;
+  width:112%;
+  max-width:860px;
   height:auto;
-  max-height:560px;
+  max-height:590px;
   object-fit:contain;
   object-position:center;
-  transform:translateX(18px) scale(1.06);
+  position:relative;
+  z-index:2;
+  opacity:1;
+  visibility:visible;
+  transform:translate(20px,10px) scale(1.04);
   transform-origin:center center;
   filter:drop-shadow(0 34px 72px rgba(0,0,0,.52));
+  -webkit-mask-image:radial-gradient(ellipse 78% 76% at 52% 50%,#000 0%,#000 58%,rgba(0,0,0,.9) 72%,rgba(0,0,0,.45) 86%,transparent 100%);
+  mask-image:radial-gradient(ellipse 78% 76% at 52% 50%,#000 0%,#000 58%,rgba(0,0,0,.9) 72%,rgba(0,0,0,.45) 86%,transparent 100%);
+  -webkit-mask-repeat:no-repeat;
+  mask-repeat:no-repeat;
+  -webkit-mask-position:center;
+  mask-position:center;
+  -webkit-mask-size:100% 100%;
+  mask-size:100% 100%;
 }
 
 @media(max-width:1180px){
@@ -54,9 +69,10 @@
     margin-right:-22px;
   }
   .heroArtworkImage{
-    max-width:710px;
-    max-height:540px;
-    transform:translateX(10px) scale(1.035);
+    width:110%;
+    max-width:800px;
+    max-height:560px;
+    transform:translate(14px,8px) scale(1.025);
   }
 }
 
@@ -67,9 +83,10 @@
     margin-right:-12px;
   }
   .heroArtworkImage{
-    max-width:630px;
-    max-height:500px;
-    transform:translateX(6px) scale(1.02);
+    width:108%;
+    max-width:720px;
+    max-height:520px;
+    transform:translate(8px,6px) scale(1.01);
   }
 }
 
@@ -89,6 +106,8 @@
     max-width:680px;
     max-height:none;
     transform:none;
+    -webkit-mask-image:radial-gradient(ellipse 82% 80% at 50% 50%,#000 0%,#000 62%,rgba(0,0,0,.88) 78%,transparent 100%);
+    mask-image:radial-gradient(ellipse 82% 80% at 50% 50%,#000 0%,#000 62%,rgba(0,0,0,.88) 78%,transparent 100%);
   }
 }
 
