@@ -83,4 +83,129 @@
   .marketHeader,.workspaceBody,.accountStatus{min-width:700px}
 }
 
-.mobileStage{display:flex;align-items:flex-end;gap:28px;position:relative;min-height:520px}.phoneVisual{position:relative;flex:0 0 auto}.phone{width:300px;min-height:548px;border:6px solid #242d31;border-radius:34px;background:#0b1113;padding:20px;box-shadow:0 38px 80px rgba(0,0,0,.45)}.phoneHeader{display:flex;justify-content:space-between;align-items:center}.phoneHeader b{font-size:15px}.phoneHeader span{font-size:9px;color:#23d4aa}.balance{margin:26px 0 18px}.balance small{display:block;color:#687980;font-size:9px}.balance strong{display:block;font-size:27px;margin:6px 0}.balance span{color:#22c99f;font-size:10px}.miniMarket{border:1px solid #243237;background:#0d1518;padding:14px;border-radius:10px}.miniMarket>div:first-child{display:flex;justify-content:space-between}.miniMarket b{font-size:10px}.miniMarket strong{font-size:12px}.spark{height:68px;display:flex;align-items:flex-end;gap:5px;margin-top:12px}.spark i{width:8px;background:#b9ff31;opacity:.85;border-radius:2px 2px 0 0}.quickStats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0}.quickStats div{border:1px solid #223035;padding:9px 7px}.quickStats small{display:block;color:#617279;font-size:7px}.quickStats b{display:block;font-size:8px;margin-top:4px}.assets{display:grid}.assets span{display:grid;grid-template-columns:.7fr .8fr 1fr;padding:12px 0;border-bottom:1px solid #1e2b30;font-size:9px}.assets em{font-style:normal;color:#6e7d83}.assets strong{text-align:right}.mobileNav{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;padding-top:13px;border-top:1px solid #1f2b2f;font-size:8px;color:#65767c}.mobileNav b{color:#b9ff31}.quickAccess{width:190px;background:#101619;border:1px solid #28353a;border-radius:16px;padding:18px;transform:translateY(-24px)}.qr{background:#f1f5f4;border-radius:10px;padding:13px;margin-bottom:14px;display:grid;place-items:center;aspect-ratio:1}.qrSvg,.qrImage{display:block;width:100%;height:100%;object-fit:contain}.quickAccess small{display:block;color:#75868c;font-size:8px;letter-spacing:.12em}.quickAccess b{display:block;font-size:15px;margin:6px 0}.quickAccess p{color:#77878d;font-size:10px;line-height:1.5}.quickAccess a{display:inline-flex;margin-top:4px;color:#b9ff31;font-size:10px;font-weight:800}@media(max-width:900px){.desktopBody{grid-template-columns:1fr}.orderPanel{border-top:1px solid #253036}.desktopTop{grid-template-columns:1.2fr 1fr 1fr}.metric:nth-of-type(n+3){display:none}.mobileStage{justify-content:center;flex-wrap:wrap}.quickAccess{transform:none}}
+.mobileVisualGroup{
+  position:relative;
+  width:100%;
+  max-width:620px;
+  min-height:560px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:visible;
+  isolation:isolate;
+}
+.mobileVisualGroup:before{
+  content:'';
+  position:absolute;
+  width:78%;
+  height:72%;
+  left:7%;
+  top:14%;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(185,255,49,.10) 0%,rgba(185,255,49,.045) 42%,transparent 72%);
+  filter:blur(34px);
+  z-index:0;
+  pointer-events:none;
+}
+.phoneMockup{
+  position:relative;
+  width:320px;
+  z-index:2;
+  transform:translateX(-45px);
+  flex:0 0 auto;
+}
+.phone{
+  width:320px;
+  min-height:558px;
+  border:5px solid #242d31;
+  border-radius:34px;
+  background:#0b1113;
+  padding:20px;
+  box-shadow:0 34px 72px rgba(0,0,0,.42);
+}
+.phoneHeader{display:flex;justify-content:space-between;align-items:center}
+.phoneHeader b{font-size:15px}.phoneHeader span{font-size:9px;color:#23d4aa}
+.balance{margin:26px 0 18px}.balance small{display:block;color:#687980;font-size:9px}.balance strong{display:block;font-size:27px;margin:6px 0}.balance span{color:#22c99f;font-size:10px}
+.miniMarket{border:1px solid #243237;background:#0d1518;padding:14px;border-radius:10px}.miniMarket>div:first-child{display:flex;justify-content:space-between}.miniMarket b{font-size:10px}.miniMarket strong{font-size:12px}
+.spark{height:68px;display:flex;align-items:flex-end;gap:5px;margin-top:12px}.spark i{width:8px;background:#b9ff31;opacity:.85;border-radius:2px 2px 0 0}
+.quickStats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:12px 0}.quickStats div{border:1px solid #223035;padding:9px 7px}.quickStats small{display:block;color:#617279;font-size:7px}.quickStats b{display:block;font-size:8px;margin-top:4px}
+.assets{display:grid}.assets span{display:grid;grid-template-columns:.7fr .8fr 1fr;padding:12px 0;border-bottom:1px solid #1e2b30;font-size:9px}.assets em{font-style:normal;color:#6e7d83}.assets strong{text-align:right}
+.mobileNav{display:grid;grid-template-columns:repeat(4,1fr);margin-top:20px;padding-top:13px;border-top:1px solid #1f2b2f;font-size:8px;color:#65767c}.mobileNav b{color:#b9ff31}
+.qrFloatingCard{
+  position:absolute;
+  width:190px;
+  right:30px;
+  bottom:55px;
+  z-index:4;
+  background:#0b1214;
+  border:1px solid #28353a;
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 18px 42px rgba(0,0,0,.32);
+}
+.qr{
+  width:132px;
+  height:132px;
+  margin:0 auto 13px;
+  background:#f1f5f4;
+  border-radius:10px;
+  padding:8px;
+  display:grid;
+  place-items:center;
+}
+.qrSvg,.qrImage{display:block;width:100%;height:100%;object-fit:contain}
+.qrFloatingCard small{display:block;color:#75868c;font-size:8px;letter-spacing:.12em}
+.qrFloatingCard b{display:block;font-size:14px;margin:6px 0}
+.qrFloatingCard p{color:#77878d;font-size:9px;line-height:1.5;margin:0}
+.qrFloatingCard a{display:inline-flex;margin-top:7px;color:#b9ff31;font-size:9px;font-weight:800}
+
+@media(max-width:900px){
+  .mobileVisualGroup{
+    max-width:560px;
+    min-height:540px;
+    margin:0 auto;
+  }
+  .phoneMockup{
+    width:300px;
+    transform:translateX(-32px);
+  }
+  .phone{
+    width:300px;
+    min-height:530px;
+  }
+  .qrFloatingCard{
+    width:180px;
+    right:18px;
+    bottom:46px;
+    padding:14px;
+  }
+  .qr{
+    width:124px;
+    height:124px;
+  }
+}
+@media(max-width:620px){
+  .mobileVisualGroup{
+    max-width:100%;
+    min-height:500px;
+  }
+  .phoneMockup{
+    width:280px;
+    transform:translateX(-24px) scale(.94);
+    transform-origin:center;
+  }
+  .phone{
+    width:280px;
+    min-height:510px;
+  }
+  .qrFloatingCard{
+    width:168px;
+    right:4px;
+    bottom:34px;
+    padding:12px;
+  }
+  .qr{
+    width:118px;
+    height:118px;
+  }
+}
