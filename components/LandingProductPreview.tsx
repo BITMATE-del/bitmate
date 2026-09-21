@@ -120,9 +120,11 @@ function PhoneMockup(){
 function MobileVisualGroup(){
   return (
     <div className={s.mobileStage}>
-      <PhoneMockup/>
+      <div className={s.phoneVisual}>
+        <PhoneMockup/>
+        <LandingMediaOverlay slotKey="home_mobile_preview" alt="BITMATE mobile product preview"/>
+      </div>
       <QrFloatingCard {...mobilePromo}/>
-      <LandingMediaOverlay slotKey="home_mobile_preview" alt="BITMATE mobile product preview"/>
     </div>
   );
 }
