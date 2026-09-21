@@ -3,8 +3,10 @@ export default function HeroArtwork(){
     <div className="heroArtworkWrap" aria-label="BITMATE trading hero visual">
       <img
         className="heroArtworkImage"
-        src="/assets/bitmate-hero-visual.webp"
-        alt="BITMATE trading app with digital asset market visual"
+        src="/assets/bitmate-hero-transparent.png"
+        alt="BITMATE hero"
+        width={1800}
+        height={1200}
         loading="eager"
         fetchPriority="high"
       />
