@@ -9,14 +9,15 @@ import s from './AdminWalletOperations.module.css';
 type NetworkRow={id:string;asset:string;network:string;display_name:string;confirmations:number;deposit_enabled:boolean;withdraw_enabled:boolean;min_deposit:number;min_withdraw:number;withdraw_fee:number;active:boolean;updated_at:string};
 type DepositRow={id:string;user_id:string;email:string|null;asset:string;network:string;address:string|null;txid:string|null;amount:number;confirmations:number;status:string;created_at:string;credited_at:string|null};
 type WithdrawalRow={id:string;user_id:string;email:string|null;asset:string;network:string;address:string;amount:number;fee:number;status:string;txid:string|null;note:string|null;created_at:string;reviewed_at:string|null;updated_at:string};
-type Snap={networks:NetworkRow[];deposits:DepositRow[];withdrawals:WithdrawalRow[];stats:Record<string,number>};
-type Tab='networks'|'deposits'|'withdrawals';
+type AddressRow={id:string;user_id:string;email:string|null;asset:string;network:string;address:string;provider:string;active:boolean;scan_from:string;created_at:string};
+type Snap={networks:NetworkRow[];deposits:DepositRow[];withdrawals:WithdrawalRow[];addresses:AddressRow[];stats:Record<string,number>};
+type Tab='networks'|'addresses'|'deposits'|'withdrawals';
 
 export default function AdminWalletOperations(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const [allowed,setAllowed]=useState<boolean|null>(null);
  const [tab,setTab]=useState<Tab>('networks');
- const [data,setData]=useState<Snap>({networks:[],deposits:[],withdrawals:[],stats:{}});
+ const [data,setData]=useState<Snap>({networks:[],deposits:[],withdrawals:[],addresses:[],stats:{}});
  const [msg,setMsg]=useState('');
  const [busy,setBusy]=useState(false);
 
@@ -50,6 +51,15 @@ export default function AdminWalletOperations(){
   await run('admin_update_asset_network',{p_id:n.id,p_deposit_enabled:depositEnabled,p_withdraw_enabled:withdrawEnabled,p_confirmations:confirmations,p_min_deposit:minDeposit,p_min_withdraw:minWithdraw,p_withdraw_fee:fee,p_active:active},`${n.asset} ${n.network} 설정이 변경되었습니다.`);
  }
 
+ async function assignTronAddress(){
+  const email=(prompt('회원 이메일을 입력하세요.')||'').trim();
+  if(!email)return;
+  const address=(prompt('TRON 입금 주소를 입력하세요. (T로 시작하는 34자리 주소)')||'').trim();
+  if(!address)return;
+  if(!confirm(email+'\n'+address+'\nUSDT/TRC20 + TRX 자동입금 주소로 배정할까요?'))return;
+  await run('admin_assign_tron_deposit_address',{p_email:email,p_address:address},'TRON 자동입금 주소가 배정되었습니다.');
+ }
+
  async function updateWithdrawal(r:WithdrawalRow,status:string){
   let txid=r.txid||'';let note=r.note||'';
   if(status==='SENT')txid=prompt('전송 TXID를 입력하세요.',txid)||'';
@@ -72,10 +82,12 @@ export default function AdminWalletOperations(){
    <div><span>입금 활성</span><b>{data.stats?.deposit_enabled||0}</b></div>
    <div><span>출금 활성</span><b>{data.stats?.withdraw_enabled||0}</b></div>
    <div><span>출금 대기</span><b>{data.stats?.withdraw_pending||0}</b></div>
+   <div><span>TRON 주소 배정</span><b>{data.stats?.tron_addresses||0}</b></div>
   </section>
 
   <nav className={s.tabs}>
    <button className={tab==='networks'?s.active:''} onClick={()=>setTab('networks')}><UiIcon name="wallet" size={17}/> Asset Networks</button>
+   <button className={tab==='addresses'?s.active:''} onClick={()=>setTab('addresses')}><UiIcon name="link" size={17}/> TRON Addresses</button>
    <button className={tab==='deposits'?s.active:''} onClick={()=>setTab('deposits')}><UiIcon name="history" size={17}/> Deposit Records</button>
    <button className={tab==='withdrawals'?s.active:''} onClick={()=>setTab('withdrawals')}><UiIcon name="order" size={17}/> Withdrawals</button>
   </nav>
@@ -90,6 +102,13 @@ export default function AdminWalletOperations(){
     <span><b className={n.active?s.good:s.bad}>{n.active?'ACTIVE':'HIDDEN'}</b><small>Deposit {n.deposit_enabled?'ON':'OFF'} · Withdraw {n.withdraw_enabled?'ON':'OFF'}</small></span>
     <span className={s.actions}><button disabled={busy} onClick={()=>editNetwork(n)}>설정 수정</button></span>
    </div>)}
+   </div>
+  </section>}
+
+  {tab==='addresses'&&<section className={s.panel}>
+   <div className={s.panelHead}><div><h2>TRON 자동입금 주소</h2><p>회원별 TRON 주소를 배정하면 USDT/TRC20과 TRX 입금을 동일 주소에서 자동 감지합니다.</p></div><div className={s.actions}><button disabled={busy} onClick={assignTronAddress}>TRON 주소 배정</button></div></div>
+   <div className={s.table}><div className={s.thAddr}><span>회원</span><span>자산</span><span>주소</span><span>공급자</span><span>상태</span></div>
+   {data.addresses.length?data.addresses.map(r=><div className={s.trAddr} key={r.id}><span><b>{r.email||'—'}</b><small>{r.user_id.slice(0,8)}…</small></span><span><b>{r.asset}</b><small>{r.network}</small></span><span><small>{r.address}</small></span><span><b>{r.provider}</b><small>{new Date(r.scan_from).toLocaleString()} 이후 감지</small></span><span><b className={r.active?s.good:s.bad}>{r.active?'ACTIVE':'INACTIVE'}</b></span></div>):<div className={s.empty}>배정된 TRON 입금 주소가 없습니다.</div>}
    </div>
   </section>}
 
