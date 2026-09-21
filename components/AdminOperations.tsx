@@ -64,7 +64,7 @@ export default function AdminOperations(){
  if(allowed===null)return <main className={s.page}><div className={s.gate}>관리자 권한 확인 중...</div></main>;
  if(!allowed)return <main className={s.page}><div className={s.gate}><h1>관리자 권한이 필요합니다.</h1><Link href="/">홈으로</Link></div></main>;
 
- const systemKeys=['SPOT_REAL_ENABLED','AI_REAL_ENABLED','QUICK_TRADE_REAL_ENABLED','WITHDRAW_ENABLED'];
+ const systemKeys=['VIRTUAL_TRADING_ENABLED','SPOT_VIRTUAL_ENABLED','FUTURES_VIRTUAL_ENABLED','CFD_VIRTUAL_ENABLED','AI_VIRTUAL_ENABLED','COPY_VIRTUAL_ENABLED','WITHDRAW_ENABLED'];
 
  return <main className={s.page}><div className={s.shell}>
   <header className={s.hero}><div><span>BITMATE ADMIN</span><h1>회원 · 자산 · 운영 관리</h1><p>회원 프로필, KYC, 계정 삭제 요청, DEMO 원장 조정과 시스템 운영 스위치를 한 곳에서 관리합니다. 모든 민감 변경은 관리자 로그에 남습니다.</p></div><div className={s.heroActions}><Link href="/admin">관리자 홈</Link><Link href="/account">사용자 자산화면</Link></div></header>
@@ -112,9 +112,9 @@ export default function AdminOperations(){
   </section>}
 
   {tab==='system'&&<section className={s.panel}>
-   <div className={s.panelHead}><div><h2>System Switches</h2><p>실거래/출금 관련 운영 플래그를 관리합니다. 실제 엔진이 해당 setting을 읽도록 연결된 기능에만 즉시 적용됩니다.</p></div></div>
+   <div className={s.panelHead}><div><h2>System Switches</h2><p>BITMATE 내부 체결 엔진과 출금 운영 플래그를 관리합니다. 외부 거래소 실주문 스위치는 별도로 비활성 상태를 유지합니다.</p></div></div>
    <div className={s.settings}>
-    {systemKeys.map(key=>{const current=boolValue(data.settings?.[key]);return <div className={s.setting} key={key}><div><b>{key}</b><p>{key==='WITHDRAW_ENABLED'?'출금 기능 운영 스위치':key==='AI_REAL_ENABLED'?'AI 실제 운용 스위치':key==='SPOT_REAL_ENABLED'?'Spot 실거래 스위치':'Quick Trade 실거래 스위치'}</p></div><button className={current?s.switchOn:s.switchOff} onClick={()=>toggleSetting(key,current)} disabled={busy}>{current?'ENABLED':'DISABLED'}</button></div>})}
+    {systemKeys.map(key=>{const current=boolValue(data.settings?.[key]);return <div className={s.setting} key={key}><div><b>{key}</b><p>{key==='WITHDRAW_ENABLED'?'출금 기능 운영 스위치':key==='VIRTUAL_TRADING_ENABLED'?'전체 내부 체결 마스터 스위치':key==='SPOT_VIRTUAL_ENABLED'?'Spot 내부 체결':key==='FUTURES_VIRTUAL_ENABLED'?'Futures 내부 체결':key==='CFD_VIRTUAL_ENABLED'?'CFD 내부 체결':key==='AI_VIRTUAL_ENABLED'?'AI 내부 운용':key==='COPY_VIRTUAL_ENABLED'?'Copy Trading 내부 운용':'내부 체결 스위치'}</p></div><button className={current?s.switchOn:s.switchOff} onClick={()=>toggleSetting(key,current)} disabled={busy}>{current?'ENABLED':'DISABLED'}</button></div>})}
    </div>
   </section>}
 
