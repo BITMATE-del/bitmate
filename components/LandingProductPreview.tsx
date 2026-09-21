@@ -107,11 +107,39 @@ export function DesktopTradingPreview(){
 function PhoneMockup(){
   return (
     <div className={s.phone}>
-      <div className={s.phoneHeader}><b>BITMATE</b><span>● Live</span></div>
-      <div className={s.balance}><small>Total assets</small><strong>₩10,000,000</strong><span>+2.18% today</span></div>
-      <div className={s.miniMarket}><div><b>BTC/USDT</b><strong>76,526.10</strong></div><div className={s.spark}>{[18,22,20,29,26,35,31,42,39,49,46,55].map((h,i)=><i key={i} style={{height:h}}/>)}</div></div>
-      <div className={s.quickStats}><div><small>Futures</small><b>1 Position</b></div><div><small>Mining</small><b>Boost ON</b></div><div><small>Reward</small><b>3 Available</b></div></div>
-      <div className={s.assets}><span><b>BTC</b><em>0.0421</em><strong>₩4,216,000</strong></span><span><b>ETH</b><em>0.82</em><strong>₩2,941,000</strong></span><span><b>SOL</b><em>18.4</em><strong>₩1,844,000</strong></span></div>
+      <div className={s.phoneHeader}>
+        <b>BITMATE</b>
+        <span>● Live</span>
+      </div>
+
+      <div className={s.balance}>
+        <small>Total Assets</small>
+        <strong>₩10,000,000</strong>
+        <span>+2.18% today</span>
+      </div>
+
+      <div className={s.miniMarket}>
+        <div className={s.marketTop}>
+          <div><small>BTC/USDT</small><strong>76,526.10</strong></div>
+          <span>+2.19%</span>
+        </div>
+        <div className={s.spark}>
+          {[18,22,20,29,26,35,31,42,39,49,46,55].map((h,i)=><i key={i} style={{height:h}}/> )}
+        </div>
+      </div>
+
+      <div className={s.statusStrip}>
+        <span><small>Position</small><b>1 Open</b></span>
+        <span><small>Mining</small><b>Active</b></span>
+        <span><small>Reward</small><b>3</b></span>
+      </div>
+
+      <div className={s.assets}>
+        <span><b><i className={s.assetDot}>₿</i>BTC</b><em>0.0421</em><strong>₩4,216,000</strong></span>
+        <span><b><i className={s.assetDot}>Ξ</i>ETH</b><em>0.82</em><strong>₩2,941,000</strong></span>
+        <span><b><i className={s.assetDot}>S</i>SOL</b><em>18.4</em><strong>₩1,844,000</strong></span>
+      </div>
+
       <div className={s.mobileNav}><b>Home</b><span>Markets</span><span>Trade</span><span>Assets</span></div>
     </div>
   );
