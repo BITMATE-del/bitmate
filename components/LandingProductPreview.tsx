@@ -1,5 +1,6 @@
-import Link from 'next/link';
 import LandingMediaOverlay from './LandingMediaOverlay';
+import QrFloatingCard from './QrFloatingCard';
+import { mobilePromo } from '@/lib/mobilePromo';
 import s from './LandingProductPreview.module.css';
 
 const candles=[
@@ -103,8 +104,8 @@ export function DesktopTradingPreview(){
   </div>
 }
 
-export function MobileAccessPreview(){
-  return <div className={s.mobileStage} style={{position:'relative',overflow:'hidden'}}>
+function PhoneMockup(){
+  return (
     <div className={s.phone}>
       <div className={s.phoneHeader}><b>BITMATE</b><span>● Live</span></div>
       <div className={s.balance}><small>Total assets</small><strong>₩10,000,000</strong><span>+2.18% today</span></div>
@@ -113,10 +114,19 @@ export function MobileAccessPreview(){
       <div className={s.assets}><span><b>BTC</b><em>0.0421</em><strong>₩4,216,000</strong></span><span><b>ETH</b><em>0.82</em><strong>₩2,941,000</strong></span><span><b>SOL</b><em>18.4</em><strong>₩1,844,000</strong></span></div>
       <div className={s.mobileNav}><b>Home</b><span>Markets</span><span>Trade</span><span>Assets</span></div>
     </div>
-    <div className={s.quickAccess}>
-      <div className={s.qr}><div className={s.qrGrid}>{Array.from({length:49}).map((_,i)=><i key={i} className={(i%3===0||i%7===0||[1,2,8,9,39,40,46,47].includes(i))?s.qrOn:''}/>)}</div></div>
-      <small>QUICK ACCESS</small><b>Scan to open</b><p>모바일 브라우저에서 BITMATE를 바로 확인하세요.</p><Link href="/markets">Open Web App →</Link>
+  );
+}
+
+function MobileVisualGroup(){
+  return (
+    <div className={s.mobileStage}>
+      <PhoneMockup/>
+      <QrFloatingCard {...mobilePromo}/>
+      <LandingMediaOverlay slotKey="home_mobile_preview" alt="BITMATE mobile product preview"/>
     </div>
-    <LandingMediaOverlay slotKey="home_mobile_preview" alt="BITMATE mobile product preview"/>
-  </div>
+  );
+}
+
+export function MobileAccessPreview(){
+  return <MobileVisualGroup/>;
 }
