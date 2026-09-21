@@ -16,7 +16,7 @@ export default function QrFloatingCard({
   qrButtonUrl
 }: Props){
   return (
-    <aside className={s.quickAccess} aria-label="BITMATE mobile quick access">
+    <aside className={s.qrFloatingCard} aria-label="BITMATE mobile quick access">
       <div className={s.qr}>
         {qrImage ? (
           <img className={s.qrImage} src={qrImage} alt="BITMATE QR code" />
