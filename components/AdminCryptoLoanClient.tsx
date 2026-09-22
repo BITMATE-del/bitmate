@@ -1,3 +1,4 @@
+import {siteConfirm,sitePrompt} from './SiteDialog';
 'use client';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
@@ -15,11 +16,11 @@ export default function AdminCryptoLoanClient(){
  async function save(){setBusy(true);setMsg('');const {error}=await supabase.rpc('admin_upsert_crypto_loan_product',{p_id:form.id||null,p_name:form.name,p_borrow_asset:form.borrow_asset,p_collateral_asset:form.collateral_asset,p_term_mode:form.term_mode,p_term_days:form.term_mode==='FIXED'?Number(form.term_days):null,p_hourly_rate:Number(form.hourly_rate),p_annual_rate:form.annual_rate===''?null:Number(form.annual_rate),p_initial_ltv:Number(form.initial_ltv),p_margin_call_ltv:Number(form.margin_call_ltv),p_liquidation_ltv:Number(form.liquidation_ltv),p_min_borrow:Number(form.min_borrow||0),p_max_borrow:form.max_borrow===''?null:Number(form.max_borrow),p_provider_code:form.provider_code||null,p_provider_product_code:form.provider_product_code||null,p_status:form.status,p_visible:!!form.visible,p_sort_order:Number(form.sort_order||100)});setBusy(false);if(error){setMsg(error.message);return;}setMsg('대출 상품이 저장되었습니다.');setForm(empty);await load()}
  async function runAction(loan:Loan,action:string){
   let reference:string|null=null,note:string|null=null,amount:number|null=null,surplus:number|null=null;
-  if(action==='DISBURSE'||action==='RELEASE_COLLATERAL'){reference=window.prompt(action==='DISBURSE'?'지급/담보처리 참조번호를 입력하세요.':'담보 반환 참조번호를 입력하세요.')||null;if(!reference)return;}
-  if(action==='REJECT'||action==='CANCEL'){note=window.prompt(action==='REJECT'?'거절 사유를 입력하세요.':'취소 사유를 입력하세요.')||null;if(!note)return;}
-  if(action==='COMPLETE_LIQUIDATION'){const a=window.prompt('청산 처리금액을 입력하세요.','0');if(a===null)return;const s=window.prompt('회원에게 반환할 잔여금이 있으면 입력하세요.','0');if(s===null)return;amount=Number(a);surplus=Number(s);reference=window.prompt('청산 참조번호를 입력하세요.')||null;if(!reference)return;}
+  if(action==='DISBURSE'||action==='RELEASE_COLLATERAL'){reference=(await sitePrompt(action==='DISBURSE'?'지급/담보처리 참조번호를 입력하세요.':'담보 반환 참조번호를 입력하세요.','',{title:'참조번호 입력'}))||null;if(!reference)return;}
+  if(action==='REJECT'||action==='CANCEL'){note=(await sitePrompt(action==='REJECT'?'거절 사유를 입력하세요.':'취소 사유를 입력하세요.','',{title:'처리 사유'}))||null;if(!note)return;}
+  if(action==='COMPLETE_LIQUIDATION'){const a=await sitePrompt('청산 처리금액을 입력하세요.','0',{title:'청산 처리',inputType:'number'});if(a===null)return;const s=await sitePrompt('회원에게 반환할 잔여금이 있으면 입력하세요.','0',{title:'청산 처리',inputType:'number'});if(s===null)return;amount=Number(a);surplus=Number(s);reference=(await sitePrompt('청산 참조번호를 입력하세요.','',{title:'청산 처리'}))||null;if(!reference)return;}
   const labels:Record<string,string>={APPROVE:'승인',DISBURSE:'지급 완료',REJECT:'거절',CANCEL:'취소',CONFIRM_REPAYMENT:'상환 확정',RELEASE_COLLATERAL:'담보 반환',COMPLETE_LIQUIDATION:'청산 완료'};
-  if(!window.confirm(`${loan.loan_no} 건을 '${labels[action]||action}' 처리하시겠습니까?`))return;
+  if(!(await siteConfirm(`${loan.loan_no} 건을 '${labels[action]||action}' 처리하시겠습니까?`,{title:'대출 처리 확인'})))return;
   setActionLoan(loan.id);setMsg('');
   const {error}=await supabase.rpc('admin_manual_crypto_loan_action',{p_loan:loan.id,p_action:action,p_reference:reference,p_note:note,p_amount:amount,p_surplus:surplus});
   setActionLoan('');if(error){setMsg(error.message);return;}setMsg(`${loan.loan_no} · ${labels[action]||action} 처리 완료`);await load();
