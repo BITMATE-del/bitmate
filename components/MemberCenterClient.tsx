@@ -20,6 +20,7 @@ const sha256=async(value:string)=>{const buf=await crypto.subtle.digest('SHA-256
 
 export default function MemberCenterClient(){
  const supabase=createBrowserSupabase();
+ const wallet=useUnifiedWalletDisplay();
  const [view,setView]=useState<View>('overview');
  const [email,setEmail]=useState(''); const [phone,setPhone]=useState(''); const [uid,setUid]=useState('');
  const [nickname,setNickname]=useState('BITMATE User'); const [avatarUrl,setAvatarUrl]=useState('');
