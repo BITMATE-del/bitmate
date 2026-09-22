@@ -1,6 +1,14 @@
 'use client';
 
 import {useEffect} from 'react';
+import {createBrowserSupabase} from '@/lib/supabase-browser';
+
+declare global{
+  interface Window{
+    TradingView?:any;
+    __bitmateTvLoader?:Promise<void>;
+  }
+}
 
 const normalizeTradingViewSymbol=(raw:string,perpetual:boolean)=>{
   const symbol=raw.toUpperCase().replace(/[^A-Z0-9]/g,'');
@@ -8,18 +16,171 @@ const normalizeTradingViewSymbol=(raw:string,perpetual:boolean)=>{
   return perpetual?'BINANCE:BTCUSDT.P':'BINANCE:BTCUSDT';
 };
 
+const loadTradingView=()=>{
+  if(window.TradingView?.widget)return Promise.resolve();
+  if(window.__bitmateTvLoader)return window.__bitmateTvLoader;
+  window.__bitmateTvLoader=new Promise<void>((resolve,reject)=>{
+    const existing=document.querySelector('script[data-bitmate-tvjs="true"]') as HTMLScriptElement|null;
+    if(existing){
+      if(window.TradingView?.widget){resolve();return;}
+      existing.addEventListener('load',()=>resolve(),{once:true});
+      existing.addEventListener('error',()=>reject(new Error('tradingview_load_failed')),{once:true});
+      return;
+    }
+    const script=document.createElement('script');
+    script.src='https://s3.tradingview.com/tv.js';
+    script.async=true;
+    script.dataset.bitmateTvjs='true';
+    script.onload=()=>resolve();
+    script.onerror=()=>reject(new Error('tradingview_load_failed'));
+    document.head.appendChild(script);
+  });
+  return window.__bitmateTvLoader;
+};
+
+type EntryLine={id:string;price:number;label:string;color:string};
+
 export default function TradingViewCfdInjector(){
   useEffect(()=>{
+    const supabase=createBrowserSupabase();
     let disposed=false;
     let activeSymbol='';
     let observer:MutationObserver|null=null;
     let timer:ReturnType<typeof setInterval>|null=null;
+    let lineTimer:ReturnType<typeof setInterval>|null=null;
+    let widget:any=null;
+    let chart:any=null;
+    let shapeIds:any[]=[];
 
-    const find=(name:string)=>document.querySelector(`[class*="${name}"]`) as HTMLElement|null;
+    const findStage=()=>document.querySelector('[class*="chartStage"]') as HTMLElement|null;
+
+    const clearShapes=()=>{
+      if(chart?.removeEntity){
+        for(const id of shapeIds){
+          try{chart.removeEntity(id)}catch{}
+        }
+      }
+      shapeIds=[];
+    };
+
+    const getEntryLines=async(rawSymbol:string):Promise<EntryLine[]>=>{
+      const symbol=rawSymbol.toUpperCase().replace(/[^A-Z0-9]/g,'');
+      if(window.location.pathname.startsWith('/futures')){
+        const {data,error}=await supabase.rpc('futures_action',{p_action:'snapshot',p_payload:{}});
+        if(error||!data)return [];
+        const positions=Array.isArray((data as any).positions)?(data as any).positions:[];
+        return positions
+          .filter((p:any)=>String(p.symbol).toUpperCase()===symbol&&Number(p.entry_price)>0)
+          .map((p:any)=>({
+            id:String(p.id),
+            price:Number(p.entry_price),
+            label:`${p.side==='SHORT'?'SHORT':'LONG'} 평단 ${Number(p.entry_price).toLocaleString(undefined,{maximumFractionDigits:8})}`,
+            color:p.side==='SHORT'?'#ff6172':'#a8f000',
+          }));
+      }
+      const {data,error}=await supabase
+        .from('cfd_timed_trades')
+        .select('id,symbol,direction,start_price,status')
+        .eq('status','ACTIVE')
+        .eq('symbol',symbol);
+      if(error)return [];
+      return (data||[])
+        .filter((p:any)=>Number(p.start_price)>0)
+        .map((p:any)=>({
+          id:String(p.id),
+          price:Number(p.start_price),
+          label:`${p.direction==='DOWN'?'DOWN':'UP'} 체결가 ${Number(p.start_price).toLocaleString(undefined,{maximumFractionDigits:8})}`,
+          color:p.direction==='DOWN'?'#ff6172':'#a8f000',
+        }));
+    };
+
+    const refreshEntryLines=async()=>{
+      if(!chart||!activeSymbol||!chart.createShape)return;
+      const raw=activeSymbol.replace(/^BINANCE:/,'').replace(/\.P$/,'');
+      const lines=await getEntryLines(raw);
+      if(disposed||!chart)return;
+      clearShapes();
+      for(const line of lines){
+        try{
+          const id=await chart.createShape(
+            {price:line.price},
+            {
+              shape:'horizontal_line',
+              lock:true,
+              disableSelection:true,
+              disableSave:true,
+              disableUndo:true,
+              text:line.label,
+              overrides:{
+                linecolor:line.color,
+                linewidth:2,
+                linestyle:2,
+                showPrice:true,
+                textcolor:line.color,
+                fontsize:11,
+              },
+            }
+          );
+          if(id)shapeIds.push(id);
+        }catch{}
+      }
+    };
+
+    const initWidget=async(stage:HTMLElement,tvSymbol:string)=>{
+      await loadTradingView();
+      if(disposed||!window.TradingView?.widget)return;
+
+      stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
+      const overlay=document.createElement('div');
+      overlay.dataset.bitmateTradingview='true';
+      const id=`bitmate-tv-${Math.random().toString(36).slice(2)}`;
+      overlay.id=id;
+      Object.assign(overlay.style,{position:'absolute',inset:'0',zIndex:'20',width:'100%',height:'100%',background:'#0b1012',overflow:'hidden'});
+      stage.appendChild(overlay);
+
+      widget=new window.TradingView.widget({
+        autosize:true,
+        symbol:tvSymbol,
+        interval:'15',
+        timezone:'Asia/Seoul',
+        theme:'dark',
+        style:'1',
+        locale:'kr',
+        toolbar_bg:'#0b1012',
+        enable_publishing:false,
+        hide_top_toolbar:false,
+        hide_legend:false,
+        hide_side_toolbar:false,
+        allow_symbol_change:false,
+        save_image:false,
+        withdateranges:true,
+        details:false,
+        hotlist:false,
+        calendar:false,
+        container_id:id,
+        support_host:'https://www.tradingview.com',
+      });
+
+      const ready=async()=>{
+        if(disposed)return;
+        try{
+          chart=widget.activeChart?widget.activeChart():widget.chart?widget.chart():null;
+          await refreshEntryLines();
+        }catch{}
+      };
+
+      try{
+        if(widget.chartReady)await widget.chartReady().then(ready);
+        else if(widget.onChartReady)widget.onChartReady(ready);
+        else setTimeout(ready,1800);
+      }catch{
+        setTimeout(ready,1800);
+      }
+    };
 
     const mount=()=>{
       if(disposed)return;
-      const stage=find('chartStage');
+      const stage=findStage();
       if(!stage)return;
 
       const perpetual=window.location.pathname.startsWith('/futures');
@@ -28,51 +189,15 @@ export default function TradingViewCfdInjector(){
       if(existing&&activeSymbol===tvSymbol)return;
 
       activeSymbol=tvSymbol;
-      existing?.remove();
-
-      const overlay=document.createElement('div');
-      overlay.dataset.bitmateTradingview='true';
-      overlay.className='tradingview-widget-container';
-      Object.assign(overlay.style,{position:'absolute',inset:'0',zIndex:'20',width:'100%',height:'100%',background:'#0b1012',overflow:'hidden'});
-
-      const widget=document.createElement('div');
-      widget.className='tradingview-widget-container__widget';
-      widget.style.width='100%';
-      widget.style.height='100%';
-      overlay.appendChild(widget);
-
-      const script=document.createElement('script');
-      script.type='text/javascript';
-      script.src='https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-      script.async=true;
-      script.innerHTML=JSON.stringify({
-        autosize:true,
-        symbol:tvSymbol,
-        interval:'15',
-        timezone:'Asia/Seoul',
-        theme:'dark',
-        style:'1',
-        locale:'kr',
-        backgroundColor:'rgba(11, 16, 18, 1)',
-        gridColor:'rgba(115, 130, 138, 0.10)',
-        allow_symbol_change:false,
-        save_image:false,
-        calendar:false,
-        support_host:'https://www.tradingview.com',
-        hide_top_toolbar:false,
-        hide_legend:false,
-        hide_side_toolbar:false,
-        withdateranges:true,
-        details:false,
-        hotlist:false
-      });
-      overlay.appendChild(script);
-      stage.appendChild(overlay);
+      chart=null;widget=null;shapeIds=[];
+      stage.style.position='relative';
+      void initWidget(stage,tvSymbol);
     };
 
     const start=()=>{
       mount();
       timer=setInterval(mount,750);
+      lineTimer=setInterval(()=>void refreshEntryLines(),2000);
       observer=new MutationObserver(mount);
       observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-symbol']});
     };
@@ -82,7 +207,9 @@ export default function TradingViewCfdInjector(){
       disposed=true;
       cancelAnimationFrame(raf);
       if(timer)clearInterval(timer);
+      if(lineTimer)clearInterval(lineTimer);
       observer?.disconnect();
+      clearShapes();
       document.querySelector('[data-bitmate-tradingview="true"]')?.remove();
     };
   },[]);
