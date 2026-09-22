@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon,{type UiIconName} from './UiIcon';
 import s from './HeaderUserTools.module.css';
 
 type Panel='wallet'|'account'|'notifications'|'download'|null;
+type Balance={asset:string;available:number;locked:number};
+type WalletSnapshot={spot:Balance[];futures_usdt:number};
 
 const walletItems:[UiIconName,string,string][]=[
   ['overview','Overview','/account?view=overview'],
@@ -43,24 +45,64 @@ const notificationItems:[UiIconName,string,string,string,string][]=[
 ];
 
 function maskEmail(email:string){const [name,domain='']=email.split('@');if(!domain)return email;return `${name.slice(0,2)}***@${domain}`}
+function formatUsdt(value:number){return Number(value||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}
 
 export default function HeaderUserTools(){
-  const supabase=createBrowserSupabase();
+  const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const [panel,setPanel]=useState<Panel>(null);
   const [email,setEmail]=useState('');
   const [uid,setUid]=useState('');
+  const [wallet,setWallet]=useState<WalletSnapshot>({spot:[],futures_usdt:0});
+  const [walletLoading,setWalletLoading]=useState(false);
   const root=useRef<HTMLDivElement>(null);
-  useEffect(()=>{supabase.auth.getUser().then(({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'')}})},[]);
+
+  useEffect(()=>{supabase.auth.getUser().then(({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'')}})},[supabase]);
   useEffect(()=>{const close=(e:MouseEvent)=>{if(root.current&&!root.current.contains(e.target as Node))setPanel(null)};document.addEventListener('mousedown',close);return()=>document.removeEventListener('mousedown',close)},[]);
+  useEffect(()=>{
+    if(panel!=='wallet'||!uid)return;
+    let alive=true;
+    setWalletLoading(true);
+    supabase.rpc('user_wallet_snapshot').then(({data,error})=>{
+      if(!alive)return;
+      setWalletLoading(false);
+      if(!error&&data){
+        const snap=data as WalletSnapshot;
+        setWallet({
+          spot:Array.isArray(snap.spot)?snap.spot:[],
+          futures_usdt:Number(snap.futures_usdt||0),
+        });
+      }
+    });
+    return()=>{alive=false};
+  },[panel,uid,supabase]);
+
   const toggle=(next:Panel)=>setPanel(v=>v===next?null:next);
   const logout=async()=>{await supabase.auth.signOut();location.href='/'};
+  const usdt=wallet.spot.find(x=>x.asset==='USDT');
+  const spotAvailable=Number(usdt?.available||0);
+  const spotLocked=Number(usdt?.locked||0);
+  const futuresBalance=Number(wallet.futures_usdt||0);
+  const totalBalance=spotAvailable+spotLocked+futuresBalance;
+
   return <div className={s.root} ref={root}>
     <Link className={s.deposit} href="/deposit">Deposit</Link>
 
     <div className={s.rel} onMouseEnter={()=>setPanel('wallet')} onMouseLeave={()=>setPanel(v=>v==='wallet'?null:v)}>
       <button className={`${s.icon} ${panel==='wallet'?s.active:''}`} onClick={()=>toggle('wallet')} aria-label="Wallet"><UiIcon name="wallet" size={18}/></button>
       {panel==='wallet'&&<div className={`${s.panel} ${s.walletPanel}`}>
-        <div className={s.promo}><small>Unlocking rewards</small><span>First deposit ≥ 20 USDT, get up to</span><strong>200 USDT</strong><Link href="/deposit"><UiIcon name="wallet" size={16}/> <span>Deposit Now</span></Link></div>
+        <div className={s.walletSummary}>
+          <div className={s.walletSummaryHead}><small>My Wallet</small><Link href="/account?view=overview" onClick={()=>setPanel(null)}>Overview <UiIcon name="chevronRight" size={12}/></Link></div>
+          <span className={s.walletLabel}>USDT Balance</span>
+          <strong className={s.walletBalance}>{walletLoading?'—':formatUsdt(totalBalance)} <em>USDT</em></strong>
+          <div className={s.walletBreakdown}>
+            <div><small>Spot Available</small><b>{walletLoading?'—':formatUsdt(spotAvailable)}</b></div>
+            <div><small>Futures</small><b>{walletLoading?'—':formatUsdt(futuresBalance)}</b></div>
+          </div>
+          <div className={s.walletActions}>
+            <Link className={s.primaryAction} href="/deposit" onClick={()=>setPanel(null)}><UiIcon name="wallet" size={15}/>Deposit</Link>
+            <Link href="/account?view=overview" onClick={()=>setPanel(null)}>Wallet</Link>
+          </div>
+        </div>
         <div className={s.accountList}>{walletItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></Link>)}</div>
       </div>}
     </div>
