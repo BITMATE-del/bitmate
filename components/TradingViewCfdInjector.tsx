@@ -48,6 +48,7 @@ export default function TradingViewCfdInjector(){
     let observer:MutationObserver|null=null;
     let timer:ReturnType<typeof setInterval>|null=null;
     let lineTimer:ReturnType<typeof setInterval>|null=null;
+    let lastLineSignature='';
     let widget:any=null;
     let chart:any=null;
     let shapeIds:any[]=[];
@@ -140,11 +141,15 @@ export default function TradingViewCfdInjector(){
       }
     };
 
-    const refreshEntryLines=async()=>{
+    const refreshEntryLines=async(force=false)=>{
       if(!activeSymbol)return;
       const raw=activeSymbol.replace(/^BINANCE:/,'').replace(/\.P$/,'');
       const lines=await getEntryLines(raw);
       if(disposed)return;
+
+      const signature=JSON.stringify(lines.map(x=>[x.id,x.price,x.label]));
+      if(!force&&signature===lastLineSignature)return;
+      lastLineSignature=signature;
       clearShapes();
 
       let nativeDrawn=false;
@@ -175,6 +180,9 @@ export default function TradingViewCfdInjector(){
         }
       }
 
+      // Standard TradingView tv.js is cross-origin and does not expose its live
+      // price-scale transform. In that case draw a stable guide once and do not
+      // continuously recalculate it while the member pans/zooms the chart.
       if(!nativeDrawn&&lines.length)await drawFallbackLines(raw,lines);
     };
 
@@ -217,7 +225,7 @@ export default function TradingViewCfdInjector(){
         if(disposed)return;
         try{
           chart=widget.activeChart?widget.activeChart():widget.chart?widget.chart():null;
-          await refreshEntryLines();
+          await refreshEntryLines(true);
         }catch{}
       };
 
@@ -249,7 +257,7 @@ export default function TradingViewCfdInjector(){
     const start=()=>{
       mount();
       timer=setInterval(mount,750);
-      lineTimer=setInterval(()=>void refreshEntryLines(),2000);
+      lineTimer=setInterval(()=>void refreshEntryLines(false),2000);
       observer=new MutationObserver(mount);
       observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-symbol']});
     };
