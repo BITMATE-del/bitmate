@@ -84,8 +84,9 @@ export default function FuturesTradingClient(){
   const engineReady=!!engineMarket&&engineMarket.enabled&&engineMarket.trading_status==='ACTIVE'&&!engineMarket.stale;
   const canTrade=loggedIn&&settingsEnabled&&engineReady;
   const referencePrice=orderType==='LIMIT'?num(price):orderType==='TRIGGER'&&triggerOrderType==='LIMIT'?num(price):num(tradeSide==='BUY'?(ask||lastPrice):(bid||lastPrice));
-  const totalValue=Math.max(0,num(orderValue));
-  const quantity=referencePrice>0?Math.floor((totalValue/referencePrice)*Math.pow(10,qtyDigits))/Math.pow(10,qtyDigits):0;
+  const marginAmount=Math.max(0,num(orderValue));
+  const positionValue=marginAmount*Math.max(1,leverage);
+  const quantity=referencePrice>0?Math.floor((positionValue/referencePrice)*Math.pow(10,qtyDigits))/Math.pow(10,qtyDigits):0;
 
   async function loadEngineMarkets(){const {data,error}=await supabase.rpc('futures_markets');if(error)return;const p=(data||{}) as MarketsPayload;setMarketsPayload({...p,markets:Array.isArray(p.markets)?p.markets:[]})}
   async function loadFeedMarkets(){try{const r=await fetch('/api/futures/markets',{cache:'no-store'});if(!r.ok)return;const j=await r.json();const rows=(j.markets||[]) as FuturesFeedMarket[];if(rows.length){setFeedMarkets(rows);if(!rows.some(x=>x.symbol===symbol))setSymbol(rows[0].symbol)}}catch{}}
@@ -99,10 +100,10 @@ export default function FuturesTradingClient(){
 
   const fundingMs=nextFundingTime?Math.max(0,nextFundingTime-now):0;
   const fundingText=`${String(Math.floor(fundingMs/3600000)).padStart(2,'0')}:${String(Math.floor((fundingMs%3600000)/60000)).padStart(2,'0')}:${String(Math.floor((fundingMs%60000)/1000)).padStart(2,'0')}`;
-  const setRatio=(ratio:number)=>{if(!snapshot?.account)return;const available=num(snapshot.account.available_balance);if(available<=0)return;const value=Math.floor(available*ratio*leverage*100)/100;setOrderValue(String(Math.max(0,value)))};
+  const setRatio=(ratio:number)=>{if(!snapshot?.account)return;const available=num(snapshot.account.available_balance);if(available<=0)return;const feeRate=num(engineMarket?.taker_fee);const maxMargin=available/(1+Math.max(1,leverage)*feeRate);const value=Math.floor(maxMargin*ratio*100)/100;setOrderValue(String(Math.max(0,value)))};
 
   async function submit(side:TradeSide){
-    setTradeSide(side);setMessage('');if(!loggedIn){setMessage('로그인 후 선물거래를 이용할 수 있습니다.');return}if(!settingsEnabled){setMessage('현재 선물 신규 주문이 일시 중지되어 있습니다.');return}if(!engineMarket){setMessage('현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.');return}if(!engineReady){setMessage('현재 이 종목은 주문할 수 없는 상태입니다.');return}const q=Number(quantity);if(!Number.isFinite(q)||q<=0||totalValue<=0){setMessage('주문 금액을 확인하세요.');return}
+    setTradeSide(side);setMessage('');if(!loggedIn){setMessage('로그인 후 선물거래를 이용할 수 있습니다.');return}if(!settingsEnabled){setMessage('현재 선물 신규 주문이 일시 중지되어 있습니다.');return}if(!engineMarket){setMessage('현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.');return}if(!engineReady){setMessage('현재 이 종목은 주문할 수 없는 상태입니다.');return}const q=Number(quantity);if(!Number.isFinite(q)||q<=0||marginAmount<=0){setMessage('주문 금액을 확인하세요.');return}
     const positionSide=positionMode==='HEDGE'?(reduceOnly?(side==='BUY'?'SHORT':'LONG'):(side==='BUY'?'LONG':'SHORT')):'BOTH';
     const payload:any={symbol:engineMarket.symbol,side,positionSide,orderType,marginMode,leverage,quantity:q,clientOrderId:`web-${crypto.randomUUID()}`,reduceOnly:orderType==='TRAILING_STOP'?true:reduceOnly,postOnly:orderType==='LIMIT'?postOnly:false,timeInForce:orderType==='LIMIT'?(postOnly?'POST_ONLY':timeInForce):'GTC',triggerBy};
     if(orderType==='LIMIT')payload.price=Number(price);
@@ -149,16 +150,16 @@ export default function FuturesTradingClient(){
         {orderType==='TRIGGER'&&<><label className={s.inputRow}><span>Trigger Price</span><input value={triggerPrice} onChange={e=>setTriggerPrice(e.target.value)} inputMode="decimal"/><em>USDT</em></label><div className={s.microControls}><span>Trigger By</span><button className={triggerBy==='MARK'?s.selectedPill:''} onClick={()=>setTriggerBy('MARK')}>Mark</button><button className={triggerBy==='LAST'?s.selectedPill:''} onClick={()=>setTriggerBy('LAST')}>Last</button></div><div className={s.triggerDir}><button className={triggerDirection==='ABOVE'?s.selectedPill:''} onClick={()=>setTriggerDirection('ABOVE')}>이상 도달</button><button className={triggerDirection==='BELOW'?s.selectedPill:''} onClick={()=>setTriggerDirection('BELOW')}>이하 도달</button></div><div className={s.microControls}><span>Execution</span><button className={triggerOrderType==='MARKET'?s.selectedPill:''} onClick={()=>setTriggerOrderType('MARKET')}>Market</button><button className={triggerOrderType==='LIMIT'?s.selectedPill:''} onClick={()=>setTriggerOrderType('LIMIT')}>Limit</button></div>{triggerOrderType==='LIMIT'&&<label className={s.inputRow}><span>Order Price</span><input value={price} onChange={e=>setPrice(e.target.value)} inputMode="decimal"/><em>USDT</em></label>}</>}
         {orderType==='TRAILING_STOP'&&<><label className={s.inputRow}><span>Activation Price</span><input value={activationPrice} onChange={e=>setActivationPrice(e.target.value)} inputMode="decimal" placeholder="선택"/><em>USDT</em></label><label className={s.inputRow}><span>Callback Rate</span><input value={callbackRate} onChange={e=>setCallbackRate(e.target.value)} inputMode="decimal"/><em>%</em></label></>}
 
-        <label className={s.inputRow}><span>Amount</span><input value={orderValue} onChange={e=>setOrderValue(e.target.value)} inputMode="decimal"/><em>USDT</em></label>
+        <label className={s.inputRow}><span>Margin</span><input value={orderValue} onChange={e=>setOrderValue(e.target.value)} inputMode="decimal"/><em>USDT</em></label>
         <div className={s.ratios}>{[.25,.5,.75,1].map(r=><button key={r} onClick={()=>setRatio(r)}>{Math.round(r*100)}%</button>)}</div>
-        <div className={s.inputRow}><span>Est. Qty</span><b className={s.readonlyValue}>{priceFmt(quantity,qtyDigits)}</b><em>{baseAsset}</em></div>
+        <div className={s.inputRow}><span>Position Value</span><b className={s.readonlyValue}>{priceFmt(positionValue,2)}</b><em>USDT</em></div>
         <div className={s.tpsl}><label><span>Take Profit</span><input value={takeProfit} onChange={e=>setTakeProfit(e.target.value)} inputMode="decimal" placeholder="선택"/></label><label><span>Stop Loss</span><input value={stopLoss} onChange={e=>setStopLoss(e.target.value)} inputMode="decimal" placeholder="선택"/></label></div>
         <div className={s.options}><label><input type="checkbox" checked={reduceOnly} onChange={e=>setReduceOnly(e.target.checked)}/> Reduce Only</label><label><input type="checkbox" checked={postOnly} disabled={orderType!=='LIMIT'} onChange={e=>setPostOnly(e.target.checked)}/> Post Only</label></div>
 
         <div className={s.orderFooter}>
-          <div className={s.preview}><div><span>Order Value</span><b>{priceFmt(totalValue,2)} USDT</b></div><div><span>Required Margin</span><b>{priceFmt(preview?.required_margin,2)} USDT</b></div><div><span>Estimated Fee</span><b>{priceFmt(preview?.estimated_fee,4)} USDT</b></div><div><span>Est. Qty</span><b>{priceFmt(quantity,qtyDigits)} {baseAsset}</b></div></div>
+          <div className={s.preview}><div><span>Margin</span><b>{priceFmt(marginAmount,2)} USDT</b></div><div><span>Position Value</span><b>{priceFmt(positionValue,2)} USDT</b></div><div><span>Estimated Fee</span><b>{priceFmt(preview?.estimated_fee,4)} USDT</b></div><div><span>Est. Qty</span><b>{priceFmt(quantity,qtyDigits)} {baseAsset}</b></div></div>
           <div className={s.tradeButtons}><button disabled={busy||!canTrade} className={tradeSide==='BUY'?s.longBtn:s.shortBtn} style={{gridColumn:'1 / -1'}} onClick={()=>submit(tradeSide)}>{tradeSide==='BUY'?`Long ${baseAsset}`:`Short ${baseAsset}`}</button></div>
-          <p className={s.orderNote}>{engineMarket?'USDT 금액 기준으로 주문하며 현재가에 따라 코인 수량이 자동 계산됩니다. 25%/50%/75%/100%는 사용 가능 잔액과 레버리지 기준으로 적용됩니다.':'현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.'}</p>
+          <p className={s.orderNote}>{engineMarket?'25%/50%/75%/100%는 현재 사용 가능 자산에서 해당 비율만큼 증거금을 배정합니다. 레버리지는 그 증거금으로 만들 포지션 가치에만 적용됩니다.':'현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.'}</p>
         </div>
       </section>
     </section>
