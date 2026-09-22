@@ -1,3 +1,4 @@
+import {siteConfirm,sitePrompt} from './SiteDialog';
 'use client';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
@@ -68,8 +69,8 @@ export default function CfdTradingClient(){
  },[ticks]);
 
  async function order(){setMsg('');if(!selected){setMsg('상품을 선택하세요.');return;}if(m<=0){setMsg('증거금을 확인하세요.');return;}const riskVersion='cfd-risk-v1';const {data:{user}}=await supabase.auth.getUser();if(!user){setMsg('로그인이 필요합니다.');return;}await supabase.from('cfd_risk_acceptances').upsert({user_id:user.id,version:riskVersion},{onConflict:'user_id,version'});const id=crypto.randomUUID();const {error}=await supabase.rpc('open_cfd_market_order',{p_symbol:selected.symbol,p_side:side,p_margin:m,p_leverage:lev,p_stop_loss:sl?Number(sl):null,p_take_profit:tp?Number(tp):null,p_client_order_id:id,p_idempotency_key:id});if(error){setMsg(error.message);return;}setMsg('CFD 시장가 주문이 체결되었습니다.');await load()}
- async function close(id:string,pct:number){if(!confirm(`${pct}% 청산하시겠습니까?`))return;const {error}=await supabase.rpc('close_cfd_position',{p_position_id:id,p_percent:pct});if(error)setMsg(error.message);else{setMsg('청산이 반영되었습니다.');await load()}}
- async function updateStops(p:Position){const nsl=prompt('Stop Loss',p.stop_loss?.toString()||'')??'';const ntp=prompt('Take Profit',p.take_profit?.toString()||'')??'';const {error}=await supabase.rpc('update_cfd_sltp',{p_position_id:p.id,p_stop_loss:nsl?Number(nsl):null,p_take_profit:ntp?Number(ntp):null});if(error)setMsg(error.message);else await load()}
+ async function close(id:string,pct:number){if(!(await siteConfirm(`${pct}% 청산하시겠습니까?`,{title:'CFD 포지션 청산'})))return;const {error}=await supabase.rpc('close_cfd_position',{p_position_id:id,p_percent:pct});if(error)setMsg(error.message);else{setMsg('청산이 반영되었습니다.');await load()}}
+ async function updateStops(p:Position){const nsl=(await sitePrompt('Stop Loss',p.stop_loss?.toString()||'',{title:'SL 설정',inputType:'number'}))??'';const ntp=(await sitePrompt('Take Profit',p.take_profit?.toString()||'',{title:'TP 설정',inputType:'number'}))??'';const {error}=await supabase.rpc('update_cfd_sltp',{p_position_id:p.id,p_stop_loss:nsl?Number(nsl):null,p_take_profit:ntp?Number(ntp):null});if(error)setMsg(error.message);else await load()}
 
  const fmt=(v:number|null|undefined,d=2)=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
  const selectProduct=(id:string)=>{const p=products.find(x=>x.id===id)||null;setSelected(p);if(p)setLev(p.available_leverages?.[0]||1)};
