@@ -23,3 +23,8 @@
 .syncDot,.syncDotActive{width:7px;height:7px;border-radius:50%;background:#647078;flex:0 0 auto}
 .syncDotActive{background:#a8f000;box-shadow:0 0 0 4px rgba(168,240,0,.08)}
 @media(max-width:680px){.kycCard{grid-template-columns:34px 1fr}.kycCard>a{grid-column:1/-1;width:max-content}.networkTitle{align-items:flex-start;flex-direction:column;gap:6px}}
+
+.walletBalanceChip{margin-left:auto;min-width:150px;padding:9px 12px;border:1px solid #27343a;border-radius:10px;background:#0e1518;display:grid;gap:2px;text-align:right}
+.walletBalanceChip small{color:#708188;font-size:9px}
+.walletBalanceChip b{color:#eef3f4;font-size:13px;font-variant-numeric:tabular-nums}
+@media(max-width:700px){.walletBalanceChip{min-width:0;padding:8px 10px}.walletBalanceChip b{font-size:11px}}
