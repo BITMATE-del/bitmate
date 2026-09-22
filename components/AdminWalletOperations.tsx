@@ -107,17 +107,21 @@ export default function AdminWalletOperations(){
    <button className={tab==='withdrawals'?s.active:''} onClick={()=>setTab('withdrawals')}><UiIcon name="order" size={17}/> Withdrawals</button>
   </nav>
 
-  {tab==='balances'&&<section className={s.panel}>
-   <div className={s.panelHead}><div><h2>회원 입금 / 지갑 잔액</h2><p>상단 지갑 메뉴와 Deposit 충전 후 표시되는 Spot 잔액입니다. 체인 입금이 CREDITED 되면 동일한 잔액에 자동 반영됩니다.</p></div><div className={s.actions}><button disabled={busy} onClick={()=>setBalance()}>회원 잔액 설정</button></div></div>
-   <div className={s.balanceNote}>관리자 수정은 <b>Available</b> 잔액만 변경합니다. 주문·출금 등으로 잠긴 <b>Locked</b> 잔액은 유지되며 모든 수정 내역은 Ledger와 Admin Log에 기록됩니다.</div>
-   <div className={s.table}><div className={s.thBal}><span>회원</span><span>자산</span><span>Available</span><span>Locked</span><span>관리</span></div>
-   {data.balances.length?data.balances.map(r=><div className={s.trBal} key={r.id}>
-    <span><b>{r.email||'—'}</b><small>{r.user_id.slice(0,8)}…</small></span>
-    <span><b>{r.asset}</b><small>Updated {new Date(r.updated_at).toLocaleString()}</small></span>
-    <span><b>{Number(r.available||0).toLocaleString(undefined,{maximumFractionDigits:10})}</b></span>
-    <span><b>{Number(r.locked||0).toLocaleString(undefined,{maximumFractionDigits:10})}</b></span>
-    <span className={s.actions}><button disabled={busy} onClick={()=>setBalance(r)}>잔액 수정</button></span>
-   </div>):<div className={s.empty}>잔액 데이터가 없습니다. 회원 잔액 설정 버튼으로 생성할 수 있습니다.</div>}
+  {tab==='balances'&&<section className={`${s.panel} ${s.balancePanel}`}>
+   <div className={s.balanceHead}>
+    <div className={s.balanceHeadCopy}><span>MEMBER WALLET</span><h2>회원 입금 / 지갑 잔액</h2><p>입금 완료 및 관리자 조정 금액이 회원 상단 지갑 잔액에 동일하게 반영됩니다.</p></div>
+    <button className={s.balanceAddButton} disabled={busy} onClick={()=>setBalance()}><UiIcon name="wallet" size={16}/>회원 잔액 설정</button>
+   </div>
+   <div className={s.balanceInfo}><UiIcon name="info" size={15}/><span>관리자는 <b>Available</b> 잔액만 수정합니다. 주문·출금으로 잠긴 <b>Locked</b> 잔액은 유지되고, 모든 조정 내역은 Ledger와 Admin Log에 기록됩니다.</span></div>
+   <div className={s.balanceTable}>
+    <div className={s.balanceTableHead}><span>회원</span><span>자산</span><span>사용 가능 잔액</span><span>잠금 잔액</span><span>관리</span></div>
+    {data.balances.length?data.balances.map(r=><div className={s.balanceRow} key={r.id}>
+     <div className={s.memberCell}><div className={s.memberAvatar}>{(r.email||'M').slice(0,1).toUpperCase()}</div><div><b>{r.email||'—'}</b><small>UID {r.user_id.slice(0,8)}…</small></div></div>
+     <div className={s.assetCell}><strong>{r.asset}</strong><small>{new Date(r.updated_at).toLocaleString()}</small></div>
+     <div className={s.availableCell}><strong>{Number(r.available||0).toLocaleString(undefined,{maximumFractionDigits:10})}</strong><small>{r.asset}</small></div>
+     <div className={s.lockedCell}><strong>{Number(r.locked||0).toLocaleString(undefined,{maximumFractionDigits:10})}</strong><small>{r.asset}</small></div>
+     <div className={s.manageCell}><button disabled={busy} onClick={()=>setBalance(r)}>잔액 수정</button></div>
+    </div>):<div className={s.balanceEmpty}><UiIcon name="wallet" size={24}/><b>잔액 데이터가 없습니다.</b><span>회원 잔액 설정 버튼으로 첫 잔액을 생성할 수 있습니다.</span></div>}
    </div>
   </section>}
 
