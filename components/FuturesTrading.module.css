@@ -28,3 +28,29 @@
 .modalSave:hover{background:#b5ff00}
 .modalActions button:disabled{opacity:.5;cursor:not-allowed}
 @media(max-width:560px){.modalBackdrop{padding:10px}.modalActions{grid-template-columns:1fr 1fr}.modalGhost{grid-column:1/-1}.modalMarket{grid-template-columns:1fr}.modalField>span{align-items:flex-start;gap:4px;flex-direction:column}}
+
+/* readability pass: futures account summary + position area */
+.accountStrip{min-height:72px}
+.accountStrip div{padding:12px 14px}
+.accountStrip span{font-size:10px;letter-spacing:.02em;color:#74848b}
+.accountStrip b{margin-top:4px;font-size:15px;line-height:1.2;font-weight:850}
+
+.bottomTabs{height:44px}
+.bottomTabs button{padding:0 13px;font-size:11px;font-weight:800}
+.bottomTabs .cancelAll{height:30px;font-size:10px}
+
+.tableWrap{min-height:220px}
+.tableWrap th,.tableWrap td{padding:12px 10px;font-size:11px;line-height:1.35}
+.tableWrap th{font-size:10px;letter-spacing:.02em;color:#74848b}
+.tableWrap td{color:#c5d0d4}
+.tableWrap td b{font-size:11px}
+.positionActions{gap:5px}
+.positionActions button{height:30px;padding:0 9px;font-size:9px;font-weight:750}
+.cancelBtn{padding:6px 10px;font-size:9px;font-weight:750}
+
+@media(max-width:1250px){
+  .accountStrip span{font-size:9px}
+  .accountStrip b{font-size:13px}
+  .tableWrap th,.tableWrap td{font-size:10px;padding:10px 8px}
+  .positionActions button{height:28px;padding:0 7px;font-size:8px}
+}
