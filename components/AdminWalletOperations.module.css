@@ -44,3 +44,6 @@
  .balanceInfo{margin:12px}
  .balanceTable{padding:0 12px 12px}
 }
+
+.balanceSyncBadge{height:38px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border:1px solid #2a3b42;border-radius:9px;background:#0f171b;color:#9fb0b7;font-size:11px;font-weight:800;white-space:nowrap}
+.balanceSyncBadge svg{color:#b8ff24}
