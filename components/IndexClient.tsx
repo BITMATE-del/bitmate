@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from '@/app/crypto-etf/Index.module.css';
+import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 
 type Product={id:string;code:string;name:string;description:string;risk_level:string;min_investment:number;max_investment:number|null;rebalance_frequency:string;status:string};
 type Version={id:string;product_id:string;version_no:number;label:string;base_nav:number};
