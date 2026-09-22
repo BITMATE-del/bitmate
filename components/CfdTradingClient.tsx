@@ -117,13 +117,12 @@ export default function CfdTradingClient(){
     <div className={s.orderTypes}><button disabled>지정가</button><button className={s.typeActive}>시장가</button><button disabled>스탑</button><button disabled>스탑리밋</button></div>
     <div className={s.available}><span>사용 가능</span><b>{fmt(available)} USDT</b></div>
     <label className={s.tradeField}><span>가격</span><div><input value={px?fmt(px):''} readOnly/><em>USDT</em></div></label>
-    <label className={s.tradeField}><span>증거금</span><div><input value={margin} onChange={e=>setMargin(e.target.value)} inputMode="decimal"/><em>USDT</em></div></label>
-    <label className={s.tradeField}><span>수량</span><div><input value={px?fmt(posVal/px,6):''} readOnly/><em>{selected?.symbol?.replace('USDT','')||'UNIT'}</em></div></label>
-    <input className={s.range} type="range" min="0" max="100" step="25" value={Math.round(marginPct/25)*25} onChange={e=>{if(available>0)setMargin((available*Number(e.target.value)/100).toFixed(2))}}/>
-    <div className={s.rangeLabels}><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+    <label className={s.tradeField}><span>주문금액</span><div><input value={margin} onChange={e=>setMargin(e.target.value)} inputMode="decimal"/><em>USDT</em></div></label>
+    <div className={s.quickRatios}>{[.25,.5,.75,1].map(r=><button key={r} type="button" onClick={()=>{if(available>0)setMargin((Math.floor(available*r*100)/100).toFixed(2))}}>{Math.round(r*100)}%</button>)}</div>
+    <label className={s.tradeField}><span>예상 수량</span><div><input value={px?fmt(posVal/px,6):''} readOnly/><em>{selected?.symbol?.replace('USDT','')||'UNIT'}</em></div></label>
     <label className={s.tradeField}><span>Stop Loss</span><div><input value={sl} onChange={e=>setSl(e.target.value)} placeholder="선택"/><em>USDT</em></div></label>
     <label className={s.tradeField}><span>Take Profit</span><div><input value={tp} onChange={e=>setTp(e.target.value)} placeholder="선택"/><em>USDT</em></div></label>
-    <div className={s.preview}><div><span>예상 포지션 가치</span><b>{fmt(posVal)} USDT</b></div><div><span>예상 진입가</span><b>{fmt(px)}</b></div><div><span>예상 수수료</span><b>{fmt(fee,4)} USDT</b></div><div><span>예상 청산가</span><b>{fmt(liq)}</b></div></div>
+    <div className={s.preview}><div><span>주문금액</span><b>{fmt(m)} USDT</b></div><div><span>예상 포지션 가치</span><b>{fmt(posVal)} USDT</b></div><div><span>예상 수수료</span><b>{fmt(fee,4)} USDT</b></div><div><span>예상 청산가</span><b>{fmt(liq)}</b></div></div>
     <button className={`${s.primary} ${side==='SHORT'?s.primaryShort:''}`} onClick={order}>{side==='LONG'?'매수 주문':'매도 주문'}</button>
    </section>
   </section>
