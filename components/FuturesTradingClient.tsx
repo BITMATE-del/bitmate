@@ -58,6 +58,9 @@ export default function FuturesTradingClient(){
   const [bookTab,setBookTab]=useState<BookTab>('book');
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
+  const [tpslPosition,setTpslPosition]=useState<Position|null>(null);
+  const [tpslTp,setTpslTp]=useState('');
+  const [tpslSl,setTpslSl]=useState('');
   const [now,setNow]=useState(Date.now());
 
   const engineMarket=marketsPayload.markets.find(x=>x.symbol===symbol)||null;
@@ -117,13 +120,47 @@ export default function FuturesTradingClient(){
   const cancelOrder=(orderId:string)=>callAction('cancel',{orderId},'주문을 취소했습니다.');
   const cancelAll=()=>callAction('cancel_all',{},'미체결 주문을 모두 취소했습니다.');
   const changePositionMode=(mode:'ONE_WAY'|'HEDGE')=>mode===positionMode?Promise.resolve():callAction('position_mode',{mode},mode==='HEDGE'?'헤지 모드로 변경했습니다.':'단방향 모드로 변경했습니다.');
-  async function editTPSL(p:Position){const tp=window.prompt('Take Profit 가격 (비우면 해제)',p.take_profit?String(p.take_profit):'');if(tp===null)return;const sl=window.prompt('Stop Loss 가격 (비우면 해제)',p.stop_loss?String(p.stop_loss):'');if(sl===null)return;await callAction('position_tpsl',{positionId:p.id,takeProfit:tp.trim()?Number(tp):null,stopLoss:sl.trim()?Number(sl):null,triggerBy:'MARK'},'TP/SL을 변경했습니다.')}
+  function editTPSL(p:Position){
+    const ref=num(p.mark_price||p.entry_price);
+    const suggestedTp=p.side==='LONG'?ref*1.03:ref*0.97;
+    const suggestedSl=p.side==='LONG'?ref*0.98:ref*1.02;
+    setTpslPosition(p);
+    setTpslTp(p.take_profit?String(p.take_profit):suggestedTp.toFixed(2));
+    setTpslSl(p.stop_loss?String(p.stop_loss):suggestedSl.toFixed(2));
+  }
+  async function saveTPSL(){
+    if(!tpslPosition)return;
+    const tp=tpslTp.trim()?Number(tpslTp):null;
+    const sl=tpslSl.trim()?Number(tpslSl):null;
+    if(tp!==null&&(!Number.isFinite(tp)||tp<=0)){setMessage('TP 가격을 확인하세요.');return}
+    if(sl!==null&&(!Number.isFinite(sl)||sl<=0)){setMessage('SL 가격을 확인하세요.');return}
+    const ref=num(tpslPosition.mark_price||tpslPosition.entry_price);
+    if(tpslPosition.side==='LONG'){
+      if(tp!==null&&tp<=ref){setMessage('롱 포지션 TP는 현재가보다 높게 설정하세요.');return}
+      if(sl!==null&&sl>=ref){setMessage('롱 포지션 SL은 현재가보다 낮게 설정하세요.');return}
+    }else{
+      if(tp!==null&&tp>=ref){setMessage('숏 포지션 TP는 현재가보다 낮게 설정하세요.');return}
+      if(sl!==null&&sl<=ref){setMessage('숏 포지션 SL은 현재가보다 높게 설정하세요.');return}
+    }
+    await callAction('position_tpsl',{positionId:tpslPosition.id,takeProfit:tp,stopLoss:sl,triggerBy:'MARK'},'TP/SL을 변경했습니다.');
+    setTpslPosition(null);
+  }
   async function addMargin(p:Position){const value=window.prompt('추가할 격리 증거금(USDT)','10');if(value===null)return;const amount=Number(value);if(!Number.isFinite(amount)||amount<=0){setMessage('추가 증거금을 확인하세요.');return}await callAction('position_margin',{positionId:p.id,amount,clientOrderId:`margin-${crypto.randomUUID()}`},'격리 증거금을 추가했습니다.')}
   async function changeLeverage(p:Position){const pm=marketsPayload.markets.find(x=>x.symbol===p.symbol);const value=window.prompt(`변경 레버리지 (1~${pm?.max_leverage||100})`,String(p.leverage));if(value===null)return;const next=Number(value);if(!Number.isInteger(next)||next<1||next>(pm?.max_leverage||100)){setMessage('허용 레버리지를 확인하세요.');return}await callAction('position_leverage',{positionId:p.id,leverage:next},'포지션 레버리지를 변경했습니다.')}
   async function closePosition(p:Position,ratio:number){const pm=marketsPayload.markets.find(x=>x.symbol===p.symbol);if(!pm){setMessage('종목 정보를 찾을 수 없습니다.');return}const scale=Math.pow(10,pm.quantity_precision);const q=ratio>=1?num(p.size):Math.floor(num(p.size)*ratio*scale)/scale;if(q<=0){setMessage('청산 가능한 수량이 없습니다.');return}await callAction('order',{symbol:p.symbol,side:p.side==='LONG'?'SELL':'BUY',positionSide:positionMode==='HEDGE'?p.position_side:'BOTH',orderType:'MARKET',marginMode:p.margin_mode,leverage:p.leverage,quantity:q,clientOrderId:`close-${crypto.randomUUID()}`,reduceOnly:true,postOnly:false,timeInForce:'GTC',triggerBy:'MARK'},`${Math.round(ratio*100)}% 청산 주문을 전송했습니다.`)}
 
   return <main className={s.page}>
     {message&&<div className={s.toast} onClick={()=>setMessage('')}>{message}</div>}
+    {tpslPosition&&<div className={s.modalBackdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setTpslPosition(null)}}>
+      <div className={s.tpslModal} role="dialog" aria-modal="true" aria-label="TP SL 설정">
+        <div className={s.modalHead}><div><small>{tpslPosition.symbol} · {tpslPosition.side}</small><h3>TP / SL 설정</h3></div><button onClick={()=>setTpslPosition(null)}>×</button></div>
+        <div className={s.modalMarket}><span>진입가 <b>{priceFmt(tpslPosition.entry_price,2)}</b></span><span>현재가 <b>{priceFmt(tpslPosition.mark_price,2)}</b></span></div>
+        <label className={s.modalField}><span>TP 설정 <em>Take Profit · 익절</em></span><div><input value={tpslTp} onChange={e=>setTpslTp(e.target.value)} inputMode="decimal"/><b>USDT</b></div><small>{tpslPosition.side==='LONG'?'현재가보다 높은 가격에서 이익 실현':'현재가보다 낮은 가격에서 이익 실현'} · 예시값 자동 입력됨</small></label>
+        <label className={s.modalField}><span>SL 설정 <em>Stop Loss · 손절</em></span><div><input value={tpslSl} onChange={e=>setTpslSl(e.target.value)} inputMode="decimal"/><b>USDT</b></div><small>{tpslPosition.side==='LONG'?'현재가보다 낮은 가격에서 손실 제한':'현재가보다 높은 가격에서 손실 제한'} · 예시값 자동 입력됨</small></label>
+        <div className={s.exampleBox}><b>예시 기준</b><span>TP는 현재가 대비 약 3%, SL은 약 2% 범위로 예시값을 넣었습니다. 원하는 가격으로 직접 수정할 수 있습니다.</span></div>
+        <div className={s.modalActions}><button className={s.modalGhost} onClick={()=>{setTpslTp('');setTpslSl('')}}>둘 다 해제</button><button className={s.modalCancel} onClick={()=>setTpslPosition(null)}>취소</button><button className={s.modalSave} disabled={busy} onClick={saveTPSL}>{busy?'저장 중...':'설정 저장'}</button></div>
+      </div>
+    </div>}
     <section className={s.marketHeader}>
       <div className={s.symbolCell}><FuturesMarketSelector markets={feedMarkets} selectedSymbol={currentSymbol} onSelect={setSymbol}/></div>
       <div className={s.priceCell}><strong className={changePct>=0?s.up:s.down}>{priceFmt(lastPrice,priceDigits)}</strong><span>{changePct>=0?'+':''}{changePct.toFixed(2)}%</span></div>
