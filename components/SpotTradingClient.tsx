@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './SpotTrading.module.css';
+import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 
 type Market={symbol:string;price:number;changePct:number;volume:number};
 type Balance={asset:string;available:number;locked:number};
@@ -15,6 +16,7 @@ const priceDigits=(v:number)=>v>=1000?2:v>=1?4:6;
 
 export default function SpotTradingClient(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
+ const wallet=useUnifiedWalletDisplay();
  const [markets,setMarkets]=useState<Market[]>([]);
  const [symbol,setSymbol]=useState('BTC');
  const [side,setSide]=useState<'BUY'|'SELL'>('BUY');
@@ -102,7 +104,7 @@ export default function SpotTradingClient(){
    <aside className={s.orderPanel}>
     <div className={s.sideTabs}><button className={side==='BUY'?s.buyActive:''} onClick={()=>setSide('BUY')}>Buy</button><button className={side==='SELL'?s.sellActive:''} onClick={()=>setSide('SELL')}>Sell</button></div>
     <div className={s.orderType}><b>Market</b><span>즉시 체결</span></div>
-    <div className={s.balance}><span>Available</span><b>{side==='BUY'?fmt(usdt,2)+' USDT':fmt(base,8)+' '+symbol}</b></div>
+    <div className={s.balance}><span>Available</span><b>{side==='BUY'?wallet.withUnit(wallet.available):fmt(base,8)+' '+symbol}</b></div>
     <label><span>{side==='BUY'?'Spend':'Amount'}</span><div><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal"/><em>{side==='BUY'?'USDT':symbol}</em></div></label>
     <button className={s.max} onClick={max}>MAX</button>
     <div className={s.preview}><span>현재가 <b>{market?fmt(market.price,priceDigits(market.price)):'—'} USDT</b></span><span>{side==='BUY'?'예상 수량':'예상 수령'} <b>{side==='BUY'?fmt(estBase,8)+' '+symbol:fmt(estQuote,2)+' USDT'}</b></span></div>
