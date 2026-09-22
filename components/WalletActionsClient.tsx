@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
+import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 import s from './WalletActions.module.css';
 
 type Balance={asset:string;available:number;locked:number};
@@ -19,11 +20,13 @@ const errorText=(m:string)=>{
  if(m.includes('insufficient_balance'))return '사용 가능 잔액이 부족합니다.';
  if(m.includes('insufficient_spot_balance'))return 'Spot USDT 잔액이 부족합니다.';
  if(m.includes('insufficient_futures_balance'))return 'Futures USDT 잔액이 부족합니다.';
+ if(m.includes('unified_wallet_no_transfer_required'))return 'BITMATE는 통합 지갑을 사용하므로 계정 간 이체가 필요하지 않습니다.';
  return m;
 };
 
 export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'}){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
+ const wallet=useUnifiedWalletDisplay();
  const [snap,setSnap]=useState<Snapshot>({spot:[],futures_usdt:0,withdrawals:[],transfers:[],withdraw_networks:[]});
  const [loading,setLoading]=useState(true);
  const [asset,setAsset]=useState('USDT');
@@ -82,7 +85,7 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
 
  return <main className={s.page}><div className={s.shell}>
   <header className={s.head}>
-   <div><span>BITMATE WALLET</span><h1>{mode==='withdraw'?'Crypto Withdrawal':'Account Transfer'}</h1><p>{mode==='withdraw'?'출금 네트워크와 수량을 확인한 뒤 출금 요청을 제출하세요.':'Spot과 Futures 계정 사이에서 USDT를 즉시 내부 이체합니다.'}</p></div>
+   <div><span>BITMATE WALLET</span><h1>{mode==='withdraw'?'Crypto Withdrawal':'Account Transfer'}</h1><p>{mode==='withdraw'?'출금 네트워크와 수량을 확인한 뒤 출금 요청을 제출하세요.':'모든 거래 메뉴가 하나의 통합 지갑 잔액을 사용합니다.'}</p></div>
    <div className={s.headActions}><Link href="/account?view=spot">Wallet Center</Link><Link href="/deposit">Deposit</Link></div>
   </header>
 
@@ -109,19 +112,12 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
   </>:<>
    <section className={s.grid}>
     <div className={s.formCard}>
-     <div className={s.formTitle}><UiIcon name="wallet" size={20}/><div><h2>Internal Transfer</h2><p>Spot ↔ Futures · USDT</p></div></div>
-     <div className={s.route}><label>From<select value={from} onChange={e=>{const v=e.target.value as 'SPOT'|'FUTURES';setFrom(v);setTo(v==='SPOT'?'FUTURES':'SPOT')}}><option>SPOT</option><option>FUTURES</option></select></label><button onClick={swap}><UiIcon name="external" size={16}/></button><label>To<select value={to} onChange={e=>{const v=e.target.value as 'SPOT'|'FUTURES';setTo(v);setFrom(v==='SPOT'?'FUTURES':'SPOT')}}><option>FUTURES</option><option>SPOT</option></select></label></div>
-     <div className={s.available}>Available <b>{available.toLocaleString()} USDT</b></div>
-     <label>Amount<div className={s.amount}><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal" placeholder="0.00"/><button onClick={()=>setAmount(String(available))}>MAX</button><span>USDT</span></div></label>
-     <button className={s.submit} disabled={busy} onClick={submitTransfer}>{busy?'Transferring...':'Confirm Transfer'}</button>
-     <p className={s.notice}>Spot과 Futures 계정 간 USDT를 수수료 없이 즉시 이체할 수 있습니다.</p>
+     <div className={s.formTitle}><UiIcon name="wallet" size={20}/><div><h2>Unified Wallet</h2><p>BITMATE 모든 거래 메뉴가 하나의 지갑 잔액을 공유합니다.</p></div></div>
+     <div className={s.available}>내 자산 <b>{wallet.withUnit(wallet.total)}</b><span>Available {wallet.withUnit(wallet.available)} · Locked {wallet.withUnit(wallet.locked)}</span></div>
+     <p className={s.notice}>Spot, Futures, CFD, AI, Copy Trading, Index 등에서 별도 계정 이체 없이 동일한 통합 지갑을 사용합니다.</p>
+     <div className={s.headActions}><Link href="/deposit">Deposit</Link><Link href="/account?view=overview">Wallet Center</Link></div>
     </div>
-    <aside className={s.balanceCard}><h3>Account Balances</h3><div><span>Spot USDT</span><b>{Number(snap.spot.find(x=>x.asset==='USDT')?.available||0).toLocaleString()}</b></div><div><span>Futures USDT</span><b>{Number(snap.futures_usdt||0).toLocaleString()}</b></div></aside>
-   </section>
-
-   <section className={s.history}><div className={s.historyHead}><h2>Transfer History</h2><button onClick={load}>Refresh</button></div>
-    <div className={s.transferHead}><span>Time</span><span>From</span><span>To</span><span>Amount</span><span>Status</span></div>
-    {snap.transfers.length?snap.transfers.map(r=><div className={s.transferRow} key={r.id}><span>{new Date(r.created_at).toLocaleString()}</span><span>{r.from_account}</span><span>{r.to_account}</span><span><b>{Number(r.amount).toLocaleString()} {r.asset}</b></span><span>{r.status}</span></div>):<div className={s.empty}>No transfer history</div>}
+    <aside className={s.balanceCard}><h3>Wallet Status</h3><div><span>통합 잔액</span><b>{wallet.withUnit(wallet.total)}</b></div><div><span>사용 가능</span><b>{wallet.withUnit(wallet.available)}</b></div><div><span>잠금</span><b>{wallet.withUnit(wallet.locked)}</b></div></aside>
    </section>
   </>}
 
