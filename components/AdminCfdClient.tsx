@@ -1,5 +1,6 @@
-import {siteConfirm,sitePrompt} from './SiteDialog';
 'use client';
+
+import {siteConfirm,sitePrompt} from './SiteDialog';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './CfdTrading.module.css';
