@@ -22,6 +22,7 @@ type MarginMode='CROSS'|'ISOLATED';
 type TriggerBy='MARK'|'LAST';
 type TimeInForce='GTC'|'IOC'|'FOK';
 type TradeSide='BUY'|'SELL';
+type DisplayCurrency='KRW'|'USDT';
 
 const num=(v:any)=>Number(v||0);
 const priceFmt=(v:any,p=2)=>{const n=Number(v);if(!Number.isFinite(n)||n===0)return '—';return n.toLocaleString(undefined,{minimumFractionDigits:p,maximumFractionDigits:p})};
@@ -58,6 +59,8 @@ export default function FuturesTradingClient(){
   const [bookTab,setBookTab]=useState<BookTab>('book');
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
+  const [displayCurrency,setDisplayCurrency]=useState<DisplayCurrency>('KRW');
+  const [krwRate,setKrwRate]=useState(0);
   const [tpslPosition,setTpslPosition]=useState<Position|null>(null);
   const [tpslTp,setTpslTp]=useState('');
   const [tpslSl,setTpslSl]=useState('');
@@ -96,10 +99,52 @@ export default function FuturesTradingClient(){
   async function loadSnapshot(){const {data:{user}}=await supabase.auth.getUser();setLoggedIn(!!user);if(!user){setSnapshot(null);return}const {data,error}=await supabase.rpc('futures_action',{p_action:'snapshot',p_payload:{}});if(!error&&data)setSnapshot(data as Snapshot)}
 
   useEffect(()=>{let alive=true;const init=async()=>{await Promise.all([loadEngineMarkets(),loadFeedMarkets(),loadSnapshot()])};init();const e=setInterval(()=>{if(alive)loadEngineMarkets()},5000);const f=setInterval(()=>{if(alive)loadFeedMarkets()},15000);const a=setInterval(()=>{if(alive)loadSnapshot()},2500);const n=setInterval(()=>setNow(Date.now()),1000);const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>loadSnapshot());return()=>{alive=false;clearInterval(e);clearInterval(f);clearInterval(a);clearInterval(n);subscription.unsubscribe()}},[supabase]);
+  useEffect(()=>{
+    const readCurrency=()=>{
+      const saved=localStorage.getItem('bitmate_display_currency');
+      setDisplayCurrency(saved==='USDT'?'USDT':'KRW');
+    };
+    const loadRate=()=>fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{});
+    const onCurrency=(e:Event)=>{
+      const next=(e as CustomEvent<{currency?:DisplayCurrency}>).detail?.currency;
+      if(next==='KRW'||next==='USDT')setDisplayCurrency(next);else readCurrency();
+    };
+    readCurrency();loadRate();
+    window.addEventListener('bitmate:display-currency',onCurrency as EventListener);
+    const rateId=setInterval(loadRate,60000);
+    return()=>{window.removeEventListener('bitmate:display-currency',onCurrency as EventListener);clearInterval(rateId)};
+  },[]);
   useEffect(()=>{let ws:WebSocket|null=null;let retry:ReturnType<typeof setTimeout>|null=null;let dead=false;const connect=()=>{if(dead)return;ws=new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');ws.onmessage=ev=>{try{const arr=JSON.parse(ev.data) as any[];if(!Array.isArray(arr))return;const patch=new Map(arr.map(x=>[String(x.s),x]));setFeedMarkets(prev=>prev.map(m=>{const x=patch.get(m.symbol);return x?{...m,lastPrice:Number(x.c),changePct:Number(x.P),high24h:Number(x.h),low24h:Number(x.l),volume:Number(x.v),quoteVolume:Number(x.q)}:m}))}catch{}};ws.onclose=()=>{if(!dead)retry=setTimeout(connect,2500)};ws.onerror=()=>ws?.close()};connect();return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()}},[]);
   useEffect(()=>{setPrice('');setTriggerPrice('');setActivationPrice('')},[symbol]);
   useEffect(()=>{if(!lastPrice)return;if(orderType==='LIMIT'&&!price)setPrice(String(Number(lastPrice).toFixed(priceDigits)));if(orderType==='TRIGGER'&&!triggerPrice)setTriggerPrice(String(Number(markPrice||lastPrice).toFixed(priceDigits)));if(orderType==='TRAILING_STOP'){setReduceOnly(true);setPostOnly(false);setTimeInForce('GTC')}},[orderType,lastPrice,markPrice,priceDigits]);
   useEffect(()=>{let dead=false;const q=Number(quantity);if(!loggedIn||!engineMarket||!Number.isFinite(q)||q<=0||orderType==='TRAILING_STOP'){setPreview(null);return}const id=setTimeout(async()=>{const payload:any={symbol:engineMarket.symbol,side:tradeSide,orderType,marginMode,leverage,quantity:q};if(orderType==='LIMIT')payload.price=Number(price);if(orderType==='TRIGGER'&&triggerOrderType==='LIMIT')payload.price=Number(price);const {data,error}=await supabase.rpc('futures_action',{p_action:'preview',p_payload:payload});if(!dead&&!error)setPreview(data as Preview);if(!dead&&error)setPreview(null)},250);return()=>{dead=true;clearTimeout(id)}},[loggedIn,engineMarket?.symbol,quantity,leverage,marginMode,orderType,price,triggerOrderType,tradeSide,supabase]);
+
+  const currencyUnit=displayCurrency==='KRW'?'KRW':'USDT';
+  const displayMoney=(value:number|null|undefined,d=2)=>{
+    const v=Number(value);
+    if(!Number.isFinite(v))return '—';
+    if(displayCurrency==='KRW'){
+      if(krwRate<=0)return '—';
+      return Math.round(v*krwRate).toLocaleString('ko-KR');
+    }
+    return v.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+  };
+  const displayMarginValue=()=>{
+    if(displayCurrency==='KRW'){
+      if(krwRate<=0)return '';
+      return String(Math.round(num(orderValue)*krwRate));
+    }
+    return orderValue;
+  };
+  const setDisplayMargin=(raw:string)=>{
+    const clean=raw.replace(/,/g,'').trim();
+    if(clean===''){setOrderValue('');return;}
+    const v=Number(clean);
+    if(!Number.isFinite(v))return;
+    if(displayCurrency==='KRW'){
+      if(krwRate>0)setOrderValue(String(v/krwRate));
+    }else setOrderValue(clean);
+  };
 
   const fundingMs=nextFundingTime?Math.max(0,nextFundingTime-now):0;
   const fundingText=`${String(Math.floor(fundingMs/3600000)).padStart(2,'0')}:${String(Math.floor((fundingMs%3600000)/60000)).padStart(2,'0')}:${String(Math.floor((fundingMs%60000)/1000)).padStart(2,'0')}`;
@@ -178,28 +223,28 @@ export default function FuturesTradingClient(){
         <div className={s.sideSelector}><button className={tradeSide==='BUY'?s.longSelected:''} onClick={()=>setTradeSide('BUY')}>Long</button><button className={tradeSide==='SELL'?s.shortSelected:''} onClick={()=>setTradeSide('SELL')}>Short</button></div>
         <div className={s.orderTabs}><button className={orderType==='LIMIT'?s.activeTab:''} onClick={()=>setOrderType('LIMIT')}>Limit</button><button className={orderType==='MARKET'?s.activeTab:''} onClick={()=>setOrderType('MARKET')}>Market</button><button className={orderType==='TRIGGER'?s.activeTab:''} onClick={()=>setOrderType('TRIGGER')}>Trigger</button><button className={orderType==='TRAILING_STOP'?s.activeTab:''} onClick={()=>setOrderType('TRAILING_STOP')}>Trailing</button></div>
         <div className={s.compactSettings}><div className={s.modeBar}><span>Position</span><div><button disabled={!loggedIn||busy} className={positionMode==='ONE_WAY'?s.selectedPill:''} onClick={()=>changePositionMode('ONE_WAY')}>One-Way</button><button disabled={!loggedIn||busy} className={positionMode==='HEDGE'?s.selectedPill:''} onClick={()=>changePositionMode('HEDGE')}>Hedge</button></div></div><div className={s.orderTop}><button className={marginMode==='CROSS'?s.selectedPill:''} onClick={()=>setMarginMode('CROSS')}>Cross</button><button className={marginMode==='ISOLATED'?s.selectedPill:''} onClick={()=>setMarginMode('ISOLATED')}>Isolated</button><label><input type="number" min={1} max={engineMarket?.max_leverage||100} value={leverage} onChange={e=>setLeverage(Math.max(1,Math.min(engineMarket?.max_leverage||100,Number(e.target.value)||1)))}/><span>x</span></label></div></div>
-        <div className={s.available}><span>Available</span><b>{loggedIn?`${priceFmt(snapshot?.account?.available_balance,2)} USDT`:'로그인 필요'}</b></div>
+        <div className={s.available}><span>Available</span><b>{loggedIn?`${displayMoney(snapshot?.account?.available_balance)} ${currencyUnit}`:'로그인 필요'}</b></div>
 
         {orderType==='MARKET'&&<div className={s.inputRow}><span>Price</span><b className={s.readonlyValue}>Market</b><em>USDT</em></div>}
         {orderType==='LIMIT'&&<><label className={s.inputRow}><span>Price</span><input value={price} onChange={e=>setPrice(e.target.value)} inputMode="decimal"/><em>USDT</em></label><div className={s.microControls}><span>Time in Force</span>{(['GTC','IOC','FOK'] as TimeInForce[]).map(x=><button key={x} className={timeInForce===x?s.selectedPill:''} onClick={()=>setTimeInForce(x)}>{x}</button>)}</div></>}
         {orderType==='TRIGGER'&&<><label className={s.inputRow}><span>Trigger Price</span><input value={triggerPrice} onChange={e=>setTriggerPrice(e.target.value)} inputMode="decimal"/><em>USDT</em></label><div className={s.microControls}><span>Trigger By</span><button className={triggerBy==='MARK'?s.selectedPill:''} onClick={()=>setTriggerBy('MARK')}>Mark</button><button className={triggerBy==='LAST'?s.selectedPill:''} onClick={()=>setTriggerBy('LAST')}>Last</button></div><div className={s.triggerDir}><button className={triggerDirection==='ABOVE'?s.selectedPill:''} onClick={()=>setTriggerDirection('ABOVE')}>이상 도달</button><button className={triggerDirection==='BELOW'?s.selectedPill:''} onClick={()=>setTriggerDirection('BELOW')}>이하 도달</button></div><div className={s.microControls}><span>Execution</span><button className={triggerOrderType==='MARKET'?s.selectedPill:''} onClick={()=>setTriggerOrderType('MARKET')}>Market</button><button className={triggerOrderType==='LIMIT'?s.selectedPill:''} onClick={()=>setTriggerOrderType('LIMIT')}>Limit</button></div>{triggerOrderType==='LIMIT'&&<label className={s.inputRow}><span>Order Price</span><input value={price} onChange={e=>setPrice(e.target.value)} inputMode="decimal"/><em>USDT</em></label>}</>}
         {orderType==='TRAILING_STOP'&&<><label className={s.inputRow}><span>Activation Price</span><input value={activationPrice} onChange={e=>setActivationPrice(e.target.value)} inputMode="decimal" placeholder="선택"/><em>USDT</em></label><label className={s.inputRow}><span>Callback Rate</span><input value={callbackRate} onChange={e=>setCallbackRate(e.target.value)} inputMode="decimal"/><em>%</em></label></>}
 
-        <label className={s.inputRow}><span>Margin</span><input value={orderValue} onChange={e=>setOrderValue(e.target.value)} inputMode="decimal"/><em>USDT</em></label>
+        <label className={s.inputRow}><span>Margin</span><input value={displayMarginValue()} onChange={e=>setDisplayMargin(e.target.value)} inputMode="decimal"/><em>{currencyUnit}</em></label>
         <div className={s.ratios}>{[.25,.5,.75,1].map(r=><button key={r} onClick={()=>setRatio(r)}>{Math.round(r*100)}%</button>)}</div>
-        <div className={s.inputRow}><span>Position Value</span><b className={s.readonlyValue}>{priceFmt(positionValue,2)}</b><em>USDT</em></div>
+        <div className={s.inputRow}><span>Position Value</span><b className={s.readonlyValue}>{displayMoney(positionValue)}</b><em>{currencyUnit}</em></div>
         <div className={s.tpsl}><label><span>Take Profit</span><input value={takeProfit} onChange={e=>setTakeProfit(e.target.value)} inputMode="decimal" placeholder="선택"/></label><label><span>Stop Loss</span><input value={stopLoss} onChange={e=>setStopLoss(e.target.value)} inputMode="decimal" placeholder="선택"/></label></div>
         <div className={s.options}><label><input type="checkbox" checked={reduceOnly} onChange={e=>setReduceOnly(e.target.checked)}/> Reduce Only</label><label><input type="checkbox" checked={postOnly} disabled={orderType!=='LIMIT'} onChange={e=>setPostOnly(e.target.checked)}/> Post Only</label></div>
 
         <div className={s.orderFooter}>
-          <div className={s.preview}><div><span>Margin</span><b>{priceFmt(marginAmount,2)} USDT</b></div><div><span>Position Value</span><b>{priceFmt(positionValue,2)} USDT</b></div><div><span>Estimated Fee</span><b>{priceFmt(preview?.estimated_fee,4)} USDT</b></div><div><span>Est. Qty</span><b>{priceFmt(quantity,qtyDigits)} {baseAsset}</b></div></div>
+          <div className={s.preview}><div><span>Margin</span><b>{displayMoney(marginAmount)} {currencyUnit}</b></div><div><span>Position Value</span><b>{displayMoney(positionValue)} {currencyUnit}</b></div><div><span>Estimated Fee</span><b>{displayMoney(preview?.estimated_fee,4)} {currencyUnit}</b></div><div><span>Est. Qty</span><b>{priceFmt(quantity,qtyDigits)} {baseAsset}</b></div></div>
           <div className={s.tradeButtons}><button disabled={busy||!canTrade} className={tradeSide==='BUY'?s.longBtn:s.shortBtn} style={{gridColumn:'1 / -1'}} onClick={()=>submit(tradeSide)}>{tradeSide==='BUY'?`Long ${baseAsset}`:`Short ${baseAsset}`}</button></div>
           <p className={s.orderNote}>{engineMarket?'25%/50%/75%/100%는 현재 사용 가능 자산에서 해당 비율만큼 증거금을 배정합니다. 레버리지는 그 증거금으로 만들 포지션 가치에만 적용됩니다.':'현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.'}</p>
         </div>
       </section>
     </section>
 
-    <section className={s.accountStrip}><div><span>Wallet Balance</span><b>{loggedIn?priceFmt(snapshot?.account?.balance,2):'—'}</b></div><div><span>Available</span><b>{loggedIn?priceFmt(snapshot?.account?.available_balance,2):'—'}</b></div><div><span>Used Margin</span><b>{loggedIn?priceFmt(snapshot?.account?.used_margin,2):'—'}</b></div><div><span>Unrealized PNL</span><b className={num(snapshot?.account?.unrealized_pnl)>=0?s.up:s.down}>{loggedIn?priceFmt(snapshot?.account?.unrealized_pnl,2):'—'}</b></div><div><span>Realized PNL</span><b className={num(snapshot?.account?.realized_pnl)>=0?s.up:s.down}>{loggedIn?priceFmt(snapshot?.account?.realized_pnl,2):'—'}</b></div></section>
+    <section className={s.accountStrip}><div><span>Wallet Balance</span><b>{loggedIn?`${displayMoney(snapshot?.account?.balance)} ${currencyUnit}`:'—'}</b></div><div><span>Available</span><b>{loggedIn?`${displayMoney(snapshot?.account?.available_balance)} ${currencyUnit}`:'—'}</b></div><div><span>Used Margin</span><b>{loggedIn?`${displayMoney(snapshot?.account?.used_margin)} ${currencyUnit}`:'—'}</b></div><div><span>Unrealized PNL</span><b className={num(snapshot?.account?.unrealized_pnl)>=0?s.up:s.down}>{loggedIn?`${displayMoney(snapshot?.account?.unrealized_pnl)} ${currencyUnit}`:'—'}</b></div><div><span>Realized PNL</span><b className={num(snapshot?.account?.realized_pnl)>=0?s.up:s.down}>{loggedIn?`${displayMoney(snapshot?.account?.realized_pnl)} ${currencyUnit}`:'—'}</b></div></section>
 
     <section className={`${s.panel} ${s.bottomPanel}`}><div className={s.bottomTabs}><button className={bottomTab==='positions'?s.activeTab:''} onClick={()=>setBottomTab('positions')}>포지션 ({positions.length})</button><button className={bottomTab==='open'?s.activeTab:''} onClick={()=>setBottomTab('open')}>미체결 주문 ({activeOrders.length})</button><button className={bottomTab==='orders'?s.activeTab:''} onClick={()=>setBottomTab('orders')}>주문내역</button><button className={bottomTab==='fills'?s.activeTab:''} onClick={()=>setBottomTab('fills')}>체결내역</button><button className={bottomTab==='funding'?s.activeTab:''} onClick={()=>setBottomTab('funding')}>Funding</button>{bottomTab==='open'&&activeOrders.length>0&&<button className={s.cancelAll} disabled={busy} onClick={cancelAll}>전체 취소</button>}</div>
       <div className={s.tableWrap}>
