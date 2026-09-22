@@ -1,3 +1,4 @@
+// BITMATE unified wallet display source
 'use client';
 
 import {useCallback,useEffect,useMemo,useState} from 'react';
