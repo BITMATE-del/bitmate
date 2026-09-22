@@ -15,6 +15,7 @@ const items:[View,UiIconName,string][]=[
 const assets=[['BTC','Bitcoin'],['ETH','Ethereum'],['USDT','Tether'],['TRX','TRON'],['SOL','Solana']];
 
 export default function WalletCenterClient(){
+ const wallet=useUnifiedWalletDisplay();
  const [view,setView]=useState<View>('overview');
  useEffect(()=>{const q=new URLSearchParams(location.search).get('view') as View|null;if(q&&items.some(x=>x[0]===q))setView(q)},[]);
  const go=(v:View)=>{setView(v);history.replaceState(null,'',`/account?view=${v}`)};
