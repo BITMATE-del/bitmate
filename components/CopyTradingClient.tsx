@@ -117,10 +117,10 @@ export default function CopyTradingClient(){
    <h2>{selected.nickname} 카피 설정</h2>
    <p className={s.muted}>Trader UID · {selected.trader_uid}</p>
    <div className={s.formGrid}>
-    <label className={s.field}>카피 투자금 USDT<input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal"/></label>
+    <label className={s.field}>카피 투자금 ({wallet.unit})<input value={wallet.currency==='KRW'?(Number.isFinite(wallet.toDisplay(Number(amount)||0))?String(Math.round(wallet.toDisplay(Number(amount)||0))):''):amount} onChange={e=>{const v=Number(e.target.value.replace(/,/g,''));if(!Number.isFinite(v))return;setAmount(String(wallet.fromDisplay(v)))}} inputMode="decimal"/></label>
     <label className={s.field}>사용 가능 잔액<input value={wallet.loggedIn?wallet.withUnit(wallet.available):'로그인 후 확인'} readOnly/></label>
-    <label className={s.field}>거래당 최대 금액<input value={tradeLimit} onChange={e=>setTradeLimit(e.target.value)}/></label>
-    <label className={s.field}>최대 손실 금액<input value={maxLoss} onChange={e=>setMaxLoss(e.target.value)}/></label>
+    <label className={s.field}>거래당 최대 금액 ({wallet.unit})<input value={wallet.currency==='KRW'&&tradeLimit?String(Math.round(wallet.toDisplay(Number(tradeLimit)))):tradeLimit} onChange={e=>{const v=e.target.value;if(!v){setTradeLimit('');return;}const n=Number(v.replace(/,/g,''));if(Number.isFinite(n))setTradeLimit(String(wallet.fromDisplay(n)))}}/></label>
+    <label className={s.field}>최대 손실 금액 ({wallet.unit})<input value={wallet.currency==='KRW'&&maxLoss?String(Math.round(wallet.toDisplay(Number(maxLoss)))):maxLoss} onChange={e=>{const v=e.target.value;if(!v){setMaxLoss('');return;}const n=Number(v.replace(/,/g,''));if(Number.isFinite(n))setMaxLoss(String(wallet.fromDisplay(n)))}}/></label>
     <label className={s.field}>최대 동시 포지션<input value={maxPositions} onChange={e=>setMaxPositions(e.target.value)}/></label>
     <div className={`${s.notice} ${s.full}`}>카피트레이딩은 다른 트레이더의 거래를 참고하여 자동으로 거래를 실행하는 기능이며, 과거의 거래 성과가 미래의 수익을 보장하지 않습니다. 시장 변동에 따라 원금 손실이 발생할 수 있습니다.</div>
     <label className={`${s.field} ${s.full}`}><span><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/> 위험 고지 내용을 확인했습니다.</span></label>
