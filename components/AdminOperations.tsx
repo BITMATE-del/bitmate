@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
+import {siteAlert,siteConfirm,sitePrompt} from './SiteDialog';
 import s from './AdminOperations.module.css';
 
 type Balance={asset:string;available:number;locked:number};
@@ -44,15 +45,15 @@ export default function AdminOperations(){
  }
 
  async function editProfile(u:UserRow){
-  const display=prompt('표시 이름',u.display_name||'')?.trim(); if(display===undefined)return;
-  const vip=prompt('VIP 등급',u.vip_level||'BASIC')?.trim(); if(vip===undefined)return;
+  const display=(await sitePrompt('표시 이름',u.display_name||'',{title:'회원 정보 수정'}))?.trim(); if(display===undefined||display===null)return;
+  const vip=(await sitePrompt('VIP 등급',u.vip_level||'BASIC',{title:'회원 정보 수정'}))?.trim(); if(vip===undefined||vip===null)return;
   await run('admin_update_profile',{p_user_id:u.id,p_display_name:display,p_vip_level:vip},'회원 프로필이 변경되었습니다.');
  }
  async function adjust(u:UserRow){
-  const asset=(prompt('조정할 DEMO 자산','USDT')||'').trim().toUpperCase();if(!asset)return;
-  const amount=Number(prompt('증가/차감 금액을 입력하세요. 차감은 음수입니다.','0'));if(!Number.isFinite(amount)||amount===0)return alert('0이 아닌 숫자를 입력하세요.');
-  const reason=(prompt('조정 사유를 입력하세요.','관리자 잔액 조정')||'').trim();if(reason.length<3)return alert('사유를 3자 이상 입력하세요.');
-  if(!confirm(`${u.email||u.id} · ${asset} · ${amount>0?'+':''}${amount}\n이 조정을 실행할까요?`))return;
+  const asset=((await sitePrompt('조정할 자산','USDT',{title:'잔액 조정'}))||'').trim().toUpperCase();if(!asset)return;
+  const amount=Number(await sitePrompt('증가/차감 금액을 입력하세요. 차감은 음수입니다.','0',{title:'잔액 조정',inputType:'number'}));if(!Number.isFinite(amount)||amount===0){await siteAlert('0이 아닌 숫자를 입력하세요.');return}
+  const reason=((await sitePrompt('조정 사유를 입력하세요.','관리자 잔액 조정',{title:'잔액 조정 사유'}))||'').trim();if(reason.length<3){await siteAlert('사유를 3자 이상 입력하세요.');return}
+  if(!(await siteConfirm(`${u.email||u.id} · ${asset} · ${amount>0?'+':''}${amount}\n이 조정을 실행할까요?`,{title:'잔액 조정 확인'})))return;
   await run('admin_adjust_demo_balance',{p_user_id:u.id,p_asset:asset,p_amount:amount,p_reason:reason},'DEMO 잔액이 조정되고 원장에 기록되었습니다.');
  }
  const updateKyc=(r:KycRow,status:string)=>run('admin_update_kyc',{p_request_id:r.id,p_status:status},`KYC 상태가 ${status}로 변경되었습니다.`);
