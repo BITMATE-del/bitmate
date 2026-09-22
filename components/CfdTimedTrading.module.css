@@ -4,3 +4,68 @@
 .settlementTime span{color:#78856f;font-size:8px}
 .settlementTime b{color:#b7ff2d;font-size:13px;font-variant-numeric:tabular-nums}
 .settlementTime em{grid-column:1/-1;color:#87937e;font-style:normal;font-size:8px}
+
+/* readability pass: CFD trading + account/history area */
+.marketBar{min-height:64px}
+.symbolBox,.priceBox,.metric{padding:9px 12px}
+.priceBox strong{font-size:24px}
+.priceBox span,.metric span{font-size:10px}
+.metric b{font-size:12px}
+
+.panelTabs{height:42px}
+.panelTabs button,.bottomTabs button{padding:0 12px;font-size:11px;font-weight:800}
+.chartTools{font-size:10px}
+
+.bookHead{height:32px;font-size:9px}
+.bookRow{height:27px;font-size:10px}
+.midPrice strong{font-size:22px}
+.midPrice span,.bookStatus,.recentList>div{font-size:9px}
+
+.orderPanel{padding:14px 14px}
+.directionRow button{height:46px;font-size:13px}
+.label{margin:8px 0 6px;font-size:10px}
+.durationRow button{height:38px;font-size:11px}
+.balance{padding:6px 0 9px;font-size:10px}
+.balance b{font-size:12px}
+.field{height:44px}
+.field input{font-size:13px}
+.field em{font-size:10px}
+.quickAmounts button{height:32px;font-size:10px}
+.summary span{font-size:9px}
+.summary b{font-size:11px}
+.submit{height:48px;font-size:13px}
+.notice{font-size:9px;line-height:1.55}
+
+.activeTrade{padding:12px 0}
+.activeTrade strong{font-size:13px}
+.tradeStatus{font-size:9px}
+.settlementTime span{font-size:10px}
+.settlementTime b{font-size:28px}
+.settlementTime em{font-size:9px}
+.tradeMeta span{font-size:9px}
+.tradeMeta b{font-size:11px}
+
+.accountStrip{min-height:72px}
+.accountStrip div{padding:12px 14px}
+.accountStrip span{font-size:10px;letter-spacing:.02em}
+.accountStrip b{margin-top:4px;font-size:15px;font-weight:850}
+
+.bottomTabs{height:44px}
+.bottomTabs button{font-size:11px}
+.table th,.table td{padding:11px 10px;font-size:10px}
+.table th{font-size:9px;letter-spacing:.02em}
+.table td b{font-size:10px}
+
+.ticker{height:34px}
+.tickerStatus{font-size:9px}
+.tickerStatus b{font-size:10px}
+.tickerItem{font-size:9px}
+
+@media(max-width:1250px){
+  .priceBox strong{font-size:21px}
+  .metric b{font-size:11px}
+  .orderPanel{padding:12px}
+  .accountStrip span{font-size:9px}
+  .accountStrip b{font-size:13px}
+  .table th,.table td{font-size:9px;padding:9px 8px}
+}
