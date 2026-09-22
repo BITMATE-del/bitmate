@@ -117,8 +117,8 @@ export default function HeaderUserTools(){
           <span className={s.walletLabel}>{displayCurrency==='KRW'?'Wallet Balance':'USDT Available'}</span>
           <strong className={s.walletBalance}>{walletLoading?'—':displayCurrency==='KRW'?(krwRate>0?Math.round(displayBalance).toLocaleString():'—'):formatUsdt(displayBalance)} <em>{displayCurrency==='KRW'?'KRW':'USDT'}</em></strong>
           <div className={s.walletBreakdown}>
-            <div><small>Locked</small><b>{walletLoading?'—':formatUsdt(spotLocked)}</b></div>
-            <div><small>Futures</small><b>{walletLoading?'—':formatUsdt(futuresBalance)}</b></div>
+            <div><small>Locked</small><b>{walletLoading?'—':displayCurrency==='KRW'?(krwRate>0?Math.round(spotLocked*krwRate).toLocaleString()+' KRW':'—'):formatUsdt(spotLocked)+' USDT'}</b></div>
+            <div><small>Futures</small><b>{walletLoading?'—':displayCurrency==='KRW'?(krwRate>0?Math.round(futuresBalance*krwRate).toLocaleString()+' KRW':'—'):formatUsdt(futuresBalance)+' USDT'}</b></div>
           </div>
           <div className={s.walletActions}>
             <Link className={s.primaryAction} href="/deposit" onClick={()=>setPanel(null)}><UiIcon name="wallet" size={15}/>Deposit</Link>
