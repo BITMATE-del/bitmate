@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
+import {siteAlert,siteConfirm,sitePrompt} from './SiteDialog';
 import s from './AdminWalletOperations.module.css';
 
 type NetworkRow={id:string;asset:string;network:string;display_name:string;confirmations:number;deposit_enabled:boolean;withdraw_enabled:boolean;min_deposit:number;min_withdraw:number;withdraw_fee:number;active:boolean;updated_at:string};
@@ -43,42 +44,42 @@ export default function AdminWalletOperations(){
  }
 
  async function editNetwork(n:NetworkRow){
-  const confirmations=Number(prompt('필요 확인 수',String(n.confirmations)));if(!Number.isFinite(confirmations))return;
-  const minDeposit=Number(prompt('최소 입금 수량',String(n.min_deposit)));if(!Number.isFinite(minDeposit))return;
-  const minWithdraw=Number(prompt('최소 출금 수량',String(n.min_withdraw)));if(!Number.isFinite(minWithdraw))return;
-  const fee=Number(prompt('출금 수수료',String(n.withdraw_fee)));if(!Number.isFinite(fee))return;
-  const depositEnabled=confirm('입금을 활성화할까요?\n확인=활성 / 취소=비활성');
-  const withdrawEnabled=confirm('출금을 활성화할까요?\n확인=활성 / 취소=비활성');
-  const active=confirm('이 네트워크 자체를 노출할까요?\n확인=노출 / 취소=숨김');
+  const confirmations=Number(await sitePrompt('필요 확인 수',String(n.confirmations),{title:'네트워크 설정'}));if(!Number.isFinite(confirmations))return;
+  const minDeposit=Number(await sitePrompt('최소 입금 수량',String(n.min_deposit),{title:'네트워크 설정'}));if(!Number.isFinite(minDeposit))return;
+  const minWithdraw=Number(await sitePrompt('최소 출금 수량',String(n.min_withdraw),{title:'네트워크 설정'}));if(!Number.isFinite(minWithdraw))return;
+  const fee=Number(await sitePrompt('출금 수수료',String(n.withdraw_fee),{title:'네트워크 설정'}));if(!Number.isFinite(fee))return;
+  const depositEnabled=await siteConfirm('입금을 활성화할까요?\n확인=활성 / 취소=비활성',{title:'입금 활성 설정'});
+  const withdrawEnabled=await siteConfirm('출금을 활성화할까요?\n확인=활성 / 취소=비활성',{title:'출금 활성 설정'});
+  const active=await siteConfirm('이 네트워크 자체를 노출할까요?\n확인=노출 / 취소=숨김',{title:'네트워크 노출 설정'});
   await run('admin_update_asset_network',{p_id:n.id,p_deposit_enabled:depositEnabled,p_withdraw_enabled:withdrawEnabled,p_confirmations:confirmations,p_min_deposit:minDeposit,p_min_withdraw:minWithdraw,p_withdraw_fee:fee,p_active:active},`${n.asset} ${n.network} 설정이 변경되었습니다.`);
  }
 
  async function assignTronAddress(){
-  const email=(prompt('회원 이메일을 입력하세요.')||'').trim();
+  const email=((await sitePrompt('회원 이메일을 입력하세요.','',{title:'TRON 주소 배정',inputType:'email'}))||'').trim();
   if(!email)return;
-  const address=(prompt('TRON 입금 주소를 입력하세요. (T로 시작하는 34자리 주소)')||'').trim();
+  const address=((await sitePrompt('TRON 입금 주소를 입력하세요. (T로 시작하는 34자리 주소)','',{title:'TRON 주소 배정'}))||'').trim();
   if(!address)return;
-  if(!confirm(email+'\n'+address+'\nUSDT/TRC20 + TRX 자동입금 주소로 배정할까요?'))return;
+  if(!(await siteConfirm(email+'\n'+address+'\nUSDT/TRC20 + TRX 자동입금 주소로 배정할까요?',{title:'주소 배정 확인'})))return;
   await run('admin_assign_tron_deposit_address',{p_email:email,p_address:address},'TRON 자동입금 주소가 배정되었습니다.');
  }
 
  async function setBalance(row:BalanceRow){
-  if(!krwRate)return alert('현재 KRW 환산 시세를 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
+  if(!krwRate){await siteAlert('현재 KRW 환산 시세를 불러오지 못했습니다. 잠시 후 다시 시도하세요.');return}
   const currentUsdt=Number(row.available||0);
   const currentKrw=Math.round(currentUsdt*krwRate);
-  const nextKrw=Number(prompt(`${row.email||'회원'} · 통합 지갑 잔액(KRW)\n새 잔액을 입력하세요.`,String(currentKrw)));
-  if(!Number.isFinite(nextKrw)||nextKrw<0)return alert('0 이상의 잔액을 입력하세요.');
+  const nextKrw=Number(await sitePrompt(`${row.email||'회원'} · 통합 지갑 잔액(KRW)\n새 잔액을 입력하세요.`,String(currentKrw),{title:'회원 잔액 수정',inputType:'number'}));
+  if(!Number.isFinite(nextKrw)||nextKrw<0){await siteAlert('0 이상의 잔액을 입력하세요.');return}
   const nextUsdt=nextKrw/krwRate;
-  const note=(prompt('관리자 메모 (선택)','')||'').trim();
-  if(!confirm(`${row.email||row.user_id}\n통합 지갑: ₩${currentKrw.toLocaleString()} → ₩${Math.round(nextKrw).toLocaleString()}\n변경할까요?`))return;
+  const note=((await sitePrompt('관리자 메모 (선택)','',{title:'관리자 메모'}))||'').trim();
+  if(!(await siteConfirm(`${row.email||row.user_id}\n통합 지갑: ₩${currentKrw.toLocaleString()} → ₩${Math.round(nextKrw).toLocaleString()}\n변경할까요?`,{title:'잔액 변경 확인'})))return;
   await run('admin_set_user_usdt_balance',{p_user_id:row.user_id,p_available:nextUsdt,p_note:note||null},`${row.email||'회원'}의 통합 지갑 잔액이 ₩${Math.round(nextKrw).toLocaleString()}으로 변경되었습니다.`);
  }
 
  async function updateWithdrawal(r:WithdrawalRow,status:string){
   let txid=r.txid||'';let note=r.note||'';
-  if(status==='SENT')txid=prompt('전송 TXID를 입력하세요.',txid)||'';
-  if(status==='REJECTED'||status==='FAILED')note=prompt('처리 사유를 입력하세요.',note)||'';
-  if(!confirm(`${r.email||r.user_id}\n${r.amount} ${r.asset} · ${status}\n상태를 변경할까요?`))return;
+  if(status==='SENT')txid=(await sitePrompt('전송 TXID를 입력하세요.',txid,{title:'출금 처리'}))||'';
+  if(status==='REJECTED'||status==='FAILED')note=(await sitePrompt('처리 사유를 입력하세요.',note,{title:'출금 처리'}))||'';
+  if(!(await siteConfirm(`${r.email||r.user_id}\n${r.amount} ${r.asset} · ${status}\n상태를 변경할까요?`,{title:'출금 상태 변경'})))return;
   await run('admin_update_withdrawal_status',{p_id:r.id,p_status:status,p_txid:txid||null,p_note:note||null},`출금 요청이 ${status} 상태로 변경되었습니다.`);
  }
 
