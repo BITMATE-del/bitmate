@@ -105,12 +105,12 @@ export default function AdminWalletOperations(){
 
   {tab==='balances'&&<section className={`${s.panel} ${s.balancePanel}`}>
    <div className={s.balanceHead}>
-    <div className={s.balanceHeadCopy}><span>MEMBER WALLET</span><h2>회원 USDT 입금 / 지갑 잔액</h2><p>여기 표시되는 USDT Available 잔액과 회원 상단 Wallet 잔액은 동일한 값을 사용합니다.</p></div>
+    <div className={s.balanceHeadCopy}><span>MEMBER WALLET</span><h2>회원 통합 지갑 잔액</h2><p>회원별 지갑은 하나만 존재하며 내부 기준 잔액은 USDT 하나로 관리합니다. KRW/USDT 선택은 표시 단위만 변경합니다.</p></div>
     <div className={s.balanceSyncBadge}><UiIcon name="wallet" size={15}/>Header Wallet과 동일 기준</div>
    </div>
-   <div className={s.balanceInfo}><UiIcon name="overview" size={15}/><span><b>USDT Available</b>이 회원 헤더의 Wallet Balance입니다. TRC20 USDT 입금이 CREDITED 되면 이 값에 자동 충전됩니다. Locked와 Futures 잔액은 별도로 관리됩니다.</span></div>
+   <div className={s.balanceInfo}><UiIcon name="overview" size={15}/><span><b>통합 지갑 Available</b>이 회원 헤더의 Wallet Balance와 동일합니다. KRW는 별도 지갑이 아니라 이 잔액을 환산해서 보여주는 표시 단위입니다.</span></div>
    <div className={s.balanceTable}>
-    <div className={s.balanceTableHead}><span>회원</span><span>자산</span><span>사용 가능 잔액</span><span>잠금 잔액</span><span>관리</span></div>
+    <div className={s.balanceTableHead}><span>회원</span><span>기준통화</span><span>사용 가능 잔액</span><span>잠금 잔액</span><span>관리</span></div>
     {data.balances.length?data.balances.map(r=><div className={s.balanceRow} key={r.user_id}>
      <div className={s.memberCell}><div className={s.memberAvatar}>{(r.email||'M').slice(0,1).toUpperCase()}</div><div><b>{r.email||'—'}</b><small>UID {r.user_id.slice(0,8)}…</small></div></div>
      <div className={s.assetCell}><strong>{r.asset}</strong><small>{new Date(r.updated_at).toLocaleString()}</small></div>
