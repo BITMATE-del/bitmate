@@ -1,3 +1,4 @@
+import {siteConfirm,sitePrompt} from './SiteDialog';
 'use client';
 
 import Link from 'next/link';
@@ -73,7 +74,7 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
   if(!address.trim())return setMsg('출금 주소를 입력하세요.');
   if(!Number.isFinite(n)||n<=0)return setMsg('출금 수량을 입력하세요.');
   const fee=Number(selectedNetwork?.withdraw_fee||0);
-  if(!confirm(`${asset} ${n.toLocaleString()}\nNetwork: ${network}\nFee: ${fee}\nAddress: ${address}\n\n출금 요청을 제출할까요?`))return;
+  if(!(await siteConfirm(`${asset} ${n.toLocaleString()}\nNetwork: ${network}\nFee: ${fee}\nAddress: ${address}\n\n출금 요청을 제출할까요?`,{title:'출금 요청 확인'})))return;
   setBusy(true);setMsg('');
   const {error}=await supabase.rpc('user_create_withdrawal_request',{p_asset:asset,p_network:network,p_address:address.trim(),p_amount:n});
   setBusy(false);
