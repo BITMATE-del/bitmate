@@ -1,3 +1,4 @@
+import {siteConfirm,sitePrompt} from './SiteDialog';
 'use client';
 
 import {useEffect,useMemo,useState} from 'react';
@@ -161,8 +162,8 @@ export default function FuturesTradingClient(){
     await callAction('position_tpsl',{positionId:tpslPosition.id,takeProfit:tp,stopLoss:sl,triggerBy:'MARK'},'TP/SL을 변경했습니다.');
     setTpslPosition(null);
   }
-  async function addMargin(p:Position){const value=window.prompt('추가할 격리 증거금(USDT)','10');if(value===null)return;const amount=Number(value);if(!Number.isFinite(amount)||amount<=0){setMessage('추가 증거금을 확인하세요.');return}await callAction('position_margin',{positionId:p.id,amount,clientOrderId:`margin-${crypto.randomUUID()}`},'격리 증거금을 추가했습니다.')}
-  async function changeLeverage(p:Position){const pm=marketsPayload.markets.find(x=>x.symbol===p.symbol);const value=window.prompt(`변경 레버리지 (1~${pm?.max_leverage||100})`,String(p.leverage));if(value===null)return;const next=Number(value);if(!Number.isInteger(next)||next<1||next>(pm?.max_leverage||100)){setMessage('허용 레버리지를 확인하세요.');return}await callAction('position_leverage',{positionId:p.id,leverage:next},'포지션 레버리지를 변경했습니다.')}
+  async function addMargin(p:Position){const value=await sitePrompt('추가할 격리 증거금(USDT)','10',{title:'격리 증거금 추가',inputType:'number'});if(value===null)return;const amount=Number(value);if(!Number.isFinite(amount)||amount<=0){setMessage('추가 증거금을 확인하세요.');return}await callAction('position_margin',{positionId:p.id,amount,clientOrderId:`margin-${crypto.randomUUID()}`},'격리 증거금을 추가했습니다.')}
+  async function changeLeverage(p:Position){const pm=marketsPayload.markets.find(x=>x.symbol===p.symbol);const value=await sitePrompt(`변경 레버리지 (1~${pm?.max_leverage||100})`,String(p.leverage),{title:'레버리지 변경',inputType:'number'});if(value===null)return;const next=Number(value);if(!Number.isInteger(next)||next<1||next>(pm?.max_leverage||100)){setMessage('허용 레버리지를 확인하세요.');return}await callAction('position_leverage',{positionId:p.id,leverage:next},'포지션 레버리지를 변경했습니다.')}
   async function closePosition(p:Position,ratio:number){const pm=marketsPayload.markets.find(x=>x.symbol===p.symbol);if(!pm){setMessage('종목 정보를 찾을 수 없습니다.');return}const scale=Math.pow(10,pm.quantity_precision);const q=ratio>=1?num(p.size):Math.floor(num(p.size)*ratio*scale)/scale;if(q<=0){setMessage('청산 가능한 수량이 없습니다.');return}await callAction('order',{symbol:p.symbol,side:p.side==='LONG'?'SELL':'BUY',positionSide:positionMode==='HEDGE'?p.position_side:'BOTH',orderType:'MARKET',marginMode:p.margin_mode,leverage:p.leverage,quantity:q,clientOrderId:`close-${crypto.randomUUID()}`,reduceOnly:true,postOnly:false,timeInForce:'GTC',triggerBy:'MARK'},`${Math.round(ratio*100)}% 청산 주문을 전송했습니다.`)}
 
   return <main className={s.page}>
