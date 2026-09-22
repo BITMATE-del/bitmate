@@ -112,7 +112,7 @@ export default function AdminWalletOperations(){
     <div className={s.balanceHeadCopy}><span>MEMBER WALLET</span><h2>회원 입금 / 지갑 잔액</h2><p>입금 완료 및 관리자 조정 금액이 회원 상단 지갑 잔액에 동일하게 반영됩니다.</p></div>
     <button className={s.balanceAddButton} disabled={busy} onClick={()=>setBalance()}><UiIcon name="wallet" size={16}/>회원 잔액 설정</button>
    </div>
-   <div className={s.balanceInfo}><UiIcon name="info" size={15}/><span>관리자는 <b>Available</b> 잔액만 수정합니다. 주문·출금으로 잠긴 <b>Locked</b> 잔액은 유지되고, 모든 조정 내역은 Ledger와 Admin Log에 기록됩니다.</span></div>
+   <div className={s.balanceInfo}><UiIcon name="overview" size={15}/><span>관리자는 <b>Available</b> 잔액만 수정합니다. 주문·출금으로 잠긴 <b>Locked</b> 잔액은 유지되고, 모든 조정 내역은 Ledger와 Admin Log에 기록됩니다.</span></div>
    <div className={s.balanceTable}>
     <div className={s.balanceTableHead}><span>회원</span><span>자산</span><span>사용 가능 잔액</span><span>잠금 잔액</span><span>관리</span></div>
     {data.balances.length?data.balances.map(r=><div className={s.balanceRow} key={r.id}>
