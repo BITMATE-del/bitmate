@@ -6,7 +6,8 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon,{type UiIconName} from './UiIcon';
 import s from './HeaderUserTools.module.css';
 
-type Panel='wallet'|'account'|'notifications'|'download'|null;
+type Panel='currency'|'wallet'|'account'|'notifications'|'download'|null;
+type DisplayCurrency='KRW'|'USDT';
 type Balance={asset:string;available:number;locked:number};
 type WalletSnapshot={spot:Balance[];futures_usdt:number};
 
@@ -50,6 +51,8 @@ function formatUsdt(value:number){return Number(value||0).toLocaleString(undefin
 export default function HeaderUserTools(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const [panel,setPanel]=useState<Panel>(null);
+  const [displayCurrency,setDisplayCurrency]=useState<DisplayCurrency>('KRW');
+  const [krwRate,setKrwRate]=useState(0);
   const [email,setEmail]=useState('');
   const [uid,setUid]=useState('');
   const [wallet,setWallet]=useState<WalletSnapshot>({spot:[],futures_usdt:0});
@@ -57,6 +60,17 @@ export default function HeaderUserTools(){
   const root=useRef<HTMLDivElement>(null);
 
   useEffect(()=>{supabase.auth.getUser().then(({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'')}})},[supabase]);
+  useEffect(()=>{
+    const saved=localStorage.getItem('bitmate_display_currency');
+    if(saved==='KRW'||saved==='USDT')setDisplayCurrency(saved);
+    fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{});
+  },[]);
+  const chooseCurrency=(next:DisplayCurrency)=>{
+    setDisplayCurrency(next);
+    localStorage.setItem('bitmate_display_currency',next);
+    window.dispatchEvent(new CustomEvent('bitmate:display-currency',{detail:{currency:next}}));
+    setPanel(null);
+  };
   useEffect(()=>{const close=(e:MouseEvent)=>{if(root.current&&!root.current.contains(e.target as Node))setPanel(null)};document.addEventListener('mousedown',close);return()=>document.removeEventListener('mousedown',close)},[]);
   useEffect(()=>{
     if(panel!=='wallet'||!uid)return;
@@ -83,8 +97,16 @@ export default function HeaderUserTools(){
   const spotLocked=Number(usdt?.locked||0);
   const futuresBalance=Number(wallet.futures_usdt||0);
   const headerBalance=spotAvailable;
+  const displayBalance=displayCurrency==='KRW'&&krwRate>0?headerBalance*krwRate:headerBalance;
 
   return <div className={s.root} ref={root}>
+    <div className={s.rel}>
+      <button className={s.currencyButton} onClick={()=>toggle('currency')} aria-label="Display currency">{displayCurrency}<UiIcon name="chevronDown" size={12}/></button>
+      {panel==='currency'&&<div className={s.currencyMenu}>
+        <button className={displayCurrency==='KRW'?s.currencyActive:''} onClick={()=>chooseCurrency('KRW')}><b>KRW</b><span>원화 기준</span></button>
+        <button className={displayCurrency==='USDT'?s.currencyActive:''} onClick={()=>chooseCurrency('USDT')}><b>USDT</b><span>테더 기준</span></button>
+      </div>}
+    </div>
     <Link className={s.deposit} href="/deposit">Deposit</Link>
 
     <div className={s.rel} onMouseEnter={()=>setPanel('wallet')} onMouseLeave={()=>setPanel(v=>v==='wallet'?null:v)}>
@@ -92,8 +114,8 @@ export default function HeaderUserTools(){
       {panel==='wallet'&&<div className={`${s.panel} ${s.walletPanel}`}>
         <div className={s.walletSummary}>
           <div className={s.walletSummaryHead}><small>My Wallet</small><Link href="/account?view=overview" onClick={()=>setPanel(null)}>Overview <UiIcon name="chevronRight" size={12}/></Link></div>
-          <span className={s.walletLabel}>USDT Available</span>
-          <strong className={s.walletBalance}>{walletLoading?'—':formatUsdt(headerBalance)} <em>USDT</em></strong>
+          <span className={s.walletLabel}>{displayCurrency==='KRW'?'Wallet Balance':'USDT Available'}</span>
+          <strong className={s.walletBalance}>{walletLoading?'—':displayCurrency==='KRW'?(krwRate>0?Math.round(displayBalance).toLocaleString():'—'):formatUsdt(displayBalance)} <em>{displayCurrency==='KRW'?'KRW':'USDT'}</em></strong>
           <div className={s.walletBreakdown}>
             <div><small>Locked</small><b>{walletLoading?'—':formatUsdt(spotLocked)}</b></div>
             <div><small>Futures</small><b>{walletLoading?'—':formatUsdt(futuresBalance)}</b></div>
