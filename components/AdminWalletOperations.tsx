@@ -21,6 +21,7 @@ export default function AdminWalletOperations(){
  const [data,setData]=useState<Snap>({networks:[],deposits:[],withdrawals:[],addresses:[],balances:[],stats:{}});
  const [msg,setMsg]=useState('');
  const [busy,setBusy]=useState(false);
+ const [krwRate,setKrwRate]=useState(0);
 
  async function load(){
   const {data:{user}}=await supabase.auth.getUser();
@@ -31,7 +32,7 @@ export default function AdminWalletOperations(){
   if(error){setMsg(error.message);return}
   setData((snap||{}) as Snap);
  }
- useEffect(()=>{load()},[]);
+ useEffect(()=>{load();fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{})},[]);
 
  async function run(name:string,args:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
@@ -62,12 +63,15 @@ export default function AdminWalletOperations(){
  }
 
  async function setBalance(row:BalanceRow){
-  const current=Number(row.available||0);
-  const next=Number(prompt(`${row.email||'회원'} · USDT 사용 가능 잔액\n새 잔액을 입력하세요.`,String(current)));
-  if(!Number.isFinite(next)||next<0)return alert('0 이상의 잔액을 입력하세요.');
+  if(!krwRate)return alert('현재 KRW 환산 시세를 불러오지 못했습니다. 잠시 후 다시 시도하세요.');
+  const currentUsdt=Number(row.available||0);
+  const currentKrw=Math.round(currentUsdt*krwRate);
+  const nextKrw=Number(prompt(`${row.email||'회원'} · 통합 지갑 잔액(KRW)\n새 잔액을 입력하세요.`,String(currentKrw)));
+  if(!Number.isFinite(nextKrw)||nextKrw<0)return alert('0 이상의 잔액을 입력하세요.');
+  const nextUsdt=nextKrw/krwRate;
   const note=(prompt('관리자 메모 (선택)','')||'').trim();
-  if(!confirm(`${row.email||row.user_id}\nUSDT 사용 가능 잔액: ${current.toLocaleString()} → ${next.toLocaleString()}\n변경할까요?`))return;
-  await run('admin_set_user_usdt_balance',{p_user_id:row.user_id,p_available:next,p_note:note||null},`${row.email||'회원'}의 USDT 잔액이 ${next.toLocaleString()} 으로 변경되었습니다.`);
+  if(!confirm(`${row.email||row.user_id}\n통합 지갑: ₩${currentKrw.toLocaleString()} → ₩${Math.round(nextKrw).toLocaleString()}\n변경할까요?`))return;
+  await run('admin_set_user_usdt_balance',{p_user_id:row.user_id,p_available:nextUsdt,p_note:note||null},`${row.email||'회원'}의 통합 지갑 잔액이 ₩${Math.round(nextKrw).toLocaleString()}으로 변경되었습니다.`);
  }
 
  async function updateWithdrawal(r:WithdrawalRow,status:string){
@@ -105,17 +109,17 @@ export default function AdminWalletOperations(){
 
   {tab==='balances'&&<section className={`${s.panel} ${s.balancePanel}`}>
    <div className={s.balanceHead}>
-    <div className={s.balanceHeadCopy}><span>MEMBER WALLET</span><h2>회원 통합 지갑 잔액</h2><p>회원별 지갑은 하나만 존재하며 내부 기준 잔액은 USDT 하나로 관리합니다. KRW/USDT 선택은 표시 단위만 변경합니다.</p></div>
+    <div className={s.balanceHeadCopy}><span>MEMBER WALLET</span><h2>회원 통합 지갑 잔액</h2><p>회원별 지갑은 하나만 존재합니다. 어드민에서는 KRW 기준으로 표시하고, 회원 화면의 KRW/USDT 선택은 같은 잔액의 표시 단위만 변경합니다.</p></div>
     <div className={s.balanceSyncBadge}><UiIcon name="wallet" size={15}/>Header Wallet과 동일 기준</div>
    </div>
    <div className={s.balanceInfo}><UiIcon name="overview" size={15}/><span><b>통합 지갑 Available</b>이 회원 헤더의 Wallet Balance와 동일합니다. KRW는 별도 지갑이 아니라 이 잔액을 환산해서 보여주는 표시 단위입니다.</span></div>
    <div className={s.balanceTable}>
-    <div className={s.balanceTableHead}><span>회원</span><span>기준통화</span><span>사용 가능 잔액</span><span>잠금 잔액</span><span>관리</span></div>
+    <div className={s.balanceTableHead}><span>회원</span><span>기준</span><span>사용 가능 잔액</span><span>잠금 잔액</span><span>관리</span></div>
     {data.balances.length?data.balances.map(r=><div className={s.balanceRow} key={r.user_id}>
      <div className={s.memberCell}><div className={s.memberAvatar}>{(r.email||'M').slice(0,1).toUpperCase()}</div><div><b>{r.email||'—'}</b><small>UID {r.user_id.slice(0,8)}…</small></div></div>
-     <div className={s.assetCell}><strong>{r.asset}</strong><small>{new Date(r.updated_at).toLocaleString()}</small></div>
-     <div className={s.availableCell}><strong>{Number(r.available||0).toLocaleString(undefined,{maximumFractionDigits:10})}</strong><small>{r.asset}</small></div>
-     <div className={s.lockedCell}><strong>{Number(r.locked||0).toLocaleString(undefined,{maximumFractionDigits:10})}</strong><small>{r.asset}</small></div>
+     <div className={s.assetCell}><strong>KRW</strong><small>{new Date(r.updated_at).toLocaleString()}</small></div>
+     <div className={s.availableCell}><strong>{krwRate>0?'₩'+Math.round(Number(r.available||0)*krwRate).toLocaleString():'—'}</strong><small>{krwRate>0?`${Number(r.available||0).toLocaleString(undefined,{maximumFractionDigits:4})} USDT`:'환율 불러오는 중'}</small></div>
+     <div className={s.lockedCell}><strong>{krwRate>0?'₩'+Math.round(Number(r.locked||0)*krwRate).toLocaleString():'—'}</strong><small>{krwRate>0?`${Number(r.locked||0).toLocaleString(undefined,{maximumFractionDigits:4})} USDT`:'환율 불러오는 중'}</small></div>
      <div className={s.manageCell}><button disabled={busy} onClick={()=>setBalance(r)}>잔액 수정</button></div>
     </div>):<div className={s.balanceEmpty}><UiIcon name="wallet" size={24}/><b>잔액 데이터가 없습니다.</b><span>회원 잔액 설정 버튼으로 첫 잔액을 생성할 수 있습니다.</span></div>}
    </div>
