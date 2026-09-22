@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './CopyTrading.module.css';
+import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 
 type Trader={
  id:string;trader_uid:string;nickname:string;avatar_url:string|null;bio:string;grade:string;
@@ -14,13 +15,13 @@ const pct=(v:number|null|undefined)=>v==null?'—':`${v>=0?'+':''}${Number(v).to
 const num=(v:number|null|undefined)=>v==null?'—':Number(v).toLocaleString(undefined,{maximumFractionDigits:2});
 
 export default function CopyTradingClient(){
+ const wallet=useUnifiedWalletDisplay();
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const [uid,setUid]=useState('');
  const [trader,setTrader]=useState<Trader|null>(null);
  const [searching,setSearching]=useState(false);
  const [searchMsg,setSearchMsg]=useState('');
  const [selected,setSelected]=useState<Trader|null>(null);
- const [balance,setBalance]=useState<number|null>(null);
  const [amount,setAmount]=useState('500');
  const [maxLoss,setMaxLoss]=useState('150');
  const [tradeLimit,setTradeLimit]=useState('100');
@@ -46,9 +47,7 @@ export default function CopyTradingClient(){
  async function openCopy(t:Trader){
   setSelected(t);setMsg('');setAgree(false);
   const {data:{user}}=await supabase.auth.getUser();
-  if(!user){setBalance(null);return;}
-  const {data}=await supabase.from('demo_balances').select('available').eq('user_id',user.id).eq('asset','USDT').maybeSingle();
-  setBalance(data?Number(data.available):null);
+  if(!user)return;
  }
 
  async function startCopy(){
@@ -119,7 +118,7 @@ export default function CopyTradingClient(){
    <p className={s.muted}>Trader UID · {selected.trader_uid}</p>
    <div className={s.formGrid}>
     <label className={s.field}>카피 투자금 USDT<input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal"/></label>
-    <label className={s.field}>사용 가능 잔액<input value={balance==null?'로그인 후 확인':`${balance.toLocaleString()} USDT`} readOnly/></label>
+    <label className={s.field}>사용 가능 잔액<input value={wallet.loggedIn?wallet.withUnit(wallet.available):'로그인 후 확인'} readOnly/></label>
     <label className={s.field}>거래당 최대 금액<input value={tradeLimit} onChange={e=>setTradeLimit(e.target.value)}/></label>
     <label className={s.field}>최대 손실 금액<input value={maxLoss} onChange={e=>setMaxLoss(e.target.value)}/></label>
     <label className={s.field}>최대 동시 포지션<input value={maxPositions} onChange={e=>setMaxPositions(e.target.value)}/></label>
