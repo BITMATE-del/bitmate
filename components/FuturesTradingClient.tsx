@@ -122,11 +122,10 @@ export default function FuturesTradingClient(){
   const changePositionMode=(mode:'ONE_WAY'|'HEDGE')=>mode===positionMode?Promise.resolve():callAction('position_mode',{mode},mode==='HEDGE'?'헤지 모드로 변경했습니다.':'단방향 모드로 변경했습니다.');
   function editTPSL(p:Position){
     const ref=num(p.mark_price||p.entry_price);
-    const suggestedTp=p.side==='LONG'?ref*1.03:ref*0.97;
-    const suggestedSl=p.side==='LONG'?ref*0.98:ref*1.02;
+    const currentPrice=ref>0?ref.toFixed(2):'';
     setTpslPosition(p);
-    setTpslTp(p.take_profit?String(p.take_profit):suggestedTp.toFixed(2));
-    setTpslSl(p.stop_loss?String(p.stop_loss):suggestedSl.toFixed(2));
+    setTpslTp(p.take_profit?String(p.take_profit):currentPrice);
+    setTpslSl(p.stop_loss?String(p.stop_loss):currentPrice);
   }
   async function saveTPSL(){
     if(!tpslPosition)return;
@@ -155,9 +154,8 @@ export default function FuturesTradingClient(){
       <div className={s.tpslModal} role="dialog" aria-modal="true" aria-label="TP SL 설정">
         <div className={s.modalHead}><div><small>{tpslPosition.symbol} · {tpslPosition.side}</small><h3>TP / SL 설정</h3></div><button onClick={()=>setTpslPosition(null)}>×</button></div>
         <div className={s.modalMarket}><span>진입가 <b>{priceFmt(tpslPosition.entry_price,2)}</b></span><span>현재가 <b>{priceFmt(tpslPosition.mark_price,2)}</b></span></div>
-        <label className={s.modalField}><span>TP 설정 <em>Take Profit · 익절</em></span><div><input value={tpslTp} onChange={e=>setTpslTp(e.target.value)} inputMode="decimal"/><b>USDT</b></div><small>{tpslPosition.side==='LONG'?'현재가보다 높은 가격에서 이익 실현':'현재가보다 낮은 가격에서 이익 실현'} · 예시값 자동 입력됨</small></label>
-        <label className={s.modalField}><span>SL 설정 <em>Stop Loss · 손절</em></span><div><input value={tpslSl} onChange={e=>setTpslSl(e.target.value)} inputMode="decimal"/><b>USDT</b></div><small>{tpslPosition.side==='LONG'?'현재가보다 낮은 가격에서 손실 제한':'현재가보다 높은 가격에서 손실 제한'} · 예시값 자동 입력됨</small></label>
-        <div className={s.exampleBox}><b>예시 기준</b><span>TP는 현재가 대비 약 3%, SL은 약 2% 범위로 예시값을 넣었습니다. 원하는 가격으로 직접 수정할 수 있습니다.</span></div>
+        <label className={s.modalField}><span>TP 설정 <em>Take Profit · 익절</em></span><div><input value={tpslTp} onFocus={()=>{if(!tpslTp)setTpslTp(String(num(tpslPosition.mark_price||tpslPosition.entry_price).toFixed(2)))}} onChange={e=>setTpslTp(e.target.value)} inputMode="decimal"/><b>USDT</b></div><small>{tpslPosition.side==='LONG'?'현재가보다 높은 가격으로 수정하세요.':'현재가보다 낮은 가격으로 수정하세요.'}</small></label>
+        <label className={s.modalField}><span>SL 설정 <em>Stop Loss · 손절</em></span><div><input value={tpslSl} onFocus={()=>{if(!tpslSl)setTpslSl(String(num(tpslPosition.mark_price||tpslPosition.entry_price).toFixed(2)))}} onChange={e=>setTpslSl(e.target.value)} inputMode="decimal"/><b>USDT</b></div><small>{tpslPosition.side==='LONG'?'현재가보다 낮은 가격으로 수정하세요.':'현재가보다 높은 가격으로 수정하세요.'}</small></label>
         <div className={s.modalActions}><button className={s.modalGhost} onClick={()=>{setTpslTp('');setTpslSl('')}}>둘 다 해제</button><button className={s.modalCancel} onClick={()=>setTpslPosition(null)}>취소</button><button className={s.modalSave} disabled={busy} onClick={saveTPSL}>{busy?'저장 중...':'설정 저장'}</button></div>
       </div>
     </div>}
