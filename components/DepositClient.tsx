@@ -5,6 +5,7 @@ import {useCallback,useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
 import s from './Deposit.module.css';
+import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 
 type TokenKey='BTC'|'ETH'|'USDT'|'TRX'|'SOL';
 type TokenMeta={name:string;symbol:TokenKey;icon:string};
@@ -36,6 +37,7 @@ const isKycExempt=(asset:string,network:string)=>
  (asset==='USDT'&&network==='TRC20')||(asset==='TRX'&&network==='TRC20');
 
 export default function DepositClient(){
+ const wallet=useUnifiedWalletDisplay();
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const [token,setToken]=useState<TokenKey|''>('');
  const [network,setNetwork]=useState('');
@@ -121,7 +123,7 @@ export default function DepositClient(){
 
  return <main className={s.page}>
   <div className={s.shell}>
-   <div className={s.titleRow}><span>‹</span><h1>Crypto Deposit</h1></div>
+   <div className={s.titleRow}><span>‹</span><h1>Crypto Deposit</h1><div className={s.walletBalanceChip}><small>내 자산</small><b>{wallet.withUnit(wallet.total)}</b></div></div>
    <div className={s.mainGrid}>
     <section className={s.flow}>
       <div className={s.step+' '+(token?s.done:s.active)}><i>1</i><div><b>Select Token</b>
