@@ -82,7 +82,7 @@ export default function HeaderUserTools(){
   const spotAvailable=Number(usdt?.available||0);
   const spotLocked=Number(usdt?.locked||0);
   const futuresBalance=Number(wallet.futures_usdt||0);
-  const totalBalance=spotAvailable+spotLocked+futuresBalance;
+  const headerBalance=spotAvailable;
 
   return <div className={s.root} ref={root}>
     <Link className={s.deposit} href="/deposit">Deposit</Link>
@@ -92,10 +92,10 @@ export default function HeaderUserTools(){
       {panel==='wallet'&&<div className={`${s.panel} ${s.walletPanel}`}>
         <div className={s.walletSummary}>
           <div className={s.walletSummaryHead}><small>My Wallet</small><Link href="/account?view=overview" onClick={()=>setPanel(null)}>Overview <UiIcon name="chevronRight" size={12}/></Link></div>
-          <span className={s.walletLabel}>USDT Balance</span>
-          <strong className={s.walletBalance}>{walletLoading?'—':formatUsdt(totalBalance)} <em>USDT</em></strong>
+          <span className={s.walletLabel}>USDT Available</span>
+          <strong className={s.walletBalance}>{walletLoading?'—':formatUsdt(headerBalance)} <em>USDT</em></strong>
           <div className={s.walletBreakdown}>
-            <div><small>Spot Available</small><b>{walletLoading?'—':formatUsdt(spotAvailable)}</b></div>
+            <div><small>Locked</small><b>{walletLoading?'—':formatUsdt(spotLocked)}</b></div>
             <div><small>Futures</small><b>{walletLoading?'—':formatUsdt(futuresBalance)}</b></div>
           </div>
           <div className={s.walletActions}>
