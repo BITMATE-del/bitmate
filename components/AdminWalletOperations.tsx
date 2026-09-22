@@ -10,14 +10,15 @@ type NetworkRow={id:string;asset:string;network:string;display_name:string;confi
 type DepositRow={id:string;user_id:string;email:string|null;asset:string;network:string;address:string|null;txid:string|null;amount:number;confirmations:number;status:string;created_at:string;credited_at:string|null};
 type WithdrawalRow={id:string;user_id:string;email:string|null;asset:string;network:string;address:string;amount:number;fee:number;status:string;txid:string|null;note:string|null;created_at:string;reviewed_at:string|null;updated_at:string};
 type AddressRow={id:string;user_id:string;email:string|null;asset:string;network:string;address:string;provider:string;active:boolean;scan_from:string;created_at:string};
-type Snap={networks:NetworkRow[];deposits:DepositRow[];withdrawals:WithdrawalRow[];addresses:AddressRow[];stats:Record<string,number>};
-type Tab='networks'|'addresses'|'deposits'|'withdrawals';
+type BalanceRow={id:string;user_id:string;email:string|null;asset:string;available:number;locked:number;created_at:string;updated_at:string};
+type Snap={networks:NetworkRow[];deposits:DepositRow[];withdrawals:WithdrawalRow[];addresses:AddressRow[];balances:BalanceRow[];stats:Record<string,number>};
+type Tab='balances'|'networks'|'addresses'|'deposits'|'withdrawals';
 
 export default function AdminWalletOperations(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const [allowed,setAllowed]=useState<boolean|null>(null);
- const [tab,setTab]=useState<Tab>('networks');
- const [data,setData]=useState<Snap>({networks:[],deposits:[],withdrawals:[],addresses:[],stats:{}});
+ const [tab,setTab]=useState<Tab>('balances');
+ const [data,setData]=useState<Snap>({networks:[],deposits:[],withdrawals:[],addresses:[],balances:[],stats:{}});
  const [msg,setMsg]=useState('');
  const [busy,setBusy]=useState(false);
 
@@ -60,6 +61,19 @@ export default function AdminWalletOperations(){
   await run('admin_assign_tron_deposit_address',{p_email:email,p_address:address},'TRON 자동입금 주소가 배정되었습니다.');
  }
 
+ async function setBalance(row?:BalanceRow){
+  const email=(prompt('회원 이메일을 입력하세요.',row?.email||'')||'').trim();
+  if(!email)return;
+  const asset=(prompt('자산을 입력하세요. (예: USDT, TRX)',row?.asset||'USDT')||'').trim().toUpperCase();
+  if(!asset)return;
+  const current=row?Number(row.available||0):0;
+  const next=Number(prompt('변경할 사용 가능 잔액을 입력하세요.',String(current)));
+  if(!Number.isFinite(next)||next<0)return alert('0 이상의 잔액을 입력하세요.');
+  const note=(prompt('관리자 메모 (선택)','')||'').trim();
+  if(!confirm(`${email}\n${asset} 사용 가능 잔액을 ${next.toLocaleString()} 으로 설정할까요?\n현재 주문/출금으로 잠긴 잔액은 변경하지 않습니다.`))return;
+  await run('admin_set_user_balance',{p_email:email,p_asset:asset,p_available:next,p_note:note||null},`${email}의 ${asset} 잔액이 ${next.toLocaleString()} 으로 변경되었습니다.`);
+ }
+
  async function updateWithdrawal(r:WithdrawalRow,status:string){
   let txid=r.txid||'';let note=r.note||'';
   if(status==='SENT')txid=prompt('전송 TXID를 입력하세요.',txid)||'';
@@ -78,19 +92,34 @@ export default function AdminWalletOperations(){
   </header>
 
   <section className={s.stats}>
+   <div><span>잔액 보유 회원</span><b>{data.stats?.wallet_users||0}</b></div>
    <div><span>활성 네트워크</span><b>{data.stats?.networks||0}</b></div>
    <div><span>입금 활성</span><b>{data.stats?.deposit_enabled||0}</b></div>
-   <div><span>출금 활성</span><b>{data.stats?.withdraw_enabled||0}</b></div>
    <div><span>출금 대기</span><b>{data.stats?.withdraw_pending||0}</b></div>
    <div><span>TRON 주소 배정</span><b>{data.stats?.tron_addresses||0}</b></div>
   </section>
 
   <nav className={s.tabs}>
-   <button className={tab==='networks'?s.active:''} onClick={()=>setTab('networks')}><UiIcon name="wallet" size={17}/> Asset Networks</button>
+   <button className={tab==='balances'?s.active:''} onClick={()=>setTab('balances')}><UiIcon name="wallet" size={17}/> Member Balances</button>
+   <button className={tab==='networks'?s.active:''} onClick={()=>setTab('networks')}><UiIcon name="settings" size={17}/> Asset Networks</button>
    <button className={tab==='addresses'?s.active:''} onClick={()=>setTab('addresses')}><UiIcon name="link" size={17}/> TRON Addresses</button>
    <button className={tab==='deposits'?s.active:''} onClick={()=>setTab('deposits')}><UiIcon name="history" size={17}/> Deposit Records</button>
    <button className={tab==='withdrawals'?s.active:''} onClick={()=>setTab('withdrawals')}><UiIcon name="order" size={17}/> Withdrawals</button>
   </nav>
+
+  {tab==='balances'&&<section className={s.panel}>
+   <div className={s.panelHead}><div><h2>회원 입금 / 지갑 잔액</h2><p>상단 지갑 메뉴와 Deposit 충전 후 표시되는 Spot 잔액입니다. 체인 입금이 CREDITED 되면 동일한 잔액에 자동 반영됩니다.</p></div><div className={s.actions}><button disabled={busy} onClick={()=>setBalance()}>회원 잔액 설정</button></div></div>
+   <div className={s.balanceNote}>관리자 수정은 <b>Available</b> 잔액만 변경합니다. 주문·출금 등으로 잠긴 <b>Locked</b> 잔액은 유지되며 모든 수정 내역은 Ledger와 Admin Log에 기록됩니다.</div>
+   <div className={s.table}><div className={s.thBal}><span>회원</span><span>자산</span><span>Available</span><span>Locked</span><span>관리</span></div>
+   {data.balances.length?data.balances.map(r=><div className={s.trBal} key={r.id}>
+    <span><b>{r.email||'—'}</b><small>{r.user_id.slice(0,8)}…</small></span>
+    <span><b>{r.asset}</b><small>Updated {new Date(r.updated_at).toLocaleString()}</small></span>
+    <span><b>{Number(r.available||0).toLocaleString(undefined,{maximumFractionDigits:10})}</b></span>
+    <span><b>{Number(r.locked||0).toLocaleString(undefined,{maximumFractionDigits:10})}</b></span>
+    <span className={s.actions}><button disabled={busy} onClick={()=>setBalance(r)}>잔액 수정</button></span>
+   </div>):<div className={s.empty}>잔액 데이터가 없습니다. 회원 잔액 설정 버튼으로 생성할 수 있습니다.</div>}
+   </div>
+  </section>}
 
   {tab==='networks'&&<section className={s.panel}>
    <div className={s.panelHead}><div><h2>Asset / Network 설정</h2><p>Deposit 페이지에 노출되는 네트워크 정책의 기준 데이터입니다.</p></div></div>
