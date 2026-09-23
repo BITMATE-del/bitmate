@@ -262,6 +262,12 @@ export default function TradingViewCfdInjector(){
       if(disposed)return;
       const stage=findStage();
       if(!stage)return;
+      if(stage.dataset.chartMode==='position'){
+        stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
+        activeSymbol='';
+        chart=null;widget=null;shapeIds=[];
+        return;
+      }
 
       const perpetual=window.location.pathname.startsWith('/futures');
       const tvSymbol=normalizeTradingViewSymbol(stage.dataset.symbol||'BTCUSDT',perpetual);
