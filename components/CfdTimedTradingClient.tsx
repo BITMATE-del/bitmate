@@ -5,6 +5,7 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import BinanceMarketDepth from './BinanceMarketDepth';
 import CfdMarketSelector,{type LiveMarket} from './CfdMarketSelector';
 import s from './CfdTimedTrading.module.css';
+import PositionChart from './PositionChart';
 
 type Product={id:string;symbol:string;display_name:string;category:string;current_price:number|null;bid:number|null;ask:number|null;min_order:number;max_order:number;last_price_at:string|null};
 type TimedTrade={id:string;symbol:string;direction:'UP'|'DOWN';duration_minutes:number;amount:number;start_price:number;end_price:number|null;status:'ACTIVE'|'SETTLED'|'CANCELLED';result:'WIN'|'LOSS'|'DRAW'|null;payout_amount:number|null;net_profit:number|null;starts_at:string;expires_at:string;settled_at:string|null;created_at:string};
@@ -35,6 +36,7 @@ export default function CfdTimedTradingClient(){
   const [bookTab,setBookTab]=useState<BookTab>('book');
   const [bottomTab,setBottomTab]=useState<BottomTab>('active');
   const [msg,setMsg]=useState('');
+  const [chartMode,setChartMode]=useState<'tradingview'|'position'>('tradingview');
   const [submitting,setSubmitting]=useState(false);
   const [now,setNow]=useState(Date.now());
 
@@ -172,8 +174,8 @@ export default function CfdTimedTradingClient(){
 
     <section className={s.terminalGrid}>
       <section className={`${s.panel} ${s.chartPanel}`}>
-        <div className={s.panelTabs}><div><button className={s.activeTab}>차트</button></div><div className={s.chartTools}><span className={s.liveDot}/><span>LIVE</span><span>{fmtPrice(bid)} / {fmtPrice(ask)}</span></div></div>
-        <div className={s.chartStage} data-symbol={selected?.symbol||'BTCUSDT'}/>
+        <div className={s.panelTabs}><div><button onClick={()=>setChartMode('tradingview')} className={chartMode==='tradingview'?s.activeTab:''}>TradingView</button><button onClick={()=>setChartMode('position')} className={chartMode==='position'?s.activeTab:''}>포지션 차트</button></div><div className={s.chartTools}><span className={s.liveDot}/><span>LIVE</span><span>{fmtPrice(bid)} / {fmtPrice(ask)}</span></div></div>
+        <div className={s.chartStage} data-symbol={selected?.symbol||'BTCUSDT'} data-chart-mode={chartMode}>{chartMode==='position'&&<PositionChart symbol={selected?.symbol||'BTCUSDT'} mode="cfd"/>}</div>
       </section>
 
       <section className={s.panel}>
