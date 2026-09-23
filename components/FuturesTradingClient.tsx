@@ -8,6 +8,7 @@ import BinanceMarketDepth from './BinanceMarketDepth';
 import FuturesMarketSelector,{type FuturesFeedMarket} from './FuturesMarketSelector';
 import s from './FuturesTrading.module.css';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
+import PositionChart from './PositionChart';
 
 type EngineMarket={symbol:string;display_name:string;base_asset:string;quote_asset:string;enabled:boolean;trading_status:string;last_price:number;mark_price:number;index_price:number;bid:number;ask:number;change_pct:number;high_24h:number;low_24h:number;volume:number;quote_volume:number;funding_rate:number;next_funding_time:string;max_leverage:number;maker_fee:number;taker_fee:number;maintenance_margin_rate:number;quantity_precision:number;price_precision:number;min_order_size:number;max_order_size:number;min_notional:number;max_notional:number;stale:boolean};
 type MarketsPayload={settings:{enabled:boolean;max_price_age_seconds:number}|null;health:{prices_at:string|null;risk_at:string|null;funding_at:string|null;last_error:string|null}|null;markets:EngineMarket[]};
@@ -62,6 +63,7 @@ export default function FuturesTradingClient(){
   const [bookTab,setBookTab]=useState<BookTab>('book');
   const [busy,setBusy]=useState(false);
   const [message,setMessage]=useState('');
+  const [chartMode,setChartMode]=useState<'tradingview'|'position'>('tradingview');
   const [tpslPosition,setTpslPosition]=useState<Position|null>(null);
   const [tpslTp,setTpslTp]=useState('');
   const [tpslSl,setTpslSl]=useState('');
@@ -190,7 +192,7 @@ export default function FuturesTradingClient(){
     {settingsEnabled&&!engineMarket&&<div className={s.systemBanner}>선택한 종목은 Binance USDT-M 실시간 시세/차트 포워딩이 가능하지만 BITMATE 주문 엔진에는 아직 등록되지 않았습니다.</div>}
 
     <section className={s.terminal}>
-      <section className={`${s.panel} ${s.chartPanel}`}><div className={s.panelHead}><div><button className={s.activeTab}>차트</button><button>정보</button></div><span className={s.live}><i/> LIVE · Binance USDT-M</span></div><div className={s.chartStage} data-symbol={currentSymbol}/></section>
+      <section className={`${s.panel} ${s.chartPanel}`}><div className={s.panelHead}><div><button onClick={()=>setChartMode('tradingview')} className={chartMode==='tradingview'?s.activeTab:''}>TradingView</button><button onClick={()=>setChartMode('position')} className={chartMode==='position'?s.activeTab:''}>포지션 차트</button></div><span className={s.live}><i/> LIVE · Binance USDT-M</span></div><div className={s.chartStage} data-symbol={currentSymbol} data-chart-mode={chartMode}>{chartMode==='position'&&<PositionChart symbol={currentSymbol} mode="futures"/>}</div></section>
       <section className={s.panel}><div className={s.panelHead}><div><button className={bookTab==='book'?s.activeTab:''} onClick={()=>setBookTab('book')}>호가</button><button className={bookTab==='recent'?s.activeTab:''} onClick={()=>setBookTab('recent')}>최근 체결</button></div></div><BinanceMarketDepth symbol={currentSymbol} currentPrice={lastPrice} mode={bookTab} marketType="futures" classNames={{bookBody:s.bookBody,bookHead:s.bookHead,bookRows:s.bookRows,bookRow:s.bookRow,askDepth:s.askDepth,bidDepth:s.bidDepth,midPrice:s.midPrice,bookStatus:s.bookStatus,recentList:s.recentList,empty:s.empty}}/></section>
 
       <section className={`${s.panel} ${s.orderPanel}`}>
