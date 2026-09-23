@@ -8,7 +8,7 @@ import {siteAlert,siteConfirm,sitePrompt} from './SiteDialog';
 import s from './AdminOperations.module.css';
 
 type Balance={asset:string;available:number;locked:number};
-type UserRow={id:string;email:string|null;phone:string|null;created_at:string;last_sign_in_at:string|null;role:string|null;display_name:string|null;vip_level:string|null;kyc_status:string;balances:Balance[]};
+type UserRow={id:string;email:string|null;phone:string|null;created_at:string;last_sign_in_at:string|null;role:string|null;display_name:string|null;vip_level:string|null;kyc_status:string;frozen:boolean;banned_until:string|null;balances:Balance[]};
 type KycRow={id:string;user_id:string;email:string|null;country:string;full_name:string;status:string;submitted_at:string;reviewed_at:string|null};
 type DeletionRow={id:string;user_id:string;email:string|null;reason:string|null;status:string;created_at:string;updated_at:string};
 type Snapshot={users:UserRow[];kyc:KycRow[];deletions:DeletionRow[];settings:Record<string,unknown>;stats:Record<string,number>};
@@ -49,6 +49,39 @@ export default function AdminOperations(){
   const vip=(await sitePrompt('VIP 등급',u.vip_level||'BASIC',{title:'회원 정보 수정'}))?.trim(); if(vip===undefined||vip===null)return;
   await run('admin_update_profile',{p_user_id:u.id,p_display_name:display,p_vip_level:vip},'회원 프로필이 변경되었습니다.');
  }
+ function makeTemporaryPassword(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+  const bytes=new Uint32Array(14);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes,x=>chars[x%chars.length]).join('');
+ }
+ async function toggleFreeze(u:UserRow){
+  const freezing=!u.frozen;
+  const reason=freezing?(await sitePrompt('계정 동결 사유를 입력하세요.','관리자 계정 동결',{title:'회원 계정 동결'}))?.trim():'관리자 동결 해제';
+  if(freezing&&!reason)return;
+  const ok=await siteConfirm(
+    freezing
+      ?`${u.email||u.id}\n계정을 동결하면 현재 로그인 세션이 종료되고 로그인할 수 없습니다.\n동결할까요?`
+      :`${u.email||u.id}\n계정 동결을 해제할까요?`,
+    {title:freezing?'회원 계정 동결':'회원 계정 동결 해제'}
+  );
+  if(!ok)return;
+  await run('admin_set_user_frozen',{p_user_id:u.id,p_frozen:freezing,p_reason:reason||null},freezing?'회원 계정이 동결되었습니다.':'회원 계정 동결이 해제되었습니다.');
+ }
+ async function resetPassword(u:UserRow){
+  const temporary=makeTemporaryPassword();
+  const ok=await siteConfirm(
+    `${u.email||u.id}\n임시 비밀번호로 초기화하면 현재 로그인 세션이 모두 종료됩니다.\n비밀번호를 초기화할까요?`,
+    {title:'회원 비밀번호 초기화'}
+  );
+  if(!ok)return;
+  setBusy(true);setMsg('');
+  const {error}=await supabase.rpc('admin_reset_user_password',{p_user_id:u.id,p_temporary_password:temporary});
+  setBusy(false);
+  if(error){setMsg(error.message);return}
+  await load();
+  await siteAlert(`비밀번호가 초기화되었습니다.\n\n임시 비밀번호\n${temporary}\n\n이 비밀번호는 관리자 화면에 다시 표시되지 않습니다.`,{title:'비밀번호 초기화 완료'});
+ }
  async function adjust(u:UserRow){
   const asset=((await sitePrompt('조정할 자산','USDT',{title:'잔액 조정'}))||'').trim().toUpperCase();if(!asset)return;
   const amount=Number(await sitePrompt('증가/차감 금액을 입력하세요. 차감은 음수입니다.','0',{title:'잔액 조정',inputType:'number'}));if(!Number.isFinite(amount)||amount===0){await siteAlert('0이 아닌 숫자를 입력하세요.');return}
@@ -71,6 +104,7 @@ export default function AdminOperations(){
   <header className={s.hero}><div><span>BITMATE ADMIN</span><h1>회원 · 자산 · 운영 관리</h1><p>회원 프로필, KYC, 계정 삭제 요청, DEMO 원장 조정과 시스템 운영 스위치를 한 곳에서 관리합니다. 모든 민감 변경은 관리자 로그에 남습니다.</p></div><div className={s.heroActions}><Link href="/admin">관리자 홈</Link><Link href="/account">사용자 자산화면</Link></div></header>
   <section className={s.stats}>
    <div><span>전체 회원</span><b>{data.stats?.users||0}</b></div>
+   <div><span>동결 회원</span><b>{data.stats?.frozen_users||0}</b></div>
    <div><span>KYC 대기</span><b>{data.stats?.kyc_pending||0}</b></div>
    <div><span>삭제 요청 대기</span><b>{data.stats?.deletion_pending||0}</b></div>
    <div><span>활성 API</span><b>{data.stats?.api_active||0}</b></div>
@@ -85,15 +119,15 @@ export default function AdminOperations(){
   </nav>
 
   {tab==='members'&&<section className={s.panel}>
-   <div className={s.panelHead}><div><h2>회원 관리</h2><p>이메일·UID·닉네임 검색, 프로필/VIP 변경, DEMO 잔액 조정</p></div><div className={s.search}><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="이메일 / UID / 닉네임"/><button onClick={()=>load(query)}>검색</button></div></div>
+   <div className={s.panelHead}><div><h2>회원 관리</h2><p>이메일·UID·닉네임 검색, 프로필/VIP 변경, 통합 잔액 조정, 계정 동결 및 비밀번호 초기화</p></div><div className={s.search}><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="이메일 / UID / 닉네임"/><button onClick={()=>load(query)}>검색</button></div></div>
    <div className={s.table}>
     <div className={s.th}><span>회원</span><span>상태</span><span>DEMO 자산</span><span>최근 로그인</span><span>관리</span></div>
     {data.users.map(u=><div className={s.tr} key={u.id}>
      <span><b>{u.display_name||'이름 없음'}</b><small>{u.email||'—'}</small><em>{u.id.slice(0,8)}…</em></span>
-     <span><b>{u.vip_level||'BASIC'}</b><small>KYC {u.kyc_status}</small>{u.role&&<em>{u.role}</em>}</span>
+     <span><b>{u.frozen?'FROZEN':(u.vip_level||'BASIC')}</b><small>KYC {u.kyc_status}</small>{u.frozen&&<em>계정 동결</em>}{!u.frozen&&u.role&&<em>{u.role}</em>}</span>
      <span className={s.balanceList}>{u.balances?.length?u.balances.map(b=><small key={b.asset}><b>{b.asset}</b> {Number(b.available||0).toLocaleString()}</small>):<small>잔액 없음</small>}</span>
      <span><small>{u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString():'—'}</small><em>가입 {new Date(u.created_at).toLocaleDateString()}</em></span>
-     <span className={s.rowActions}><button onClick={()=>editProfile(u)}>프로필</button><button className={s.primary} onClick={()=>adjust(u)}>잔액 조정</button></span>
+     <span className={s.rowActions}><button onClick={()=>editProfile(u)}>프로필</button><button className={s.primary} onClick={()=>adjust(u)}>잔액 조정</button><button disabled={busy} onClick={()=>resetPassword(u)}>비밀번호 초기화</button><button disabled={busy} className={u.frozen?s.unfreeze:s.freeze} onClick={()=>toggleFreeze(u)}>{u.frozen?'동결 해제':'계정 동결'}</button></span>
     </div>)}
    </div>
   </section>}
