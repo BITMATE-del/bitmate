@@ -19,3 +19,68 @@
 .loanActions .secondary{height:36px}
 .agree{display:flex;gap:8px;align-items:flex-start;font-size:12px;margin:14px 0;line-height:1.55}
 @media(max-width:900px){.modalSteps{grid-template-columns:repeat(2,1fr)}.extensionOffer{grid-template-columns:1fr}.extensionOffer button{grid-column:1;grid-row:auto}}
+
+
+/* Loan modal visibility + Korean heading rendering corrections */
+.input,.select{
+  color:#111827;
+  caret-color:#111827;
+  -webkit-text-fill-color:#111827;
+  background:#fff;
+  opacity:1;
+}
+.input::placeholder{
+  color:#9ca3af;
+  opacity:1;
+  -webkit-text-fill-color:#9ca3af;
+}
+.input:disabled,.input[readonly],.select:disabled{
+  color:#6b7280;
+  -webkit-text-fill-color:#6b7280;
+  opacity:1;
+}
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus,
+.select:-webkit-autofill{
+  -webkit-text-fill-color:#111827;
+  caret-color:#111827;
+  box-shadow:0 0 0 1000px #fff inset;
+  transition:background-color 9999s ease-out 0s;
+}
+.select option{
+  color:#111827;
+  background:#fff;
+}
+.close{
+  width:36px;
+  height:36px;
+  min-width:36px;
+  display:grid;
+  place-items:center;
+  border:1px solid #d7dcdf;
+  border-radius:8px;
+  background:#fff;
+  color:#111827;
+  -webkit-text-fill-color:#111827;
+  font-size:24px;
+  line-height:1;
+  opacity:1;
+}
+.close:hover{
+  background:#f3f4f6;
+  border-color:#bfc6ca;
+}
+.sectionTitle{
+  font-family:"Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",Pretendard,system-ui,sans-serif;
+  font-weight:800;
+  font-feature-settings:normal;
+  font-variation-settings:normal;
+  font-stretch:normal;
+  letter-spacing:-.01em;
+  transform:none;
+  scale:none;
+}
+.sectionTitle::before,.sectionTitle::after{
+  content:none!important;
+}
