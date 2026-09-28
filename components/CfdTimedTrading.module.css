@@ -79,3 +79,33 @@
 .amountInput input::placeholder{color:#4d5b61;font-weight:600}
 .amountInput em{font-style:normal;color:#9baaaf;font-size:10px;font-weight:800;padding:0 12px;border-left:1px solid #223036;height:24px;display:flex;align-items:center}
 @media(max-width:700px){.amountInput{height:46px}.amountInput input{font-size:14px}}
+
+
+@media(max-width:700px){
+  .page{padding-bottom:calc(74px + env(safe-area-inset-bottom))}
+  .marketBar{grid-template-columns:minmax(0,1.3fr) minmax(110px,.7fr);min-height:58px}
+  .metric{display:none}
+  .priceBox strong{font-size:20px}
+  .terminalGrid{display:flex;flex-direction:column;min-height:0}
+  .chartPanel{order:1;min-height:390px}
+  .chartStage{min-height:350px;width:100%;max-width:100%}
+  .panel:nth-child(2){order:3;max-height:360px;overflow:auto}
+  .orderPanel{order:2;height:auto;min-height:0;padding:12px}
+  .panelTabs{height:44px}
+  .panelTabs button,.bottomTabs button{min-height:44px;font-size:12px}
+  .directionRow button{height:48px;font-size:14px}
+  .durationRow button{height:44px;font-size:13px}
+  .amountInput,.field{min-height:48px}
+  .amountInput input,.field input{font-size:16px}
+  .quickAmounts button{height:42px;font-size:12px}
+  .balance,.amountHead,.summary span,.notice{font-size:11px}
+  .summary b{font-size:13px}
+  .submit{min-height:50px;font-size:15px}
+  .accountStrip{grid-template-columns:1fr 1fr}
+  .accountStrip div{padding:12px 10px}
+  .bottomTabs{overflow-x:auto;scrollbar-width:none}
+  .bottomTabs::-webkit-scrollbar{display:none}
+  .tableWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .table{min-width:760px}
+  .toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));max-width:none}
+}
