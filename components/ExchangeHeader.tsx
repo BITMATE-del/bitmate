@@ -64,6 +64,23 @@ export default function ExchangeHeader(){
   },[]);
 
   useEffect(()=>{
+    const closeInteractiveMenus=(e:Event)=>{
+      if(!(mobileOpen||miningOpen||aiOpen||copyOpen||etfOpen||moreOpen||searchOpen))return;
+      e.preventDefault();
+      closeMenus();
+      setSearchOpen(false);
+    };
+    const onEscape=(e:KeyboardEvent)=>{if(e.key==='Escape')closeInteractiveMenus(e)};
+    window.addEventListener('bitmate:native-back',closeInteractiveMenus as EventListener);
+    document.addEventListener('keydown',onEscape);
+    return()=>{
+      window.removeEventListener('bitmate:native-back',closeInteractiveMenus as EventListener);
+      document.removeEventListener('keydown',onEscape);
+    };
+  },[mobileOpen,miningOpen,aiOpen,copyOpen,etfOpen,moreOpen,searchOpen]);
+
+
+  useEffect(()=>{
     if(!searchOpen)return;
     let cancelled=false;
     Promise.all([
