@@ -3,6 +3,7 @@
 import {siteConfirm} from './SiteDialog';
 import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
+import {Noto_Sans_KR} from 'next/font/google';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 import s from './CryptoLoan.module.css';
@@ -30,6 +31,8 @@ type Loan={
 };
 type Collateral={id:string;loan_id:string;asset_symbol:string;quantity:number;initial_price:number;initial_value:number;current_price:number|null;current_value:number|null;status:string};
 type Extension={id:string;loan_id:string;old_due_at:string;new_due_at:string|null;old_interest_rate:number;new_interest_rate:number|null;additional_interest:number|null;admin_note:string|null;status:string;requested_at:string;accepted_at:string|null};
+
+const loanKoreanFont=Noto_Sans_KR({weight:'700',preload:false,display:'swap',variable:'--font-loan-korean'});
 
 const qtyFmt=(n:number,d=8)=>Number(n||0).toLocaleString(undefined,{maximumFractionDigits:d});
 const pct=(n:number|null|undefined)=>n==null?'—':`${(Number(n)*100).toFixed(2)}%`;
@@ -191,7 +194,7 @@ export default function CryptoLoanClient(){
     <section className={s.body}><div className={s.shell}>
       <div className={s.steps}>{[['01','상품 선택'],['02','담보 및 금액'],['03','조건 확인'],['04','대출 실행']].map(([n,t])=><div className={s.step} key={n}><span className={s.stepNum}>{n}</span><b>{t}</b></div>)}</div>
 
-      <h2 className={s.sectionTitle}>대출 시장</h2>
+      <h2 className={`${s.sectionTitle} ${s.loanPageTitle} ${loanKoreanFont.variable}`}>대출 시장</h2>
       <div className={s.market}>
         <div className={s.marketHead}><span>상품</span><span>최대 LTV</span><span>기간 / 기본 이자</span><span>연장 / 연체</span><span>실행</span></div>
         {products.length?products.map(p=><div className={s.row} key={p.id}>
@@ -204,7 +207,7 @@ export default function CryptoLoanClient(){
       </div>
 
       {logged&&<section id="my-loans" className={s.loans}>
-        <h2 className={s.sectionTitle}>내 대출</h2>
+        <h2 className={`${s.sectionTitle} ${s.loanPageTitle} ${loanKoreanFont.variable}`}>내 대출</h2>
         {loans.length?loans.map(l=>{
           const c=collaterals.find(x=>x.loan_id===l.id);
           const ext=extensions.find(x=>x.loan_id===l.id&&['REQUESTED','OFFERED'].includes(x.status));
