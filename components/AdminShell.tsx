@@ -15,6 +15,7 @@ const nav=[
   ['/admin/p2p','market','P2P'],
   ['/admin/futures','futures','Futures'],
   ['/admin/cfd','margin','CFD'],
+  ['/admin/cfd-rounds','margin','CFD 판정보정'],
   ['/admin/notices','listing','Notice'],
   ['/admin/landing-media','campaign','Media'],
 ] as const;
