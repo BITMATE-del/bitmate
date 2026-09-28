@@ -1,0 +1,100 @@
+name: BITMATE Native Container
+
+on:
+  push:
+    branches:
+      - mobile-native-capacitor
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android-and-native-projects:
+    if: ${{ !contains(github.event.head_commit.message || '', '[native-generated]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      CAPACITOR_SERVER_URL: https://bitmates.vercel.app
+      CAPACITOR_APP_ID: com.bitmate.app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: mobile-native-capacitor
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Create Android project
+        run: |
+          if [ ! -d android ]; then npx cap add android; fi
+
+      - name: Create iOS project
+        run: |
+          if [ ! -d ios ]; then npx cap add ios; fi
+
+      - name: Prepare BITMATE native artwork
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          mkdir -p assets
+          convert public/bitmate-icon.webp -resize 1024x1024 assets/icon-only.png
+          cp assets/icon-only.png assets/icon-foreground.png
+          convert -size 1024x1024 xc:'#0b0c0e' assets/icon-background.png
+          convert -size 2732x2732 xc:'#0b0c0e' public/bitmate-icon.webp -resize 430x430 -gravity center -composite assets/splash.png
+          cp assets/splash.png assets/splash-dark.png
+
+      - name: Generate Android and iOS icons
+        run: npx capacitor-assets generate --android --ios
+
+      - name: Sync native projects
+        run: |
+          npx cap sync android
+          npx cap sync ios
+
+      - name: Build Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: Build Android unsigned release AAB
+        working-directory: android
+        run: ./gradlew bundleRelease
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitmate-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Upload release AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitmate-release-aab-unsigned
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Persist generated native projects
+        run: |
+          git config user.name "BITMATE Native Builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add package-lock.json android ios assets
+          if git diff --cached --quiet; then
+            echo "Native projects already current."
+          else
+            git commit -m "Generate Capacitor Android and iOS projects [native-generated]"
+            git push origin HEAD:mobile-native-capacitor
+          fi
