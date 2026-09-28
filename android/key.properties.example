@@ -1,0 +1,4 @@
+storeFile=../keystore/bitmate-release.jks
+storePassword=CHANGE_ME
+keyAlias=bitmate
+keyPassword=CHANGE_ME
