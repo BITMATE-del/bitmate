@@ -286,10 +286,10 @@ export default function TradingViewCfdInjector(){
 
     const start=()=>{
       mount();
-      mountTimer=setInterval(mount,750);
+      mountTimer=setInterval(mount,5000);
       lineTimer=setInterval(()=>void refreshEntryLines(false),2000);
       observer=new MutationObserver(mount);
-      observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['data-symbol']});
+      observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-symbol','data-chart-mode']});
     };
 
     const raf=requestAnimationFrame(start);
