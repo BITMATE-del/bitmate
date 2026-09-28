@@ -61,6 +61,39 @@ export default function MarketBoard(){
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
 
+  useEffect(()=>{
+    if(!rows.length)return;
+    let ws:WebSocket|null=null;
+    let retry:ReturnType<typeof setTimeout>|null=null;
+    let dead=false;
+    const connect=()=>{
+      if(dead)return;
+      try{
+        ws=new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+        ws.onmessage=(ev)=>{
+          try{
+            const payload=JSON.parse(ev.data);
+            if(!Array.isArray(payload))return;
+            const live=new Map(payload
+              .filter((x:any)=>typeof x?.s==='string'&&x.s.endsWith('USDT'))
+              .map((x:any)=>[String(x.s).replace(/USDT$/,''),x]));
+            setRows(prev=>prev.map(r=>{
+              const x=live.get(r.symbol) as any;
+              return x?{...r,price:Number(x.c)||r.price,changePct:Number(x.P)||0,volume:Number(x.q)||r.volume}:r;
+            }));
+            setFeedState('live');
+          }catch{}
+        };
+        ws.onerror=()=>ws?.close();
+        ws.onclose=()=>{if(!dead)retry=setTimeout(connect,4000)};
+      }catch{
+        if(!dead)retry=setTimeout(connect,4000);
+      }
+    };
+    connect();
+    return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()};
+  },[rows.length>0]);
+
   const toggleFavorite=(symbol:string)=>{
     setFavorites(prev=>{
       const next=prev.includes(symbol)?prev.filter(x=>x!==symbol):[...prev,symbol];
@@ -79,7 +112,7 @@ export default function MarketBoard(){
   const tabs:[Tab,string][]=[['favorites','Favorites'],['spot','Spot'],['new','New Listings'],['volume','24h Volume']];
 
   return <section className="marketsSection" id="markets">
-    <LiveMarketTicker marketType="spot" label="Markets 실시간"/>
+    <LiveMarketTicker marketType="spot" label="Markets 실시간" externalRows={rows}/>
     <div className="xtShell">
       <div className="marketHeading">
         <div><span>MARKETS</span><h2>Popular markets</h2></div>
