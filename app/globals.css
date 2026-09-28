@@ -25,3 +25,63 @@
   .xtHeaderInner{height:62px!important;padding:0 8px!important}
   .xtHeader nav{top:62px;max-height:calc(100vh - 62px)}
 }
+
+
+/* Header mobile drawer correction: hidden dropdowns must not consume layout space */
+@media(max-width:1480px){
+  .xtHeader nav{
+    top:68px;
+    left:12px;
+    right:auto;
+    width:min(390px,calc(100vw - 24px));
+    padding:10px;
+    gap:2px!important;
+    background:#0f1417;
+    border:1px solid #273137;
+    border-radius:0 0 12px 12px;
+    box-shadow:0 22px 60px rgba(0,0,0,.55);
+    max-height:calc(100vh - 84px);
+    overflow-y:auto;
+  }
+  .xtHeader nav:not(.mobileOpen){display:none!important}
+  .xtHeader nav.mobileOpen{display:flex!important}
+  .xtHeader nav .navDropdown{width:100%}
+  .xtHeader nav .tradeDropdown{
+    display:none!important;
+    position:static!important;
+    width:100%!important;
+    max-width:none!important;
+    margin:4px 0 7px!important;
+    padding:8px!important;
+    opacity:1!important;
+    visibility:visible!important;
+    transform:none!important;
+    border-radius:10px!important;
+    box-shadow:none!important;
+    background:#151b1e!important;
+  }
+  .xtHeader nav .tradeDropdown.open{display:block!important}
+  .xtHeader nav>a,
+  .xtHeader nav .navDropButton{
+    min-height:40px;
+    padding:0 11px!important;
+    margin:0!important;
+  }
+  .xtHeader nav>a:hover,
+  .xtHeader nav .navDropButton:hover,
+  .xtHeader nav .navDropButton.active{
+    background:#1b2226;
+  }
+  .tradeMenuItem{
+    min-height:58px;
+    padding:9px 8px!important;
+  }
+}
+@media(max-width:620px){
+  .xtHeader nav{
+    top:62px;
+    left:8px;
+    width:calc(100vw - 16px);
+    max-height:calc(100vh - 74px);
+  }
+}
