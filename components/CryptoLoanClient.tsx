@@ -88,6 +88,14 @@ export default function CryptoLoanClient(){
   }
 
   useEffect(()=>{load();const id=setInterval(load,15000);return()=>clearInterval(id)},[]);
+  useEffect(()=>{
+    if(!selected)return;
+    const onKeyDown=(e:KeyboardEvent)=>{
+      if(e.key==='Escape'&&!busy)setSelected(null);
+    };
+    window.addEventListener('keydown',onKeyDown);
+    return()=>window.removeEventListener('keydown',onKeyDown);
+  },[selected,busy]);
 
   const money=(usdt:number|null|undefined)=>wallet.withUnit(Number(usdt||0));
 
@@ -238,7 +246,7 @@ export default function CryptoLoanClient(){
     </div></section>
 
     {selected&&<div className={s.modal}><div className={s.modalCard}>
-      <div className={s.modalHead}><div><b style={{fontSize:20}}>대출 신청</b><span className={s.muted} style={{display:'block'}}>{selected.name}</span></div><button className={s.close} onClick={()=>setSelected(null)}>×</button></div>
+      <div className={s.modalHead}><div><b style={{fontSize:20}}>대출 신청</b><span className={s.muted} style={{display:'block'}}>{selected.name}</span></div><button className={s.close} type="button" aria-label="대출 신청 닫기" title="닫기" onClick={()=>setSelected(null)}>×</button></div>
       <div className={s.modalSteps}>{[['1','상품 선택'],['2','담보 및 금액'],['3','조건 확인'],['4','대출 실행']].map(([n,t],i)=><span key={n} className={step>=i+1?s.modalStepActive:''}><b>{n}</b>{t}</span>)}</div>
 
       <div className={s.field}><label>담보 코인</label><select className={s.select} value={asset} onChange={e=>{setAsset(e.target.value);setQuote(null);setStep(2);setCollateralQty('');setPrincipal('')}}>
