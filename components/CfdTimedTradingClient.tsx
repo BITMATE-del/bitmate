@@ -77,7 +77,7 @@ export default function CfdTimedTradingClient(){
     const rateId=setInterval(loadRate,60000);
     return()=>{window.removeEventListener('bitmate:display-currency',onCurrency as EventListener);clearInterval(rateId)};
   },[]);
-  useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),250);return()=>clearInterval(id)},[]);
+  useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id)},[]);
 
   useEffect(()=>{
     if(!selected?.symbol)return;
