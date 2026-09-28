@@ -6,6 +6,7 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
 import s from './Deposit.module.css';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
+import {copyTextNativeAware} from '@/lib/native-platform';
 
 type TokenKey='BTC'|'ETH'|'USDT'|'TRX'|'SOL';
 type TokenMeta={name:string;symbol:TokenKey;icon:string};
@@ -117,7 +118,7 @@ export default function DepositClient(){
 
  const copyAddress=async()=>{
   if(!selectedAddress)return;
-  await navigator.clipboard.writeText(selectedAddress);
+  await copyTextNativeAware(selectedAddress);
   setSyncMessage('입금 주소를 복사했습니다.');
  };
 
