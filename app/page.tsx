@@ -2,6 +2,7 @@ import MarketBoard from '@/components/MarketBoard';
 import HeroArtwork from '@/components/HeroArtwork';
 import UiIcon,{type UiIconName} from '@/components/UiIcon';
 import {DesktopTradingPreview,MobileAccessPreview} from '@/components/LandingProductPreview';
+import HomeProductGrid from '@/components/HomeProductGrid';
 
 const promos=[
   {tag:'NEW',title:'Trading Access',copy:'시장 확인부터 주문과 자산 관리까지 하나의 흐름으로 빠르게 이용하세요.',meta:'Markets · Orders · Portfolio'},
@@ -37,7 +38,7 @@ export default function Home(){
 
     <MarketBoard/>
 
-    <section className="productSection" id="trade"><div className="xtShell"><div className="sectionTitle"><span>PRODUCTS</span><h2>Trade your way</h2><p>시장 확인부터 거래, 자동화 전략, 자산 관리까지 한 곳에서 이용하세요.</p></div><div className="productGrid">{products.map(p=><article key={p.title}><div className="productIcon"><UiIcon name={p.icon} size={23}/></div><div><h3>{p.title}</h3><p>{p.copy}</p></div><span className="arrowLink" style={{display:'grid',placeItems:'center'}}><UiIcon name="chevronRight" size={16}/></span></article>)}</div></div></section>
+    <section className="productSection" id="trade"><div className="xtShell"><div className="sectionTitle"><span>PRODUCTS</span><h2>Trade your way</h2><p>시장 확인부터 거래, 자동화 전략, 자산 관리까지 한 곳에서 이용하세요.</p></div><HomeProductGrid products={products}/></div></section>
 
     <section className="featureBand" id="tools"><div className="xtShell featureBandGrid"><div className="featureCopy"><span className="sectionLabel">ADVANCED TOOLS</span><h2>One screen.<br/>More control.</h2><p>차트, 주문, 포지션, 자산 정보를 하나의 트레이딩 워크스페이스에서 확인하세요.</p><ul><li>Live price monitoring</li><li>Order & risk controls</li><li>Position & asset visibility</li><li>AI strategy status</li></ul><a className="limeBtn compact" href="/futures">Explore platform</a></div><DesktopTradingPreview/></div></section>
 
