@@ -110,3 +110,27 @@
   content:none!important;
   display:none!important;
 }
+
+
+@media(max-width:700px){
+  .page{padding-bottom:calc(86px + env(safe-area-inset-bottom))}
+  .shell{width:calc(100% - 24px)}
+  .heroGrid,.two{grid-template-columns:1fr}
+  .market,.loans,.features,.faq{min-width:0}
+  .steps,.modalSteps{grid-template-columns:1fr 1fr}
+  .row{grid-template-columns:1fr;gap:9px}
+  .row>*:last-child{grid-column:auto}
+  .loanGrid{grid-template-columns:1fr 1fr}
+  .loanTop{align-items:flex-start;flex-direction:column}
+  .modal{padding:12px;align-items:end}
+  .modalCard{width:calc(100vw - 24px);max-width:520px;max-height:90dvh;border-radius:14px 14px 0 0;padding:18px 16px;padding-bottom:calc(18px + env(safe-area-inset-bottom))}
+  .modalHead{position:sticky;top:-18px;z-index:2;background:#fff;padding:4px 0 10px}
+  .close{width:44px;height:44px;min-width:44px}
+  .input,.select{min-height:48px;font-size:16px!important}
+  .primary,.secondary,.loanActions button,.extensionOffer button{min-height:44px}
+  .quoteBox{grid-template-columns:1fr 1fr}
+  .agree{font-size:13px}
+}
+@media(max-width:360px){
+  .steps,.modalSteps,.loanGrid,.quoteBox{grid-template-columns:1fr}
+}
