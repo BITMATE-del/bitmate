@@ -10,13 +10,13 @@ const promos=[
   {tag:'MARKET',title:'Major Assets',copy:'BTC, ETH, XRP, SOL, DOGE 등 주요 자산의 실시간 흐름을 한눈에 확인하세요.',meta:'Live market feed'},
 ];
 
-const products:{icon:UiIconName;title:string;copy:string}[]=[
-  {icon:'spot',title:'Spot',copy:'주요 디지털자산을 빠르게 확인하고 간편 주문 흐름으로 연결합니다.'},
-  {icon:'margin',title:'CFD Margin',copy:'레버리지, 증거금, 손익과 리스크 상태를 한 화면에서 관리합니다.'},
-  {icon:'bot',title:'AI Trading',copy:'전략 선택, 리스크 설정, 로그 확인을 분리한 자동화 운용 경험을 제공합니다.'},
-  {icon:'copy',title:'Copy Trading',copy:'트레이더 성과와 위험지표를 확인하고 설정한 한도 안에서 카피 운용을 관리합니다.'},
-  {icon:'etf',title:'Crypto ETF',copy:'여러 디지털자산을 정해진 비중으로 구성한 BITMATE INDEX를 제공합니다.'},
-  {icon:'mining',title:'Mining',copy:'채굴 상품, 운용 상태, 보상 내역을 하나의 화면에서 관리합니다.'},
+const products:{icon:UiIconName;title:string;copy:string;href:string}[]=[
+  {icon:'spot',title:'Spot',copy:'주요 디지털자산을 빠르게 확인하고 간편 주문 흐름으로 연결합니다.',href:'/trade/spot'},
+  {icon:'margin',title:'CFD Margin',copy:'레버리지, 증거금, 손익과 리스크 상태를 한 화면에서 관리합니다.',href:'/cfd-margin'},
+  {icon:'bot',title:'AI Trading',copy:'전략 선택, 리스크 설정, 로그 확인을 분리한 자동화 운용 경험을 제공합니다.',href:'/ai-trading'},
+  {icon:'copy',title:'Copy Trading',copy:'트레이더 성과와 위험지표를 확인하고 설정한 한도 안에서 카피 운용을 관리합니다.',href:'/copy-trading'},
+  {icon:'etf',title:'Crypto ETF',copy:'여러 디지털자산을 정해진 비중으로 구성한 BITMATE INDEX를 제공합니다.',href:'/crypto-etf'},
+  {icon:'mining',title:'Mining',copy:'채굴 상품, 운용 상태, 보상 내역을 하나의 화면에서 관리합니다.',href:'/mining'},
 ];
 
 const stats=[['5','Live market assets'],['5','Core product lines'],['24/7','Market monitoring'],['100%','Server-side controls']];
