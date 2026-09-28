@@ -56,6 +56,17 @@ export default function SiteDialog(){
     resolve?.(result);
   };
 
+  useEffect(()=>{
+    if(!current)return;
+    const onEscape=(e:KeyboardEvent)=>{
+      if(e.key!=='Escape')return;
+      e.preventDefault();
+      finish(current.kind==='confirm'?false:current.kind==='prompt'?null:undefined);
+    };
+    document.addEventListener('keydown',onEscape);
+    return()=>document.removeEventListener('keydown',onEscape);
+  },[current]);
+
   if(!current)return null;
 
   const title=current.title||(
