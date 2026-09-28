@@ -47,3 +47,27 @@
 
 .balanceSyncBadge{height:38px;display:inline-flex;align-items:center;gap:7px;padding:0 12px;border:1px solid #2a3b42;border-radius:9px;background:#0f171b;color:#9fb0b7;font-size:11px;font-weight:800;white-space:nowrap}
 .balanceSyncBadge svg{color:#b8ff24}
+
+
+@media(max-width:700px){
+  .page{padding:16px 0 calc(82px + env(safe-area-inset-bottom))}
+  .shell{width:calc(100% - 20px)}
+  .hero{padding:18px 16px;border-radius:12px}
+  .hero h1{font-size:24px}
+  .heroActions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .heroActions a{min-height:44px;display:flex;align-items:center;justify-content:center}
+  .stats{grid-template-columns:1fr 1fr;gap:8px}
+  .stats>div{padding:13px}
+  .tabs{scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{min-height:44px}
+  .panel{border-radius:12px}
+  .panelHead{padding:16px;align-items:flex-start;flex-direction:column}
+  .table{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .actions button{min-height:42px}
+  .balanceHead{padding:18px 16px;align-items:stretch}
+  .balanceAddButton{min-height:46px}
+  .balanceTable{overflow-x:auto}
+  .toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));max-width:none}
+}
+@media(max-width:360px){.heroActions,.stats{grid-template-columns:1fr}}
