@@ -11,6 +11,7 @@ const config:CapacitorConfig={
     url:serverUrl,
     cleartext:false,
     androidScheme:'https',
+    errorPath:'error.html',
     allowNavigation:[
       'bitmates.vercel.app',
       '*.supabase.co',
