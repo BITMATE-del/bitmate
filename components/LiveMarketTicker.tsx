@@ -4,15 +4,19 @@ import {useEffect,useMemo,useState} from 'react';
 import s from './LiveMarketTicker.module.css';
 
 type Row={symbol:string;base:string;price:number;changePct:number;quoteVolume:number};
-type Props={marketType:'spot'|'futures';label?:string};
+type ExternalRow={symbol:string;price:number;changePct:number;volume:number};
+type Props={marketType:'spot'|'futures';label?:string;externalRows?:ExternalRow[]};
 
 const fmt=(v:number)=>v>=1000?v.toLocaleString(undefined,{maximumFractionDigits:2}):v>=1?v.toLocaleString(undefined,{maximumFractionDigits:4}):v.toLocaleString(undefined,{maximumFractionDigits:6});
 
-export default function LiveMarketTicker({marketType,label}:Props){
+export default function LiveMarketTicker({marketType,label,externalRows}:Props){
   const [rows,setRows]=useState<Row[]>([]);
   const [connected,setConnected]=useState(false);
 
+  const usingExternal=Array.isArray(externalRows);
+
   useEffect(()=>{
+    if(usingExternal)return;
     let dead=false;
     let poll:ReturnType<typeof setInterval>|null=null;
 
@@ -62,9 +66,10 @@ export default function LiveMarketTicker({marketType,label}:Props){
     return()=>{dead=true;if(poll)clearInterval(poll)};
   // keep polling independent from price updates
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[marketType]);
+  },[marketType,usingExternal]);
 
   useEffect(()=>{
+    if(usingExternal)return;
     let ws:WebSocket|null=null;
     let retry:ReturnType<typeof setTimeout>|null=null;
     let dead=false;
@@ -115,15 +120,25 @@ export default function LiveMarketTicker({marketType,label}:Props){
 
     connect();
     return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()};
-  },[marketType]);
+  },[marketType,usingExternal]);
 
-  const loop=useMemo(()=>rows.length?[...rows,...rows]:[],[rows]);
+  const displayRows=useMemo<Row[]>(()=>usingExternal
+    ?(externalRows||[]).map(r=>({
+      symbol:`${r.symbol.toUpperCase()}USDT`,
+      base:r.symbol.toUpperCase(),
+      price:Number(r.price||0),
+      changePct:Number(r.changePct||0),
+      quoteVolume:Number(r.volume||0)
+    }))
+    :rows,[usingExternal,externalRows,rows]);
+  const loop=useMemo(()=>displayRows.length?[...displayRows,...displayRows]:[],[displayRows]);
+  const isConnected=usingExternal?displayRows.length>0:connected;
 
   return <div className={s.ticker}>
     <div className={s.status}>
-      <span className={connected?s.dot:s.dotOff}>●</span>
+      <span className={isConnected?s.dot:s.dotOff}>●</span>
       <b>{label||'실시간 시세'}</b>
-      {!connected&&<span>연결 중</span>}
+      {!isConnected&&<span>연결 중</span>}
     </div>
     <div className={s.viewport}>
       {loop.length
