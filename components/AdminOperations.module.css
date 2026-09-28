@@ -5,3 +5,29 @@
 .rowActions .unfreeze:hover{background:#16250f;border-color:#527f26}
 .rowActions button:disabled{opacity:.45;cursor:not-allowed}
 @media(max-width:1100px){.stats{grid-template-columns:repeat(3,1fr)}}
+
+
+@media(max-width:700px){
+  .page{padding:16px 0 calc(82px + env(safe-area-inset-bottom))}
+  .shell{width:calc(100% - 20px)}
+  .hero{padding:18px 16px;border-radius:12px}
+  .hero h1{font-size:24px}
+  .heroActions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .heroActions a{min-height:44px;display:flex;align-items:center;justify-content:center}
+  .stats{grid-template-columns:1fr 1fr;gap:8px}
+  .stats>div{padding:13px}
+  .stats b{font-size:20px}
+  .tabs{overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:0 0 auto;min-height:44px}
+  .panel{border-radius:12px}
+  .panelHead{padding:16px;flex-direction:column;align-items:stretch}
+  .search{width:100%}
+  .search input{width:100%;min-width:0;font-size:16px;min-height:46px}
+  .search button,.rowActions button{min-height:42px}
+  .table{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .setting{align-items:flex-start;flex-direction:column}
+  .switchOn,.switchOff{min-height:44px}
+  .toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));max-width:none}
+}
+@media(max-width:360px){.heroActions,.stats{grid-template-columns:1fr}}
