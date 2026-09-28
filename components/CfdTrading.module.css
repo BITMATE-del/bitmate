@@ -7,3 +7,27 @@
 .table select:focus,.table input:focus{border-color:#83bd25}
 .table input{min-width:150px}
 .table select:disabled,.table input:disabled{opacity:.55;cursor:not-allowed}
+
+
+@media(max-width:640px){
+  .page{padding-bottom:calc(82px + env(safe-area-inset-bottom))}
+  .marketBar{grid-template-columns:minmax(0,1.3fr) minmax(105px,.7fr)}
+  .terminalGrid{display:flex;flex-direction:column}
+  .chartPanel{order:1;min-height:390px}
+  .chartStage{min-height:300px}
+  .bookPanel{order:3;min-height:330px}
+  .orderPanel{order:2;padding:12px}
+  .panelTabs,.bottomTabs{height:44px}
+  .panelTabs button,.bottomTabs button{font-size:12px;min-height:44px}
+  .long,.short{height:48px;font-size:14px}
+  .orderTypes{overflow-x:auto;grid-template-columns:repeat(4,minmax(82px,1fr))}
+  .orderTypes button{height:42px;font-size:12px}
+  .tradeField>div{height:48px}
+  .tradeField input{font-size:16px}
+  .quickRatios button{height:42px;font-size:12px}
+  .primary{height:50px;font-size:15px}
+  .accountStrip,.assetsGrid{grid-template-columns:1fr 1fr}
+  .accountStrip div,.assetsGrid div{padding:11px}
+  .tableWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom))}
+}
