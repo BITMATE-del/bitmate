@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import ExchangeHeader from '@/components/ExchangeHeader';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 export default function SiteChrome({children}:{children:React.ReactNode}){
   const pathname=usePathname();
@@ -11,6 +12,7 @@ export default function SiteChrome({children}:{children:React.ReactNode}){
   return <>
     <ExchangeHeader/>
     {children}
+    <MobileBottomNav/>
     <footer className="xtFooter"><div className="xtShell">
       <div className="footerTop"><Link className="xtBrand" href="/"><span className="xtLogo">B</span><b>BITMATE</b></Link><p>AI Trading · CFD Margin · Crypto ETF · Crypto Mining</p></div>
       <div className="footerCols">
