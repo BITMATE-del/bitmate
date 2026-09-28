@@ -6,6 +6,10 @@ on:
       - mobile-native-capacitor
   workflow_dispatch:
 
+concurrency:
+  group: bitmate-native-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
