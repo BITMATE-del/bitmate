@@ -69,3 +69,13 @@
   .accountStrip b{font-size:13px}
   .table th,.table td{font-size:9px;padding:9px 8px}
 }
+
+.amountHead{display:flex;align-items:end;justify-content:space-between;gap:10px;margin:9px 0 6px}
+.amountHead>span{color:#8da0a8;font-size:10px;font-weight:800}
+.amountHead>small{color:#5f6e74;font-size:8px}
+.amountInput{height:48px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;border:1px solid #3a4a51;background:#0a1012;box-shadow:inset 0 0 0 1px rgba(255,255,255,.015)}
+.amountInput:focus-within{border-color:#8fdc28;box-shadow:0 0 0 2px rgba(168,240,0,.08)}
+.amountInput input{width:100%;height:100%;border:0;outline:0;background:transparent;color:#f5f8f9;padding:0 12px;font-size:15px;font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.amountInput input::placeholder{color:#4d5b61;font-weight:600}
+.amountInput em{font-style:normal;color:#9baaaf;font-size:10px;font-weight:800;padding:0 12px;border-left:1px solid #223036;height:24px;display:flex;align-items:center}
+@media(max-width:700px){.amountInput{height:46px}.amountInput input{font-size:14px}}
