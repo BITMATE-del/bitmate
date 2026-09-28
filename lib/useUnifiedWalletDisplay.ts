@@ -10,6 +10,12 @@ type WalletSnapshot={
   wallet?:{base_currency?:string;available?:number;locked?:number;total?:number};
   spot?:Array<{asset:string;available:number;locked:number}>;
 };
+type WalletValues={available:number;locked:number;total:number};
+
+let walletCache:{userId:string;at:number;value:WalletValues}|null=null;
+let walletInflight:Promise<{userId:string;value:WalletValues}|null>|null=null;
+let rateCache:{at:number;value:number}|null=null;
+let rateInflight:Promise<number>|null=null;
 
 export function useUnifiedWalletDisplay(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
@@ -21,29 +27,68 @@ export function useUnifiedWalletDisplay(){
   const [loggedIn,setLoggedIn]=useState(false);
   const [loading,setLoading]=useState(true);
 
+  const applyWallet=useCallback((v:WalletValues)=>{
+    setAvailable(v.available);
+    setLocked(v.locked);
+    setTotal(v.total);
+  },[]);
+
   const loadWallet=useCallback(async()=>{
     const {data:{user}}=await supabase.auth.getUser();
     setLoggedIn(!!user);
-    if(!user){setAvailable(0);setLocked(0);setTotal(0);setLoading(false);return;}
-    const {data,error}=await supabase.rpc('user_wallet_snapshot');
-    if(!error&&data){
-      const snap=data as WalletSnapshot;
-      const usdt=Array.isArray(snap.spot)?snap.spot.find(x=>x.asset==='USDT'):null;
-      const a=Number(snap.wallet?.available??usdt?.available??0);
-      const l=Number(snap.wallet?.locked??usdt?.locked??0);
-      setAvailable(a);setLocked(l);setTotal(Number(snap.wallet?.total??a+l));
+    if(!user){
+      walletCache=null;
+      applyWallet({available:0,locked:0,total:0});
+      setLoading(false);
+      return;
     }
+
+    const now=Date.now();
+    if(walletCache?.userId===user.id&&now-walletCache.at<1200){
+      applyWallet(walletCache.value);
+      setLoading(false);
+      return;
+    }
+
+    if(!walletInflight){
+      walletInflight=(async()=>{
+        const {data,error}=await supabase.rpc('user_wallet_snapshot');
+        if(error||!data)return null;
+        const snap=data as WalletSnapshot;
+        const usdt=Array.isArray(snap.spot)?snap.spot.find(x=>x.asset==='USDT'):null;
+        const a=Number(snap.wallet?.available??usdt?.available??0);
+        const l=Number(snap.wallet?.locked??usdt?.locked??0);
+        const value={available:a,locked:l,total:Number(snap.wallet?.total??a+l)};
+        walletCache={userId:user.id,at:Date.now(),value};
+        return {userId:user.id,value};
+      })().finally(()=>{walletInflight=null});
+    }
+
+    const result=await walletInflight;
+    if(result?.userId===user.id)applyWallet(result.value);
     setLoading(false);
-  },[supabase]);
+  },[supabase,applyWallet]);
 
   const loadRate=useCallback(async()=>{
-    try{
-      const r=await fetch('/api/fx/usdt-krw',{cache:'no-store'});
-      if(!r.ok)return;
-      const j=await r.json();
-      const rate=Number(j?.rate||0);
-      if(rate>0)setKrwRate(rate);
-    }catch{}
+    const now=Date.now();
+    if(rateCache&&now-rateCache.at<30000){
+      setKrwRate(rateCache.value);
+      return;
+    }
+    if(!rateInflight){
+      rateInflight=(async()=>{
+        try{
+          const r=await fetch('/api/fx/usdt-krw',{cache:'no-store'});
+          if(!r.ok)return 0;
+          const j=await r.json();
+          const rate=Number(j?.rate||0);
+          if(rate>0)rateCache={at:Date.now(),value:rate};
+          return rate;
+        }catch{return 0}
+      })().finally(()=>{rateInflight=null});
+    }
+    const rate=await rateInflight;
+    if(rate>0)setKrwRate(rate);
   },[]);
 
   useEffect(()=>{
@@ -55,10 +100,10 @@ export function useUnifiedWalletDisplay(){
       const next=(e as CustomEvent<{currency?:DisplayCurrency}>).detail?.currency;
       if(next==='KRW'||next==='USDT')setCurrency(next);else readCurrency();
     };
-    readCurrency();loadWallet();loadRate();
+    readCurrency();void loadWallet();void loadRate();
     window.addEventListener('bitmate:display-currency',onCurrency as EventListener);
-    const walletId=setInterval(loadWallet,3000);
-    const rateId=setInterval(loadRate,60000);
+    const walletId=setInterval(()=>void loadWallet(),3000);
+    const rateId=setInterval(()=>void loadRate(),60000);
     return()=>{window.removeEventListener('bitmate:display-currency',onCurrency as EventListener);clearInterval(walletId);clearInterval(rateId)};
   },[loadWallet,loadRate]);
 
