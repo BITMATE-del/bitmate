@@ -28,3 +28,25 @@
 .walletBalanceChip small{color:#708188;font-size:9px}
 .walletBalanceChip b{color:#eef3f4;font-size:13px;font-variant-numeric:tabular-nums}
 @media(max-width:700px){.walletBalanceChip{min-width:0;padding:8px 10px}.walletBalanceChip b{font-size:11px}}
+
+
+@media(max-width:700px){
+  .page{padding:18px 0 calc(86px + env(safe-area-inset-bottom))}
+  .shell{width:calc(100% - 24px)}
+  .titleRow{margin:4px 0 24px;align-items:flex-start;flex-wrap:wrap}
+  .titleRow h1{font-size:21px}
+  .walletBalanceChip{margin-left:auto}
+  .mainGrid{gap:20px}
+  .flow{padding-top:0}
+  .step{grid-template-columns:24px minmax(0,1fr);gap:10px}
+  .tokenSelector,.networks,.addressCard,.kycCard{max-width:100%;width:100%}
+  .tokenTrigger{min-height:48px}
+  .searchBox{height:46px}
+  .searchBox input{font-size:16px}
+  .networks{grid-template-columns:1fr}
+  .networks button{min-height:56px}
+  .addressCard button,.kycCard>a{min-height:44px;display:inline-flex;align-items:center}
+  .faq{padding:18px 16px;border-radius:13px}
+  .records{margin-top:28px;padding:18px 16px;border-radius:13px}
+  .recordRow{grid-template-columns:1fr;gap:7px}
+}
