@@ -30,7 +30,29 @@ export default function NativeAppBridge(){
     const syncForeground=()=>{
       window.dispatchEvent(new CustomEvent('bitmate:native-resume'));
       window.dispatchEvent(new Event('focus'));
+      window.dispatchEvent(new Event('resize'));
       if(navigator.onLine)window.dispatchEvent(new Event('online'));
+    };
+
+    const openDeepLink=(raw:string)=>{
+      try{
+        const url=new URL(raw);
+        let path='';
+        if(url.protocol==='bitmate:'){
+          const parts=[url.hostname,...url.pathname.split('/').filter(Boolean)];
+          const section=parts[0]||'';
+          const symbol=parts[1]||'';
+          if(section==='futures')path='/futures'+(symbol?`?symbol=${encodeURIComponent(symbol)}`:'');
+          else if(section==='cfd')path='/cfd'+(symbol?`?symbol=${encodeURIComponent(symbol)}`:'');
+          else if(section==='account')path='/account';
+          else if(section==='mining')path='/mining';
+          else if(section==='loan')path='/crypto-loan';
+          else path='/';
+        }else if(url.hostname==='bitmates.vercel.app'){
+          path=url.pathname+url.search+url.hash;
+        }
+        if(path)window.location.assign(path);
+      }catch{}
     };
 
     const setup=async()=>{
@@ -58,6 +80,12 @@ export default function NativeAppBridge(){
         handles.push(await App.addListener('appStateChange',state=>{
           if(state.isActive)syncForeground();
         }));
+      }catch{}
+
+      try{
+        handles.push(await App.addListener('appUrlOpen',event=>openDeepLink(event.url)));
+        const launch=await App.getLaunchUrl();
+        if(launch?.url)openDeepLink(launch.url);
       }catch{}
 
       try{
