@@ -38,7 +38,7 @@ const statusLabel:Record<string,string>={
   PENDING:'신청 대기',APPROVED:'승인 완료',ACTIVE:'정상 진행중',
   EXTENSION_REQUESTED:'연장 신청',EXTENSION_OFFERED:'연장 조건 확인',
   EXTENDED:'연장 완료',OVERDUE_REVIEW:'만기 협의',OVERDUE:'연체',
-  REPAID:'상환 완료',COLLATERAL_SEIZED:'담보 회수',CANCELLED:'취소'
+  REPAID:'상환 완료',COLLATERAL_SEIZED:'담보 회수',CANCELLED:'취소',REJECTED:'거절'
 };
 
 export default function CryptoLoanClient(){
@@ -135,7 +135,7 @@ export default function CryptoLoanClient(){
     });
     setBusy(false);
     if(error){console.error('apply_crypto_loan_v2',error);setMsg('대출 신청 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');return}
-    setStep(4);setMsg('대출 신청이 접수되었습니다. 담보는 신청 금액 심사 중 안전하게 LOCK 처리되며, 관리자 승인 후 대출금이 단일 지갑에 반영됩니다.');
+    setStep(4);setMsg('대출 신청이 접수되었습니다. 현재 상태는 승인 대기이며, 관리자 승인 후에만 대출금이 자산에 반영됩니다. 신청 담보가치는 승인 대기 중 출금 제한으로 예약됩니다.');
     await load();
   }
 
@@ -219,11 +219,11 @@ export default function CryptoLoanClient(){
               <div><small>대출 실행일</small><b>{l.funded_at?new Date(l.funded_at).toLocaleDateString('ko-KR'):'승인 대기'}</b></div>
               <div><small>상환 예정일</small><b>{due?due.toLocaleDateString('ko-KR'):'—'}</b></div>
               <div><small>남은 기간</small><b>{remain==null?'—':remain>=0?`${remain}일`:'만기 도달'}</b></div>
-              <div><small>담보 상태</small><b>{c?.status||'—'}</b></div>
+              <div><small>담보 상태</small><b>{c?.status==='RESERVED'?'출금제한 예약':c?.status==='ACTIVE'?'출금제한 활성':c?.status==='RELEASED'?'제한 해제':c?.status==='SEIZED'?'담보 회수':c?.status||'—'}</b></div>
             </div>
             {ext?.status==='OFFERED'&&<div className={s.extensionOffer}><b>연장 조건 제안</b><span>새 만기 {ext.new_due_at?new Date(ext.new_due_at).toLocaleDateString('ko-KR'):'—'} · 변경 이자율 {pct(ext.new_interest_rate)} · 추가 이자 {money(Number(ext.additional_interest||0))}</span><button className={s.primary} disabled={busy} onClick={()=>acceptExtension(ext)}>조건 동의 및 연장</button></div>}
             <div className={s.loanActions}>
-              {['ACTIVE','EXTENDED','EXTENSION_REQUESTED','EXTENSION_OFFERED','OVERDUE_REVIEW','OVERDUE'].includes(l.status)&&<button className={s.secondary} disabled={busy} onClick={()=>repay(l)}>상환하기</button>}
+              {l.status==='PENDING'&&<span className={s.muted}>관리자 승인 후 대출금이 자산에 반영됩니다.</span>}{['ACTIVE','EXTENDED','EXTENSION_REQUESTED','EXTENSION_OFFERED','OVERDUE_REVIEW','OVERDUE'].includes(l.status)&&<button className={s.secondary} disabled={busy} onClick={()=>repay(l)}>상환하기</button>}
               {['ACTIVE','EXTENDED'].includes(l.status)&&due&&due.getTime()>Date.now()&&<button className={s.secondary} disabled={busy} onClick={()=>requestExtension(l)}>기간 연장 신청</button>}
             </div>
           </div>
@@ -267,8 +267,8 @@ export default function CryptoLoanClient(){
         <div className={s.quoteBox}><small>예상 이자</small><b>{money(quote.estimated_interest)}</b></div>
         <div className={s.quoteBox}><small>총 상환예정금액</small><b>{money(quote.total_repayment_amount)}</b></div>
       </div>
-      <div className={s.notice}>대출 신청 시 서버에서 실제 보유수량·LOCK 수량·현재 시세·담보가치·80% LTV를 다시 검증합니다. 신청 후 승인 전까지 해당 담보는 다른 거래나 대출에 사용할 수 없습니다.</div>
-      <label className={s.agree}><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/><span>담보 LOCK, 7일 고정기간, 기본 이자 1%, 만기 및 연장 조건을 확인했습니다.</span></label>
+      <div className={s.notice}>대출 신청 시 서버에서 실제 보유수량·현재 시세·담보가치·80% LTV를 다시 검증합니다. 신청 후 승인 전까지 담보가치는 출금 제한으로 예약되지만 내부 매매에는 사용할 수 있습니다. 관리자 승인 전에는 대출금이 지급되지 않습니다.</div>
+      <label className={s.agree}><input type="checkbox" checked={agree} onChange={e=>setAgree(e.target.checked)}/><span>담보가치는 출금 제한용으로 유지되며 내부 거래는 가능하다는 점과 7일 고정기간, 기본 이자 1%, 만기 및 연장 조건을 확인했습니다.</span></label>
       <button className={s.primary} style={{width:'100%'}} onClick={apply} disabled={busy||!agree||!logged}>{logged?(busy?'처리 중...':'대출 실행'):'로그인 후 신청'}</button></>}
       {msg&&<p className={msg.includes('접수')||msg.includes('완료')?s.success:s.error}>{msg}</p>}
     </div></div>}
