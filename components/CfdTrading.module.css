@@ -2,3 +2,8 @@
 .quickRatios{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:-1px 0 8px}
 .quickRatios button{height:30px;border:1px solid #29353a;background:#0c1214;color:#86949a;font-size:9px;font-weight:800;cursor:pointer}
 .quickRatios button:hover{border-color:#7aa71f;color:#b9ff31;background:#11180d}
+
+.table select,.table input{height:30px;border:1px solid #2a383d;background:#0b1214;color:#e7edef;border-radius:4px;padding:0 7px;font-size:9px;outline:0}
+.table select:focus,.table input:focus{border-color:#83bd25}
+.table input{min-width:150px}
+.table select:disabled,.table input:disabled{opacity:.55;cursor:not-allowed}
