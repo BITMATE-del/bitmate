@@ -188,9 +188,18 @@ export default function CfdTimedTradingClient(){
         <span className={s.label}>거래시간</span>
         <div className={s.durationRow}><button className={duration===3?s.durationActive:''} onClick={()=>setDuration(3)}>3분</button><button className={duration===5?s.durationActive:''} onClick={()=>setDuration(5)}>5분</button></div>
         <div className={s.balance}><span>사용 가능</span><b>{displayMoney(summary?.available_balance)} {currencyUnit}</b></div>
-        <span className={s.label}>주문금액</span>
-        <div className={s.field}><input value={displayAmountValue()} onChange={e=>setDisplayAmount(e.target.value)} inputMode="decimal"/><em>{currencyUnit}</em></div>
-        <div className={s.quickAmounts}>{[.25,.5,.75,1].map(r=><button key={r} onClick={()=>setAmount(String(Math.max(0,(Number(summary?.available_balance)||0)*r)))}>{Math.round(r*100)}%</button>)}</div>
+        <div className={s.amountHead}><span>주문금액</span><small>직접 입력 또는 비율 선택</small></div>
+        <label className={s.amountInput}>
+          <input
+            value={displayAmountValue()}
+            onChange={e=>setDisplayAmount(e.target.value)}
+            inputMode="decimal"
+            placeholder={displayCurrency==='KRW'?'예: 100000':'예: 100'}
+            aria-label="주문금액 직접 입력"
+          />
+          <em>{currencyUnit}</em>
+        </label>
+        <div className={s.quickAmounts}>{[.25,.5,.75,1].map(r=><button key={r} type="button" onClick={()=>setAmount(String(Math.max(0,(Number(summary?.available_balance)||0)*r)))}>{Math.round(r*100)}%</button>)}</div>
         <div className={s.summary}><div><span>시작가</span><b>주문 시 확정</b></div><div><span>예상 WIN 지급</span><b>{displayMoney(expectedPayout,0)} {currencyUnit}</b></div><div><span>DRAW 지급</span><b>{displayMoney(amountNum,0)} {currencyUnit}</b></div><div><span>LOSS 지급</span><b>0 {currencyUnit}</b></div></div>
         <button className={`${s.submit} ${direction==='DOWN'?s.submitDown:''}`} disabled={submitting||!!activeTrade} onClick={startTrade}>{activeTrade?'거래 진행 중':submitting?'처리 중...':`${direction} ${duration}분 거래 시작`}</button>
         <div className={s.notice}>시작가와 종료가를 기준으로 결과가 자동 확정됩니다. 화면을 닫아도 진행 중인 거래는 만료 시 자동 정산됩니다.</div>
