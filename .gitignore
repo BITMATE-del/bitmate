@@ -1,0 +1,29 @@
+node_modules/
+.next/
+.vercel/
+.env
+.env.*
+!.env.example
+
+# Native signing / local secrets
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+*.cer
+*.p8
+key.properties
+android/local.properties
+android/.gradle/
+android/app/build/
+android/build/
+ios/App/Pods/
+ios/App/DerivedData/
+ios/App/App.xcworkspace/xcuserdata/
+**/xcuserdata/
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+*.xcarchive
