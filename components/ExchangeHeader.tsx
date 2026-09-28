@@ -116,6 +116,15 @@ export default function ExchangeHeader(){
       <Link style={desktopMenuStyle} href="/#markets" onClick={closeMenus}>Markets</Link>
       <Link style={desktopMenuStyle} href="/p2p-markets" onClick={closeMenus}>P2P Markets</Link>
 
+      <div className="mobileNavQuick" aria-label="모바일 빠른 메뉴">
+        <span>자산</span>
+        <Link href="/account" onClick={closeMenus}>Wallet</Link>
+        <Link href="/deposit" onClick={closeMenus}>Deposit</Link>
+        <Link href="/withdraw" onClick={closeMenus}>Withdraw</Link>
+        <Link href="/crypto-loan" onClick={closeMenus}>Loan</Link>
+        <Link href="/member" onClick={closeMenus}>내정보</Link>
+      </div>
+
       <div className="navDropdown" onMouseEnter={()=>setMoreOpen(true)} onMouseLeave={()=>setMoreOpen(false)}>
         <button style={desktopMenuStyle} className={moreOpen?'navDropButton active':'navDropButton'} onClick={()=>setMoreOpen(v=>!v)} aria-expanded={moreOpen}>More <span>{navChevron}</span></button>
         <div style={{...dropdownRightStyle,width:'390px',maxHeight:'calc(100vh - 100px)',overflowY:'auto'}} className={moreOpen?'tradeDropdown open':'tradeDropdown'}>
@@ -142,7 +151,7 @@ export default function ExchangeHeader(){
           {filteredLinks.length===0&&filteredMarkets.length===0&&filteredTraders.length===0&&<div style={{padding:'32px 8px',textAlign:'center',color:'#7e868b',fontSize:'13px'}}>검색 결과가 없습니다.</div>}
         </div>}
       </div>
-      {isLoggedIn?<HeaderUserTools/>:<>
+      {isLoggedIn?<div className="headerAccountTools"><HeaderUserTools/></div>:<>
         <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
         <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
         <button className="iconBtn" aria-label="Download app" style={{width:'30px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><UiIcon name="download" size={20}/></button>
