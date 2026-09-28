@@ -7,6 +7,8 @@ import './ui-fixes.css';
 import SiteChrome from '@/components/SiteChrome';
 import SiteDialog from '@/components/SiteDialog';
 
+export const viewport={width:'device-width',initialScale:1,viewportFit:'cover'};
+
 export const metadata={
   title:'BITMATE | AI · CFD · ETF · Mining',
   description:'AI trading, CFD margin, Crypto ETF and Crypto Mining in one digital asset platform',
