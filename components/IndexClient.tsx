@@ -36,7 +36,7 @@ export default function IndexClient(){
   const {data:{user}}=await supabase.auth.getUser(); if(!user){setMsg('로그인이 필요합니다.');return;}
   const riskVersion='index-risk-v1'; await supabase.from('index_risk_acceptances').upsert({user_id:user.id,version:riskVersion},{onConflict:'user_id,version'});
   const key=crypto.randomUUID(); const {error}=await supabase.rpc('start_index_investment',{p_product_id:modal.id,p_amount:n,p_idempotency_key:key});
-  if(error){setMsg(error.message);return;} setMsg('BITMATE INDEX 투자가 완료되었습니다.'); setModal(null);setAgree(false); await load();
+  if(error){console.error('start_index_investment failed',error);setMsg('투자 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');return;} setMsg('BITMATE INDEX 투자가 완료되었습니다.'); setModal(null);setAgree(false); await load();
  }
  return <main className={s.page}>
   <section className={`${s.shell} ${s.hero}`}><div className={s.heroRow}><div><span className={s.eyebrow}>CRYPTO ETF · BITMATE INDEX</span><h1>여러 자산을 한 번에 나눠 담는 분산투자</h1><p>개별 코인을 하나씩 고르지 않아도, 미리 정해진 비중으로 구성된 Basket에 간편하게 투자할 수 있습니다. 과거 성과는 미래 수익을 보장하지 않습니다.</p></div><div className={s.heroActions}><Link className={s.ghost} href="/crypto-etf/portfolio">My INDEX</Link></div></div></section>
