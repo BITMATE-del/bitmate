@@ -43,5 +43,5 @@ export default function LiveMarketTicker({marketType,label}:Props){
   },[marketType]);
 
   const loop=useMemo(()=>rows.length?[...rows,...rows]:[],[rows]);
-  return <div className={s.ticker}><div className={s.status}><span className={connected?s.dot:s.dotOff}>●</span><b>{label||'실시간 시세'}</b><span>{rows.length?`${rows.length}개`:'연결 중'}</span></div><div className={s.viewport}>{loop.length?<div className={s.track}>{loop.map((r,i)=><div className={s.item} key={`${r.symbol}-${i}`}><b>{r.base}/USDT</b><span>{fmt(r.price)}</span><em className={r.changePct>=0?s.up:s.down}>{r.changePct>=0?'+':''}{r.changePct.toFixed(2)}%</em></div>)}</div>:<div className={s.empty}>실시간 시장 데이터를 연결 중입니다.</div>}</div></div>;
+  return <div className={s.ticker}><div className={s.status}><span className={connected?s.dot:s.dotOff}>●</span><b>{label||'실시간 시세'}</b><span>{rows.length?'':'연결 중'}</span></div><div className={s.viewport}>{loop.length?<div className={s.track}>{loop.map((r,i)=><div className={s.item} key={`${r.symbol}-${i}`}><b>{r.base}/USDT</b><span>{fmt(r.price)}</span><em className={r.changePct>=0?s.up:s.down}>{r.changePct>=0?'+':''}{r.changePct.toFixed(2)}%</em></div>)}</div>:<div className={s.empty}>실시간 시장 데이터를 연결 중입니다.</div>}</div></div>;
 }
