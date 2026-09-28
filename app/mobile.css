@@ -70,3 +70,143 @@
   .xtHeaderTools .headerBtn{padding:0 10px!important;}
   .footerCols{grid-template-columns:1fr!important;}
 }
+
+
+/* 2026 mobile service pass */
+.mobileBottomNav{display:none}
+.mobileNavQuick{display:none}
+
+@media (max-width:1060px){
+  html,body{max-width:100%;overflow-x:hidden}
+  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  .xtHeader{backdrop-filter:none;background:rgba(11,12,14,.985)}
+  .xtHeaderInner{padding-top:env(safe-area-inset-top)!important}
+  .headerAccountTools{display:none!important}
+  .xtHeaderTools .searchPill{min-width:44px!important}
+  .xtHeader nav{padding-bottom:calc(90px + env(safe-area-inset-bottom))!important}
+  .mobileNavQuick{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    gap:7px;
+    padding:12px 0 4px;
+    border-top:1px solid rgba(255,255,255,.07);
+    margin-top:8px;
+  }
+  .mobileNavQuick>span{
+    grid-column:1/-1;
+    color:#6f7b80;
+    font-size:10px;
+    font-weight:850;
+    letter-spacing:.12em;
+    padding:0 7px 4px;
+  }
+  .mobileNavQuick>a{
+    min-height:46px!important;
+    display:flex!important;
+    align-items:center!important;
+    padding:0 12px!important;
+    border:1px solid #242b2f!important;
+    border-radius:9px!important;
+    background:#12171a!important;
+    color:#e8edef!important;
+    font-size:13px!important;
+    font-weight:700!important;
+  }
+  .mobileBottomNav{
+    position:fixed;
+    left:0;right:0;bottom:0;
+    z-index:1200;
+    min-height:62px;
+    padding:5px 8px calc(5px + env(safe-area-inset-bottom));
+    background:rgba(10,13,15,.97);
+    border-top:1px solid #222a2e;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+  }
+  .mobileBottomNav>a{
+    min-width:0;
+    min-height:48px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:3px;
+    color:#68757b;
+    font-size:10px;
+    font-weight:750;
+    border-radius:8px;
+  }
+  .mobileBottomNav>a.active{color:#b9ff31;background:rgba(185,255,49,.06)}
+  .mobileBottomNav>a:focus-visible{outline:2px solid rgba(185,255,49,.55);outline-offset:-2px}
+  .xtFooter{padding-bottom:calc(86px + env(safe-area-inset-bottom))!important}
+}
+
+@media (max-width:700px){
+  .xtHeaderInner{height:58px!important}
+  .xtHeaderTools{height:58px!important}
+  .xtHeaderTools .searchPill{width:44px!important;padding:0!important;justify-content:center!important}
+  .xtHeaderTools .searchPill span{display:none!important}
+  .xtHeaderTools .headerBtn{display:none!important}
+  .mobileToggle{width:44px!important;height:44px!important}
+  .xtHeader nav{top:58px!important;height:calc(100dvh - 58px)!important;width:min(90vw,350px)!important}
+
+  .noticeStrip .xtShell{height:auto;min-height:42px;padding:8px 0;white-space:normal;line-height:1.4}
+  .noticeStrip .noticeSep,.noticeStrip a{display:none}
+  .promoSection{padding:20px 0 8px!important}
+  .promoGrid article{min-height:150px!important;padding:18px!important}
+  .promoGrid h3{font-size:20px!important;margin:14px 0 6px!important}
+  .promoGrid p{max-width:100%!important;font-size:13px!important}
+  .marketsSection,.productSection{padding:36px 0!important}
+  .marketHeading{margin-bottom:16px!important}
+  .marketHeading h2,.sectionTitle h2{font-size:30px!important}
+  .marketTabs{gap:20px!important;scrollbar-width:none;white-space:nowrap}
+  .marketTabs::-webkit-scrollbar{display:none}
+  .marketTabs button{flex:0 0 auto;min-height:44px;padding:0 0 7px!important;font-size:13px}
+  .marketTable{border-top:0!important}
+  .marketRow.marketHead{display:none!important}
+  .marketRow{
+    grid-template-columns:minmax(0,1fr) auto!important;
+    gap:5px 12px!important;
+    min-height:92px!important;
+    padding:12px 0!important;
+    position:relative;
+  }
+  .marketRow>span:nth-child(1){grid-column:1;grid-row:1}
+  .marketRow>span:nth-child(2){grid-column:1;grid-row:2;font-size:15px;font-weight:800}
+  .marketRow>span:nth-child(3){grid-column:2;grid-row:2;text-align:right;font-weight:800}
+  .marketRow>span:nth-child(4){display:block!important;grid-column:1;grid-row:3;color:#6f7b80;font-size:11px}
+  .marketRow>span:nth-child(5){display:block!important;grid-column:2;grid-row:1/4;align-self:center}
+  .marketRow>span:nth-child(5) a{display:inline-flex!important;min-width:58px;height:40px;align-items:center;justify-content:center;border:1px solid #35451c;border-radius:8px;background:#141b0e}
+  .pair{min-width:0}.pair b,.pair small{white-space:nowrap}
+  .favoriteStar{min-width:36px;min-height:36px}
+  .allMarkets{min-height:44px;display:inline-flex!important;align-items:center}
+  .productGrid .productCard{min-height:136px!important;padding:18px!important;gap:13px!important}
+  .productGrid h3{font-size:17px!important;margin-bottom:7px!important}
+  .productGrid p{font-size:13px!important}
+  .featureBand,.appSection,.safetySection{padding:44px 0!important}
+  .featureCopy h2,.appCopy h2,.safetyGrid h2{font-size:30px!important}
+  .workspaceMock{border-radius:11px!important}
+  .workspaceBody{min-height:0!important}
+  .appVisual{min-height:390px!important;overflow:hidden}
+  .statsGrid div{min-width:0}
+}
+
+@media (max-width:430px){
+  .xtShell{width:calc(100% - 24px)!important}
+  .xtHeroGrid{padding:34px 0 30px!important}
+  .xtHeroCopy h1{font-size:44px!important}
+  .xtHeroCopy>p{font-size:14px!important}
+  .heroArt{height:330px!important;transform:scale(.74);margin-bottom:-92px}
+  .trustChips{font-size:11px!important}
+  .statsGrid{grid-template-columns:1fr 1fr!important}
+}
+
+@media (max-width:360px){
+  .xtHeaderInner{padding:0 7px!important}
+  .xtLogo{width:28px;height:28px}
+  .xtBrand{font-size:14px}
+  .xtHeaderTools .searchPill{width:42px!important}
+  .mobileToggle{width:42px!important}
+  .heroArt{transform:scale(.68);margin-bottom:-120px}
+  .marketHeading h2,.sectionTitle h2{font-size:27px!important}
+}
