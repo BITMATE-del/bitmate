@@ -44,7 +44,7 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
  async function load(){
   setLoading(true);
   const {data:{user}}=await supabase.auth.getUser();
-  if(!user){location.href='/auth';return}
+  if(!user){location.href=`/login?next=${encodeURIComponent(location.pathname+location.search)}`;return}
   const {data,error}=await supabase.rpc('user_wallet_snapshot');
   setLoading(false);
   if(error){setMsg(errorText(error.message));return}
