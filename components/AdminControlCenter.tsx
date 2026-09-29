@@ -13,7 +13,7 @@ type CoreLink={label:string;href:string;icon:UiIconName;desc:string};
 const coreLinks:CoreLink[]=[
   {label:'회원관리',href:'/admin/operations',icon:'user',desc:'회원 검색, KYC, 동결, 비밀번호 초기화, 잔액 확인'},
   {label:'입출금 관리',href:'/admin/wallet-ops?tab=withdrawals',icon:'order',desc:'입금/출금 요청과 승인 대기 건을 한곳에서 처리'},
-  {label:'지갑 관리',href:'/admin/wallet-ops?tab=balances',icon:'wallet',desc:'회원별 통합 지갑, 잔액 수정, 네트워크와 원장 운영'},
+  {label:'지갑 관리',href:'/admin/wallet',icon:'wallet',desc:'회원별 통합 지갑, 잔액 수정, 네트워크와 원장 운영'},
   {label:'Crypto Loan 관리',href:'/admin/crypto-loan',icon:'loan',desc:'승인 대기, 연장 요청, 연체 검토, 담보 상태 관리'},
   {label:'공지사항 관리',href:'/admin/notices',icon:'listing',desc:'공지 목록과 게시 내용을 즉시 수정'},
   {label:'Lucky Draw 관리',href:'/admin/lucky-draw',icon:'lucky',desc:'이벤트, 확률 버전, 보상 지급 상태 관리'},
