@@ -241,3 +241,20 @@
   .tickerItem b{font-size:10.5px}
   .tickerItem span,.tickerItem em{font-size:10px}
 }
+
+
+/* Mobile viewport containment for the CFD terminal; internal tables/ticker may scroll, the page may not widen. */
+.page,.marketBar,.terminalGrid,.panel,.chartPanel,.orderPanel,.accountStrip,.bottomPanel,.ticker{
+  box-sizing:border-box;
+  max-width:100%;
+  min-width:0;
+}
+.page{width:100%}
+.tickerViewport{max-width:100%;min-width:0;overflow:hidden}
+@media(max-width:700px){
+  .marketBar,.terminalGrid,.accountStrip,.bottomPanel,.ticker{width:100%;max-width:100%;min-width:0}
+  .symbolBox,.priceBox{min-width:0;max-width:100%}
+  .tickerStatus{max-width:48vw;min-width:0;overflow:hidden}
+  .tickerStatus b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tableWrap{width:100%;max-width:100%}
+}
