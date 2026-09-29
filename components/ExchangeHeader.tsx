@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import {useEffect,useMemo,useRef,useState,type CSSProperties} from 'react';
+import {useEffect,useMemo,useRef,useState,type CSSProperties,type Dispatch,type SetStateAction} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import HeaderUserTools from './HeaderUserTools';
 import UiIcon,{type UiIconName} from './UiIcon';
@@ -46,8 +46,35 @@ export default function ExchangeHeader(){
   const [traderPerf,setTraderPerf]=useState<Record<string,TraderPerf>>({});
   const [isLoggedIn,setIsLoggedIn]=useState(false);
   const searchRef=useRef<HTMLDivElement>(null);
+  const dropdownCloseTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
-  const closeMenus=()=>{setMobileOpen(false);setMiningOpen(false);setAiOpen(false);setCopyOpen(false);setEtfOpen(false);setMoreOpen(false)};
+  const closeHeaderDropdowns=()=>{setMiningOpen(false);setAiOpen(false);setCopyOpen(false);setEtfOpen(false);setMoreOpen(false)};
+  const closeMenus=()=>{setMobileOpen(false);closeHeaderDropdowns()};
+  const clearDropdownCloseTimer=()=>{
+    if(dropdownCloseTimer.current){
+      clearTimeout(dropdownCloseTimer.current);
+      dropdownCloseTimer.current=null;
+    }
+  };
+  const isDesktopDropdown=()=>typeof window!=='undefined'&&window.matchMedia('(min-width: 1481px)').matches;
+  const handleDropdownEnter=(setOpen:Dispatch<SetStateAction<boolean>>)=>{
+    if(!isDesktopDropdown())return;
+    clearDropdownCloseTimer();
+    closeHeaderDropdowns();
+    setOpen(true);
+  };
+  const handleDropdownLeave=(setOpen:Dispatch<SetStateAction<boolean>>)=>{
+    if(!isDesktopDropdown())return;
+    clearDropdownCloseTimer();
+    dropdownCloseTimer.current=setTimeout(()=>{
+      setOpen(false);
+      dropdownCloseTimer.current=null;
+    },250);
+  };
+  const handleDropdownToggle=(setOpen:Dispatch<SetStateAction<boolean>>)=>{
+    clearDropdownCloseTimer();
+    setOpen(v=>!v);
+  };
   const item=(href:string,icon:UiIconName,title:string,desc:string)=><Link style={itemStyle} className="tradeMenuItem" href={href} onClick={closeMenus}><span className="tradeIcon" style={iconBoxStyle}><UiIcon name={icon} size={16}/></span><span style={copyStyle}><b>{title}</b><small style={descStyle}>{desc}</small></span><em style={{display:'grid',placeItems:'center'}}><UiIcon name="chevronRight" size={14}/></em></Link>;
   const navChevron=<UiIcon name="chevronDown" size={13}/>;
 
@@ -57,6 +84,8 @@ export default function ExchangeHeader(){
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{if(alive)setIsLoggedIn(!!session?.user)});
     return()=>{alive=false;subscription.unsubscribe()};
   },[supabase]);
+
+  useEffect(()=>()=>clearDropdownCloseTimer(),[]);
 
   useEffect(()=>{
     const onNativeBack=(e:Event)=>{
@@ -105,23 +134,23 @@ export default function ExchangeHeader(){
       <Link style={desktopMenuStyle} href="/futures" onClick={closeMenus}>Futures</Link>
       <Link style={desktopMenuStyle} href="/cfd" onClick={closeMenus}>CFD Margin</Link>
 
-      <div className="navDropdown" onMouseEnter={()=>setAiOpen(true)} onMouseLeave={()=>setAiOpen(false)}>
-        <button style={desktopMenuStyle} className={aiOpen?'navDropButton active':'navDropButton'} onClick={()=>setAiOpen(v=>!v)} aria-expanded={aiOpen}>AI Trading <span>{navChevron}</span></button>
+      <div className="navDropdown" onMouseEnter={()=>handleDropdownEnter(setAiOpen)} onMouseLeave={()=>handleDropdownLeave(setAiOpen)}>
+        <button style={desktopMenuStyle} className={aiOpen?'navDropButton active':'navDropButton'} onClick={()=>handleDropdownToggle(setAiOpen)} aria-expanded={aiOpen}>AI Trading <span>{navChevron}</span></button>
         <div style={dropdownStyle} className={aiOpen?'tradeDropdown open':'tradeDropdown'}>{item('/ai-core','bot','AI CORE','AI 전략 선택, Risk Engine, 실시간 PnL과 Agent 상태')}{item('/ai-core/portfolio','strategy','My AI Portfolio','AI 세션, 포지션, PnL, 운용 History 확인')}</div>
       </div>
 
-      <div className="navDropdown" onMouseEnter={()=>setEtfOpen(true)} onMouseLeave={()=>setEtfOpen(false)}>
-        <button style={desktopMenuStyle} className={etfOpen?'navDropButton active':'navDropButton'} onClick={()=>setEtfOpen(v=>!v)} aria-expanded={etfOpen}>Crypto ETF <span>{navChevron}</span></button>
+      <div className="navDropdown" onMouseEnter={()=>handleDropdownEnter(setEtfOpen)} onMouseLeave={()=>handleDropdownLeave(setEtfOpen)}>
+        <button style={desktopMenuStyle} className={etfOpen?'navDropButton active':'navDropButton'} onClick={()=>handleDropdownToggle(setEtfOpen)} aria-expanded={etfOpen}>Crypto ETF <span>{navChevron}</span></button>
         <div style={dropdownRightStyle} className={etfOpen?'tradeDropdown open':'tradeDropdown'}>{item('/crypto-etf','etf','BITMATE INDEX','여러 디지털자산을 정해진 비중으로 나눠 담는 바스켓형 분산투자')}{item('/crypto-etf/portfolio','wallet','My INDEX','보유 Basket, 평가손익, 구성자산과 매도 관리')}</div>
       </div>
 
-      <div className="navDropdown" onMouseEnter={()=>setCopyOpen(true)} onMouseLeave={()=>setCopyOpen(false)}>
-        <button style={desktopMenuStyle} className={copyOpen?'navDropButton active':'navDropButton'} onClick={()=>setCopyOpen(v=>!v)} aria-expanded={copyOpen}>Copy Trading <span>{navChevron}</span></button>
+      <div className="navDropdown" onMouseEnter={()=>handleDropdownEnter(setCopyOpen)} onMouseLeave={()=>handleDropdownLeave(setCopyOpen)}>
+        <button style={desktopMenuStyle} className={copyOpen?'navDropButton active':'navDropButton'} onClick={()=>handleDropdownToggle(setCopyOpen)} aria-expanded={copyOpen}>Copy Trading <span>{navChevron}</span></button>
         <div style={dropdownStyle} className={copyOpen?'tradeDropdown open':'tradeDropdown'}>{item('/copy-trading','copy','Copy Trading','트레이더 탐색, 실제 성과와 리스크 비교, 카피 시작')}{item('/my-copy','wallet','My Copy','카피 투자금, 포지션, 손익과 카피 상태 관리')}{item('/copy-trading/history','history','Copy History','원본 주문과 연결된 카피 주문 내역 확인')}</div>
       </div>
 
-      <div className="navDropdown" onMouseEnter={()=>setMiningOpen(true)} onMouseLeave={()=>setMiningOpen(false)}>
-        <button style={desktopMenuStyle} className={miningOpen?'navDropButton active':'navDropButton'} onClick={()=>setMiningOpen(v=>!v)} aria-expanded={miningOpen}>Mining <span>{navChevron}</span></button>
+      <div className="navDropdown" onMouseEnter={()=>handleDropdownEnter(setMiningOpen)} onMouseLeave={()=>handleDropdownLeave(setMiningOpen)}>
+        <button style={desktopMenuStyle} className={miningOpen?'navDropButton active':'navDropButton'} onClick={()=>handleDropdownToggle(setMiningOpen)} aria-expanded={miningOpen}>Mining <span>{navChevron}</span></button>
         <div style={dropdownRightStyle} className={miningOpen?'tradeDropdown open':'tradeDropdown'}>{item('/mining','mining','Mining Home','채굴기 가동, Mining Power, 오늘 예상 보상 확인')}{item('/my-mining','wallet','My Mining','내 Position, 누적 보상, Mining History 확인')}</div>
       </div>
 
@@ -137,8 +166,8 @@ export default function ExchangeHeader(){
         <Link href="/member" onClick={closeMenus}>내정보</Link>
       </div>
 
-      <div className="navDropdown" onMouseEnter={()=>setMoreOpen(true)} onMouseLeave={()=>setMoreOpen(false)}>
-        <button style={desktopMenuStyle} className={moreOpen?'navDropButton active':'navDropButton'} onClick={()=>setMoreOpen(v=>!v)} aria-expanded={moreOpen}>More <span>{navChevron}</span></button>
+      <div className="navDropdown" onMouseEnter={()=>handleDropdownEnter(setMoreOpen)} onMouseLeave={()=>handleDropdownLeave(setMoreOpen)}>
+        <button style={desktopMenuStyle} className={moreOpen?'navDropButton active':'navDropButton'} onClick={()=>handleDropdownToggle(setMoreOpen)} aria-expanded={moreOpen}>More <span>{navChevron}</span></button>
         <div style={{...dropdownRightStyle,width:'390px',maxHeight:'calc(100vh - 100px)',overflowY:'auto'}} className={moreOpen?'tradeDropdown open':'tradeDropdown'}>
           {item('/more/notice','listing','Notice','서비스 공지, 시스템 업데이트 및 점검 안내')}
           {item('/more/referral','referral','Referral Program','초대 링크, 추천 현황 및 커미션 프로그램')}
