@@ -1,6 +1,6 @@
 'use client';
 
-import {siteConfirm,sitePrompt} from './SiteDialog';
+import {siteConfirm} from './SiteDialog';
 
 import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
