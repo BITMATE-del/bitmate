@@ -217,7 +217,7 @@ export default function CfdTimedTradingClient(){
     </section>
 
     <div className={s.ticker}>
-      <div className={s.tickerStatus}><span className={s.statusBars}>▥</span><b>실시간 시세</b><span>{tickerMarkets.length.toLocaleString()}개 연결</span></div>
+      <div className={s.tickerStatus}><span className={s.statusBars}>▥</span><b>실시간 시세</b></div>
       <div className={s.tickerViewport}>
         {tickerLoop.length?<div className={s.tickerTrack}>{tickerLoop.map((m,i)=><button type="button" key={`${m.symbol}-${i}`} className={s.tickerItem} onClick={()=>{const p=products.find(x=>x.symbol===m.symbol);if(p)setSelected(p)}}><b>{m.displayName}</b><span className={m.changePct>=0?s.tickerUp:s.tickerDown}>{m.changePct>=0?'+':''}{m.changePct.toFixed(2)}%</span><em>{fmtPrice(m.lastPrice)}</em></button>)}</div>:<div className={s.tickerEmpty}>실시간 시세 연결 중…</div>}
       </div>
