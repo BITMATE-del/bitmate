@@ -71,3 +71,5 @@
   .toast{left:12px;right:12px;bottom:calc(78px + env(safe-area-inset-bottom));max-width:none}
 }
 @media(max-width:360px){.heroActions,.stats{grid-template-columns:1fr}}
+
+.tabBadge{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#f3b23f;color:#171006;display:inline-grid;place-items:center;font-size:10px;font-weight:900;margin-left:2px}
