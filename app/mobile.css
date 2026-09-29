@@ -77,8 +77,8 @@
 .mobileNavQuick{display:none}
 
 @media (max-width:1060px){
-  html,body{max-width:100%;overflow-x:hidden}
-  body{padding-bottom:calc(66px + env(safe-area-inset-bottom))}
+  html,body{max-width:100%}
+  body{padding-bottom:calc(78px + env(safe-area-inset-bottom))}
   .xtHeader{backdrop-filter:none;background:rgba(11,12,14,.985)}
   .xtHeaderInner{padding-top:env(safe-area-inset-top)!important}
   .headerAccountTools{display:none!important}
@@ -242,4 +242,45 @@
 .is-native-app.native-keyboard-open body{padding-bottom:0}
 @media(max-width:700px){
   .is-native-app input,.is-native-app select,.is-native-app textarea{font-size:16px}
+}
+
+
+/* 2026-09 Android viewport overflow hardening */
+@media (max-width:1060px){
+  .xtHeaderInner,.xtHeaderTools,.xtHeaderTools>div{min-width:0;max-width:100%}
+  .headerSearchPanel{
+    position:fixed!important;
+    top:68px!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    max-width:none!important;
+    max-height:calc(100dvh - 152px)!important;
+    box-sizing:border-box!important;
+    padding:16px!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    border-radius:14px!important;
+  }
+  .headerSearchPanel>div{max-width:100%;box-sizing:border-box}
+  .headerSearchPanel input{min-width:0;max-width:100%}
+  .headerCommonGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    width:100%!important;
+    max-width:100%!important;
+    gap:8px!important;
+  }
+  .headerCommonGrid>a{width:100%!important;min-width:0!important;max-width:100%!important;overflow:hidden}
+}
+@media (max-width:700px){
+  .headerSearchPanel{
+    top:66px!important;
+    left:max(8px,env(safe-area-inset-left))!important;
+    right:max(8px,env(safe-area-inset-right))!important;
+    max-height:calc(100dvh - 146px)!important;
+    padding:14px!important;
+  }
+}
+@media (max-width:350px){
+  .headerCommonGrid{grid-template-columns:1fr!important}
 }
