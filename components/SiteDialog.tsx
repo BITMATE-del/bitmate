@@ -39,6 +39,16 @@ export default function SiteDialog(){
   const [value,setValue]=useState('');
 
   useEffect(()=>{
+    const onNativeBack=(e:Event)=>{
+      if(!current)return;
+      e.preventDefault();
+      finish(current.kind==='confirm'?false:current.kind==='prompt'?null:undefined);
+    };
+    window.addEventListener('bitmate:native-back',onNativeBack);
+    return()=>window.removeEventListener('bitmate:native-back',onNativeBack);
+  },[current]);
+
+  useEffect(()=>{
     const onDialog=(e:Event)=>{
       const detail=(e as CustomEvent<DialogPayload>).detail;
       setCurrent(detail);
