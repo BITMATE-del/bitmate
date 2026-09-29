@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import {useSearchParams} from 'next/navigation';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
@@ -20,7 +19,6 @@ const boolValue=(v:unknown)=>v===true||v==='true';
 
 export default function AdminOperations(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
- const searchParams=useSearchParams();
  const [allowed,setAllowed]=useState<boolean|null>(null);
  const [tab,setTab]=useState<Tab>('members');
  const [memberFilter,setMemberFilter]=useState<MemberFilter>('ALL');
@@ -39,8 +37,9 @@ export default function AdminOperations(){
   setData((snap||{}) as Snapshot);
  }
  useEffect(()=>{
-  const initialQ=searchParams.get('q')||'';
-  const initialTab=searchParams.get('tab');
+  const params=new URLSearchParams(window.location.search);
+  const initialQ=params.get('q')||'';
+  const initialTab=params.get('tab');
   if(initialTab==='kyc'||initialTab==='requests'||initialTab==='system'||initialTab==='members')setTab(initialTab);
   setQuery(initialQ);
   load(initialQ);
