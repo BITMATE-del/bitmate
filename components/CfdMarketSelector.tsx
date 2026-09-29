@@ -4,6 +4,8 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import UiIcon from './UiIcon';
 import s from './CfdMarketSelector.module.css';
 
+export type MarketFeedState='DISCONNECTED'|'CONNECTING'|'CONNECTED'|'RECONNECTING'|'ERROR';
+
 export type LiveMarket={
   symbol:string;base:string;displayName:string;tradingViewSymbol?:string;lastPrice:number;priceChange:number;changePct:number;high24h:number;low24h:number;volume:number;quoteVolume:number;bid:number;ask:number;
 };
@@ -15,6 +17,7 @@ type Props={
   selected:ProductLike|null;
   onSelect:(p:ProductLike)=>void;
   onMarkets?:(markets:LiveMarket[])=>void;
+  onFeedState?:(state:MarketFeedState)=>void;
 };
 
 type Tab='ALL'|'HOT'|'GAINERS';
@@ -22,7 +25,7 @@ type Tab='ALL'|'HOT'|'GAINERS';
 const priceFmt=(v:number)=>!Number.isFinite(v)||v<=0?'—':v>=1000?v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):v>=1?v.toLocaleString(undefined,{minimumFractionDigits:4,maximumFractionDigits:4}):v.toLocaleString(undefined,{minimumFractionDigits:6,maximumFractionDigits:6});
 const compact=(v:number)=>!Number.isFinite(v)||v<=0?'—':new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:2}).format(v);
 
-export default function CfdMarketSelector({products,selected,onSelect,onMarkets}:Props){
+export default function CfdMarketSelector({products,selected,onSelect,onMarkets,onFeedState}:Props){
   const [open,setOpen]=useState(false);
   const [query,setQuery]=useState('');
   const [tab,setTab]=useState<Tab>('ALL');
@@ -34,50 +37,112 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets}
     const load=async()=>{
       try{
         const r=await fetch('/api/cfd/markets',{cache:'no-store'});
-        if(!r.ok)return;
+        if(!r.ok)throw new Error(String(r.status));
         const j=await r.json();
         if(dead)return;
         const rows=(j.markets||[]) as LiveMarket[];
-        setMarkets(rows);onMarkets?.(rows);
-      }catch{}
+        if(rows.length){
+          setMarkets(rows);
+          onMarkets?.(rows);
+          onFeedState?.('CONNECTED');
+        }else{
+          onFeedState?.('CONNECTING');
+        }
+      }catch{
+        if(!dead)onFeedState?.('RECONNECTING');
+      }
     };
     load();
     const id=setInterval(load,30000);
-    return()=>{dead=true;clearInterval(id)};
-  },[onMarkets]);
+    const refresh=()=>{if(document.visibilityState==='visible')void load()};
+    window.addEventListener('pageshow',refresh);
+    window.addEventListener('online',refresh);
+    document.addEventListener('visibilitychange',refresh);
+    return()=>{dead=true;clearInterval(id);window.removeEventListener('pageshow',refresh);window.removeEventListener('online',refresh);document.removeEventListener('visibilitychange',refresh)};
+  },[onMarkets,onFeedState]);
 
   useEffect(()=>{
     let ws:WebSocket|null=null;
     let retry:ReturnType<typeof setTimeout>|null=null;
     let dead=false;
+    let attempt=0;
+    const delays=[1000,2000,4000,8000];
+    const urls=['wss://stream.binance.com:443/ws/!ticker@arr','wss://stream.binance.com:9443/ws/!ticker@arr'];
+
+    const scheduleReconnect=()=>{
+      if(dead)return;
+      if(retry)clearTimeout(retry);
+      onFeedState?.('RECONNECTING');
+      const delay=delays[Math.min(attempt,delays.length-1)];
+      retry=setTimeout(()=>{retry=null;connect()},delay);
+    };
+
     const connect=()=>{
       if(dead)return;
-      ws=new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+      if(ws&&(ws.readyState===WebSocket.OPEN||ws.readyState===WebSocket.CONNECTING))return;
+      onFeedState?.(attempt===0?'CONNECTING':'RECONNECTING');
+      const url=urls[Math.min(attempt,urls.length-1)];
+      try{ws=new WebSocket(url)}catch{attempt+=1;scheduleReconnect();return}
+      ws.onopen=()=>{};
       ws.onmessage=(ev)=>{
         try{
           const incoming=JSON.parse(ev.data) as any[];
-          if(!Array.isArray(incoming))return;
+          if(!Array.isArray(incoming)||!incoming.length)return;
+          const productMap=new Map(products.map(p=>[p.symbol,p]));
+          const patch=new Map(incoming.map(x=>[String(x.s),x]));
           setMarkets(prev=>{
-            if(!prev.length)return prev;
-            const patch=new Map(incoming.map(x=>[String(x.s),x]));
-            let changed=false;
-            const next=prev.map(m=>{
-              const x=patch.get(m.symbol);
-              if(!x)return m;
-              changed=true;
-              return {...m,lastPrice:Number(x.c),priceChange:Number(x.p),changePct:Number(x.P),high24h:Number(x.h),low24h:Number(x.l),volume:Number(x.v),quoteVolume:Number(x.q),bid:Number(x.b),ask:Number(x.a)};
-            });
-            if(changed)onMarkets?.(next);
-            return changed?next:prev;
+            const existing=new Map(prev.map(m=>[m.symbol,m]));
+            const symbols=products.length?products.map(p=>p.symbol):Array.from(patch.keys()).filter(x=>x.endsWith('USDT'));
+            const next:LiveMarket[]=[];
+            for(const symbol of symbols){
+              const x=patch.get(symbol);
+              const before=existing.get(symbol);
+              if(!x&&!before)continue;
+              const base=symbol.endsWith('USDT')?symbol.slice(0,-4):symbol;
+              const product=productMap.get(symbol);
+              next.push(x?{
+                symbol,base,displayName:product?.display_name||`${base}/USDT`,tradingViewSymbol:`BINANCE:${symbol}`,
+                lastPrice:Number(x.c),priceChange:Number(x.p),changePct:Number(x.P),high24h:Number(x.h),low24h:Number(x.l),
+                volume:Number(x.v),quoteVolume:Number(x.q),bid:Number(x.b),ask:Number(x.a)
+              }:before!);
+            }
+            if(!next.length)return prev;
+            onMarkets?.(next);
+            return next;
           });
+          attempt=0;
+          onFeedState?.('CONNECTED');
         }catch{}
       };
-      ws.onclose=()=>{if(!dead)retry=setTimeout(connect,2000)};
-      ws.onerror=()=>ws?.close();
+      ws.onclose=()=>{ws=null;if(!dead){attempt=Math.min(attempt+1,delays.length);scheduleReconnect()}};
+      ws.onerror=()=>{try{ws?.close()}catch{}};
     };
+
+    const resume=()=>{
+      if(dead||document.visibilityState==='hidden')return;
+      if(!ws||ws.readyState===WebSocket.CLOSED||ws.readyState===WebSocket.CLOSING){
+        if(retry){clearTimeout(retry);retry=null}
+        attempt=0;
+        connect();
+      }
+    };
+
     connect();
-    return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()};
-  },[onMarkets]);
+    window.addEventListener('pageshow',resume);
+    window.addEventListener('online',resume);
+    window.addEventListener('bitmate:native-resume',resume as EventListener);
+    document.addEventListener('visibilitychange',resume);
+    return()=>{
+      dead=true;
+      if(retry)clearTimeout(retry);
+      window.removeEventListener('pageshow',resume);
+      window.removeEventListener('online',resume);
+      window.removeEventListener('bitmate:native-resume',resume as EventListener);
+      document.removeEventListener('visibilitychange',resume);
+      if(ws&&ws.readyState<2)ws.close();
+      onFeedState?.('DISCONNECTED');
+    };
+  },[products,onMarkets,onFeedState]);
 
   useEffect(()=>{
     const fn=(e:MouseEvent)=>{if(rootRef.current&&!rootRef.current.contains(e.target as Node))setOpen(false)};
