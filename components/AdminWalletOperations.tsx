@@ -101,11 +101,11 @@ export default function AdminWalletOperations(){
   </section>
 
   <nav className={s.tabs}>
-   <button className={tab==='balances'?s.active:''} onClick={()=>setTab('balances')}><UiIcon name="wallet" size={17}/> Member Balances</button>
-   <button className={tab==='networks'?s.active:''} onClick={()=>setTab('networks')}><UiIcon name="settings" size={17}/> Asset Networks</button>
-   <button className={tab==='addresses'?s.active:''} onClick={()=>setTab('addresses')}><UiIcon name="link" size={17}/> TRON Addresses</button>
-   <button className={tab==='deposits'?s.active:''} onClick={()=>setTab('deposits')}><UiIcon name="history" size={17}/> Deposit Records</button>
-   <button className={tab==='withdrawals'?s.active:''} onClick={()=>setTab('withdrawals')}><UiIcon name="order" size={17}/> Withdrawals</button>
+   <button className={tab==='balances'?s.active:''} onClick={()=>setTab('balances')}><UiIcon name="wallet" size={17}/> 회원별 지갑</button>
+   <button className={tab==='networks'?s.active:''} onClick={()=>setTab('networks')}><UiIcon name="settings" size={17}/> 네트워크 설정</button>
+   <button className={tab==='addresses'?s.active:''} onClick={()=>setTab('addresses')}><UiIcon name="link" size={17}/> 입금 주소</button>
+   <button className={tab==='deposits'?s.active:''} onClick={()=>setTab('deposits')}><UiIcon name="history" size={17}/> 입금 요청/내역</button>
+   <button className={tab==='withdrawals'?s.active:''} onClick={()=>setTab('withdrawals')}><UiIcon name="order" size={17}/> 출금 요청 {Number(data.stats?.withdraw_pending||0)>0&&<b className={s.tabBadge}>{data.stats.withdraw_pending}</b>}</button>
   </nav>
 
   {tab==='balances'&&<section className={`${s.panel} ${s.balancePanel}`}>
