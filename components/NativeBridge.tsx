@@ -25,10 +25,12 @@ function nativePathFromUrl(raw:string){
 }
 
 export default function NativeBridge(){
+  const [native,setNative]=useState(false);
   const [offline,setOffline]=useState(false);
 
   useEffect(()=>{
     if(!Capacitor.isNativePlatform())return;
+    setNative(true);
     document.documentElement.classList.add('is-native-app');
 
     let alive=true;
@@ -106,6 +108,6 @@ export default function NativeBridge(){
     };
   },[]);
 
-  if(!Capacitor.isNativePlatform())return null;
+  if(!native)return null;
   return <div className={offline?'nativeNetworkBanner show':'nativeNetworkBanner'} role="status" aria-live="polite">네트워크 연결을 확인해주세요.</div>;
 }
