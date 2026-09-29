@@ -59,6 +59,18 @@ export default function ExchangeHeader(){
   },[supabase]);
 
   useEffect(()=>{
+    const onNativeBack=(e:Event)=>{
+      if(mobileOpen||searchOpen||miningOpen||aiOpen||copyOpen||etfOpen||moreOpen){
+        e.preventDefault();
+        setSearchOpen(false);
+        closeMenus();
+      }
+    };
+    window.addEventListener('bitmate:native-back',onNativeBack);
+    return()=>window.removeEventListener('bitmate:native-back',onNativeBack);
+  },[mobileOpen,searchOpen,miningOpen,aiOpen,copyOpen,etfOpen,moreOpen]);
+
+  useEffect(()=>{
     const onDown=(e:MouseEvent)=>{if(searchRef.current&&!searchRef.current.contains(e.target as Node))setSearchOpen(false)};
     document.addEventListener('mousedown',onDown);return()=>document.removeEventListener('mousedown',onDown);
   },[]);

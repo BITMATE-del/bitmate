@@ -1,0 +1,123 @@
+name: BITMATE Native Build
+
+on:
+  push:
+    branches:
+      - mobile-capacitor
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap-native:
+    if: ${{ !contains(github.event.head_commit.message || '', '[native-generated]') }}
+    runs-on: macos-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mobile-capacitor
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - name: Generate native projects
+        shell: bash
+        run: |
+          test -d android || npx cap add android
+          test -d ios || npx cap add ios
+          npx cap sync
+          npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
+          node scripts/prepare-capacitor-native.mjs
+      - name: Commit generated Android and iOS projects
+        shell: bash
+        run: |
+          git config user.name "BITMATE Native CI"
+          git config user.email "actions@users.noreply.github.com"
+          git add android ios
+          if git diff --cached --quiet; then
+            echo "Native projects already synchronized."
+          else
+            git commit -m "[native-generated] Sync Capacitor Android and iOS projects"
+            git push origin HEAD:mobile-capacitor
+          fi
+
+  web-build:
+    needs: bootstrap-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mobile-capacitor
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - run: npm run build
+
+  android-build:
+    needs: bootstrap-native
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mobile-capacitor
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Prepare Android SDK
+        shell: bash
+        run: |
+          SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
+      - run: npm install --no-audit --no-fund
+      - run: npx cap sync android
+      - name: Build Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug
+      - name: Build Android release AAB (unsigned until signing is configured)
+        working-directory: android
+        run: ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bitmate-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bitmate-android-release-aab-unsigned
+          path: android/app/build/outputs/bundle/release/app-release.aab
+
+  ios-build:
+    needs: bootstrap-native
+    runs-on: macos-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: mobile-capacitor
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package.json
+      - run: npm install --no-audit --no-fund
+      - run: npx cap sync ios
+      - name: Build iOS simulator without signing
+        shell: bash
+        run: |
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator CODE_SIGNING_ALLOWED=NO build

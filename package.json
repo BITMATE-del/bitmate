@@ -1,12 +1,18 @@
 {
   "name": "ai-trading-platform",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cap:sync": "npx cap sync",
+    "cap:android": "npx cap open android",
+    "cap:ios": "npx cap open ios",
+    "cap:assets": "npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'",
+    "android:debug": "cd android && ./gradlew assembleDebug",
+    "android:bundle": "cd android && ./gradlew bundleRelease"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.0",
@@ -15,11 +21,23 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "qrcode.react": "^4.2.0",
-    "lightweight-charts": "^4.2.0"
+    "lightweight-charts": "^4.2.0",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/browser": "8.0.4",
+    "@capacitor/clipboard": "^8.0.0",
+    "@capacitor/keyboard": "8.0.5",
+    "@capacitor/network": "8.0.1",
+    "@capacitor/splash-screen": "8.0.2",
+    "@capacitor/status-bar": "8.0.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/assets": "3.0.5"
   }
 }

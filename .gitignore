@@ -1,0 +1,34 @@
+node_modules/
+.next/
+out/
+.vercel/
+.env*
+!.env.example
+.DS_Store
+
+# Capacitor / native build output
+android/.gradle/
+android/local.properties
+android/**/build/
+android/.idea/
+ios/App/DerivedData/
+ios/DerivedData/
+ios/App/Pods/
+ios/App/App.xcworkspace/xcuserdata/
+ios/App/App.xcodeproj/xcuserdata/
+*.xcuserstate
+
+# Signing material - never commit
+*.jks
+*.keystore
+*.p12
+*.cer
+*.mobileprovision
+key.properties
+android/keystore.properties
+android/signing.properties
+
+# Generated installable artifacts
+*.apk
+*.aab
+*.ipa

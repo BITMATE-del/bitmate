@@ -210,3 +210,36 @@
   .heroArt{transform:scale(.68);margin-bottom:-120px}
   .marketHeading h2,.sectionTitle h2{font-size:27px!important}
 }
+
+
+/* Native container-only behavior */
+.is-native-app body{min-height:100dvh}
+.is-native-app .xtHeader{padding-top:env(safe-area-inset-top)}
+.is-native-app .mobileBottomNav{padding-bottom:calc(5px + env(safe-area-inset-bottom))}
+.nativeNetworkBanner{
+  position:fixed;
+  left:12px;right:12px;
+  top:calc(10px + env(safe-area-inset-top));
+  z-index:5000;
+  min-height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 14px;
+  border:1px solid #5e3b22;
+  border-radius:10px;
+  background:#21160f;
+  color:#ffd19b;
+  font-size:12px;
+  font-weight:800;
+  opacity:0;
+  pointer-events:none;
+  transform:translateY(-12px);
+  transition:opacity .18s ease,transform .18s ease;
+}
+.nativeNetworkBanner.show{opacity:1;transform:translateY(0)}
+.is-native-app.native-keyboard-open .mobileBottomNav{display:none!important}
+.is-native-app.native-keyboard-open body{padding-bottom:0}
+@media(max-width:700px){
+  .is-native-app input,.is-native-app select,.is-native-app textarea{font-size:16px}
+}
