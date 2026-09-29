@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import {useMemo,useState} from 'react';
-import {useRouter,useSearchParams} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './AuthPortal.module.css';
 
@@ -38,9 +38,10 @@ function authMessage(message:string){
 export default function AuthPortal({mode}:Props){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const router=useRouter();
-  const searchParams=useSearchParams();
-  const requestedNext=searchParams.get('next')||'/';
-  const nextPath=requestedNext.startsWith('/')&&!requestedNext.startsWith('//')?requestedNext:'/';
+  const nextPath=()=>{
+    const requested=new URLSearchParams(window.location.search).get('next')||'/';
+    return requested.startsWith('/')&&!requested.startsWith('//')?requested:'/';
+  };
   const [method,setMethod]=useState<Method>('email');
   const [email,setEmail]=useState('');
   const [countryCode,setCountryCode]=useState('+82');
@@ -69,11 +70,11 @@ export default function AuthPortal({mode}:Props){
         if(mode==='login'){
           const {error}=await supabase.auth.signInWithPassword({email:cleanEmail,password});
           if(error)throw error;
-          router.push(nextPath);router.refresh();
+          router.push(nextPath());router.refresh();
         }else{
           const {data,error}=await supabase.auth.signUp({email:cleanEmail,password});
           if(error)throw error;
-          if(data.session){router.push(nextPath);router.refresh();}
+          if(data.session){router.push(nextPath());router.refresh();}
           else setMessage('가입 확인 이메일을 전송했습니다. 이메일 인증 후 로그인해주세요.');
         }
       }else{
@@ -82,11 +83,11 @@ export default function AuthPortal({mode}:Props){
         if(mode==='login'){
           const {error}=await supabase.auth.signInWithPassword({phone:fullPhone,password});
           if(error)throw error;
-          router.push(nextPath);router.refresh();
+          router.push(nextPath());router.refresh();
         }else{
           const {data,error}=await supabase.auth.signUp({phone:fullPhone,password});
           if(error)throw error;
-          if(data.session){router.push(nextPath);router.refresh();}
+          if(data.session){router.push(nextPath());router.refresh();}
           else{setOtpPending(true);setMessage('휴대폰으로 전송된 6자리 인증번호를 입력해주세요.');}
         }
       }
@@ -104,7 +105,7 @@ export default function AuthPortal({mode}:Props){
     const {error}=await supabase.auth.verifyOtp({phone:fullPhone,token:otp.replace(/\D/g,''),type:'sms'});
     setBusy(false);
     if(error){setError(authMessage(error.message));return;}
-    router.push(nextPath);router.refresh();
+    router.push(nextPath());router.refresh();
   }
 
   const signup=mode==='signup';
