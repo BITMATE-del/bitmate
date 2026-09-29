@@ -40,6 +40,8 @@ export default function AdminOperations(){
   const params=new URLSearchParams(window.location.search);
   const initialQ=params.get('q')||'';
   const initialTab=params.get('tab');
+  const savedFilter=localStorage.getItem('bitmate_admin_member_filter') as MemberFilter|null;
+  if(savedFilter&&['ALL','NEW','ACTIVE','INACTIVE','FROZEN','KYC'].includes(savedFilter))setMemberFilter(savedFilter);
   if(initialTab==='kyc'||initialTab==='requests'||initialTab==='system'||initialTab==='members')setTab(initialTab);
   setQuery(initialQ);
   load(initialQ);
@@ -139,7 +141,7 @@ export default function AdminOperations(){
 
   {tab==='members'&&<section className={s.panel}>
    <div className={s.panelHead}><div><h2>회원 관리</h2><p>이메일·UID·닉네임 검색, 프로필/VIP 변경, 통합 잔액 조정, 계정 동결 및 비밀번호 초기화</p></div><div className={s.search}><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="이메일 / UID / 닉네임"/><button onClick={()=>load(query)}>검색</button></div></div>
-   <div className={s.memberFilters}>{([['ALL','전체 회원'],['NEW','신규 가입자'],['ACTIVE','활성 회원'],['INACTIVE','휴면/비활성'],['FROZEN','동결 회원'],['KYC','KYC 대기']] as const).map(([key,label])=><button key={key} className={memberFilter===key?s.activeFilter:''} onClick={()=>setMemberFilter(key)}>{label}</button>)}</div>
+   <div className={s.memberFilters}>{([['ALL','전체 회원'],['NEW','신규 가입자'],['ACTIVE','활성 회원'],['INACTIVE','휴면/비활성'],['FROZEN','동결 회원'],['KYC','KYC 대기']] as const).map(([key,label])=><button key={key} className={memberFilter===key?s.activeFilter:''} onClick={()=>{setMemberFilter(key);localStorage.setItem('bitmate_admin_member_filter',key)}}>{label}</button>)}</div>
    <div className={s.table}>
     <div className={s.th}><span>회원</span><span>상태</span><span>DEMO 자산</span><span>최근 로그인</span><span>관리</span></div>
     {filteredUsers.map(u=><div className={s.tr} key={u.id}>
