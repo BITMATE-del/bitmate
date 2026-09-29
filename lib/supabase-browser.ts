@@ -9,6 +9,13 @@ export function createBrowserSupabase(){
   if(browserClient)return browserClient;
   const url=process.env.NEXT_PUBLIC_SUPABASE_URL||FALLBACK_SUPABASE_URL;
   const key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||FALLBACK_SUPABASE_PUBLISHABLE_KEY;
-  browserClient=createClient(url,key);
+  browserClient=createClient(url,key,{
+    auth:{
+      persistSession:true,
+      autoRefreshToken:true,
+      detectSessionInUrl:true,
+      flowType:'pkce'
+    }
+  });
   return browserClient;
 }
