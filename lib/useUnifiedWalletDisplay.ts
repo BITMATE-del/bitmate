@@ -101,10 +101,12 @@ export function useUnifiedWalletDisplay(){
       if(next==='KRW'||next==='USDT')setCurrency(next);else readCurrency();
     };
     readCurrency();void loadWallet();void loadRate();
+    const onNativeResume=()=>{void loadWallet();void loadRate()};
     window.addEventListener('bitmate:display-currency',onCurrency as EventListener);
+    window.addEventListener('bitmate:native-resume',onNativeResume);
     const walletId=setInterval(()=>void loadWallet(),3000);
     const rateId=setInterval(()=>void loadRate(),60000);
-    return()=>{window.removeEventListener('bitmate:display-currency',onCurrency as EventListener);clearInterval(walletId);clearInterval(rateId)};
+    return()=>{window.removeEventListener('bitmate:display-currency',onCurrency as EventListener);window.removeEventListener('bitmate:native-resume',onNativeResume);clearInterval(walletId);clearInterval(rateId)};
   },[loadWallet,loadRate]);
 
   const unit=currency;
