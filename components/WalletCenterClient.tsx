@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {useEffect,useState} from 'react';
+import {useEffect,useRef,useState} from 'react';
 import UiIcon,{type UiIconName} from './UiIcon';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 import s from './WalletCenter.module.css';
@@ -17,10 +17,13 @@ const assets=[['BTC','Bitcoin'],['ETH','Ethereum'],['USDT','Tether'],['TRX','TRO
 export default function WalletCenterClient(){
  const wallet=useUnifiedWalletDisplay();
  const [view,setView]=useState<View>('overview');
+ const sideRef=useRef<HTMLElement|null>(null);
+ const activeTabRef=useRef<HTMLButtonElement|null>(null);
  useEffect(()=>{const q=new URLSearchParams(location.search).get('view') as View|null;if(q&&items.some(x=>x[0]===q))setView(q)},[]);
+ useEffect(()=>{activeTabRef.current?.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'})},[view]);
  const go=(v:View)=>{setView(v);history.replaceState(null,'',`/account?view=${v}`)};
  return <main className={s.page}><div className={s.shell}>
-  <aside className={s.side}>{items.map(([key,icon,label])=><button key={key} onClick={()=>go(key)} className={view===key?s.active:''}><span><UiIcon name={icon} size={17}/></span><b>{label}</b>{key==='order'&&<em>›</em>}</button>)}</aside>
+  <aside ref={sideRef} className={s.side}>{items.map(([key,icon,label])=><button ref={view===key?activeTabRef:undefined} key={key} onClick={()=>go(key)} className={view===key?s.active:''}><span><UiIcon name={icon} size={17}/></span><b>{label}</b>{key==='order'&&<em>›</em>}</button>)}</aside>
   <section className={s.content}>
    {view==='overview'&&<>
     <section className={s.hero}><div><small>To Be Unlocked</small><h1>First Deposit ≥ 20 USDT, Get Up to <strong>200 USDT</strong></h1><div className={s.actions}><Link href="/deposit">Deposit Now</Link><Link className={s.secondary} href="/more/reward-hub">Rewards Hub</Link></div></div><div className={s.gift}><UiIcon name="referral" size={36}/></div></section>
