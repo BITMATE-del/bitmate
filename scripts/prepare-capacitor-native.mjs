@@ -30,21 +30,21 @@ patchFile('android/app/src/main/AndroidManifest.xml',s=>{
 patchFile('ios/App/App/Info.plist',s=>{
   if(s.includes('<string>bitmate</string>'))return s;
   const block=`
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.bitmate.app</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>bitmate</string>
-			</array>
-		</dict>
-	</array>
-	<key>UIViewControllerBasedStatusBarAppearance</key>
-	<true/>
+\t<key>CFBundleURLTypes</key>
+\t<array>
+\t\t<dict>
+\t\t\t<key>CFBundleURLName</key>
+\t\t\t<string>com.bitmate.app</string>
+\t\t\t<key>CFBundleURLSchemes</key>
+\t\t\t<array>
+\t\t\t\t<string>bitmate</string>
+\t\t\t</array>
+\t\t</dict>
+\t</array>
 `;
-  return s.replace('</dict>',block+'</dict>');
+  const rootClose=s.lastIndexOf('</dict>');
+  if(rootClose<0)return s;
+  return s.slice(0,rootClose)+block+s.slice(rootClose);
 });
 
 patchFile('ios/App/App.xcodeproj/project.pbxproj',s=>
