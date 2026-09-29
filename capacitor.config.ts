@@ -1,4 +1,5 @@
 import type {CapacitorConfig} from '@capacitor/cli';
+import {KeyboardResize,KeyboardStyle} from '@capacitor/keyboard';
 
 const appId=process.env.BITMATE_APP_ID||'com.bitmate.app';
 const serverUrl=process.env.BITMATE_APP_SERVER_URL||'https://bitmates.vercel.app';
@@ -28,8 +29,8 @@ const config:CapacitorConfig={
       overlaysWebView:true
     },
     Keyboard:{
-      resize:'body',
-      style:'DARK',
+      resize:KeyboardResize.Body,
+      style:KeyboardStyle.Dark,
       resizeOnFullScreen:true,
       autoBackdropColor:'dom'
     }
