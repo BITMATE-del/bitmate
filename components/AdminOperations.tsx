@@ -143,7 +143,7 @@ export default function AdminOperations(){
    <div className={s.table}>
     <div className={s.th}><span>회원</span><span>상태</span><span>DEMO 자산</span><span>최근 로그인</span><span>관리</span></div>
     {filteredUsers.map(u=><div className={s.tr} key={u.id}>
-     <span><b>{u.display_name||'이름 없음'}</b><small>{u.email||'—'}</small><em>{u.id.slice(0,8)}…</em></span>
+     <span><Link className={s.memberLink} href={'/admin/member/'+u.id}><b>{u.display_name||'이름 없음'}</b><small>{u.email||'—'}</small><em>{u.id.slice(0,8)}…</em></Link></span>
      <span><b>{u.frozen?'FROZEN':(u.vip_level||'BASIC')}</b><small>KYC {u.kyc_status}</small>{u.frozen&&<em>계정 동결</em>}{!u.frozen&&u.role&&<em>{u.role}</em>}</span>
      <span className={s.balanceList}>{u.balances?.length?u.balances.map(b=><small key={b.asset}><b>{b.asset}</b> {Number(b.available||0).toLocaleString()}</small>):<small>잔액 없음</small>}</span>
      <span><small>{u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString():'—'}</small><em>가입 {new Date(u.created_at).toLocaleDateString()}</em></span>
