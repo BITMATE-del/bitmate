@@ -296,3 +296,5 @@
   .headerTrendingRows>a>*{min-width:0}
   .headerTrendingRows>a>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
+
+/* production sync: mobile viewport + CFD feed pass */
