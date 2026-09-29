@@ -6,6 +6,7 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
 import s from './Deposit.module.css';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
+import {copyText} from '@/lib/native-platform';
 
 type TokenKey='BTC'|'ETH'|'USDT'|'TRX'|'SOL';
 type TokenMeta={name:string;symbol:TokenKey;icon:string};
