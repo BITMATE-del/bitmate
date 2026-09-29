@@ -35,7 +35,7 @@ export default function AdminMemberDetail({userId}:{userId:string}){
         deposits:((w as any)?.deposits||[]).filter((x:any)=>x.user_id===userId),
         withdrawals:((w as any)?.withdrawals||[]).filter((x:any)=>x.user_id===userId)
       });
-      setLoans:((l as any)?.loans||[]).filter((x:any)=>x.user_id===userId));
+      setLoans(((l as any)?.loans||[]).filter((x:any)=>x.user_id===userId));
       setLoading(false);
     };
     void load();
