@@ -3,7 +3,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import BinanceMarketDepth from './BinanceMarketDepth';
-import CfdMarketSelector,{type LiveMarket} from './CfdMarketSelector';
+import CfdMarketSelector,{type LiveMarket,type MarketFeedState} from './CfdMarketSelector';
 import s from './CfdTimedTrading.module.css';
 import PositionChart from './PositionChart';
 
@@ -25,6 +25,7 @@ export default function CfdTimedTradingClient(){
   const [selected,setSelected]=useState<Product|null>(null);
   const [markets,setMarkets]=useState<LiveMarket[]>([]);
   const [liveMarket,setLiveMarket]=useState<LiveMarket|null>(null);
+  const [marketFeedState,setMarketFeedState]=useState<MarketFeedState>('CONNECTING');
   const [trades,setTrades]=useState<TimedTrade[]>([]);
   const [ledger,setLedger]=useState<Ledger[]>([]);
   const [summary,setSummary]=useState<Summary|null>(null);
@@ -80,20 +81,9 @@ export default function CfdTimedTradingClient(){
   useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id)},[]);
 
   useEffect(()=>{
-    if(!selected?.symbol)return;
-    const initial=markets.find(m=>m.symbol===selected.symbol)||null;
-    if(initial)setLiveMarket(initial);
-    const ws=new WebSocket(`wss://stream.binance.com:9443/ws/${selected.symbol.toLowerCase()}@ticker`);
-    ws.onmessage=(ev)=>{
-      try{
-        const x=JSON.parse(ev.data);
-        setLiveMarket({
-          symbol:String(x.s),base:String(x.s).replace(/USDT$/,''),displayName:`${String(x.s).replace(/USDT$/,'')}/USDT`,
-          lastPrice:Number(x.c),priceChange:Number(x.p),changePct:Number(x.P),high24h:Number(x.h),low24h:Number(x.l),volume:Number(x.v),quoteVolume:Number(x.q),bid:Number(x.b),ask:Number(x.a)
-        });
-      }catch{}
-    };
-    return()=>ws.close();
+    if(!selected?.symbol){setLiveMarket(null);return}
+    const next=markets.find(m=>m.symbol===selected.symbol)||null;
+    if(next)setLiveMarket(next);
   },[selected?.symbol,markets]);
 
   const current=Number(liveMarket?.lastPrice||selected?.current_price||0);
@@ -158,12 +148,13 @@ export default function CfdTimedTradingClient(){
   const resultClass=(r:TimedTrade['result'])=>r==='WIN'?s.win:r==='LOSS'?s.loss:s.draw;
   const tickerMarkets=useMemo(()=>[...markets].filter(m=>Number.isFinite(m.lastPrice)&&m.lastPrice>0).sort((a,b)=>b.quoteVolume-a.quoteVolume).slice(0,30),[markets]);
   const tickerLoop=tickerMarkets.length?[...tickerMarkets,...tickerMarkets]:[];
+  const tickerStatusText=marketFeedState==='CONNECTED'?'실시간 시세':marketFeedState==='RECONNECTING'?'실시간 시세 재연결 중...':marketFeedState==='ERROR'?'시세 연결이 지연되고 있습니다.':marketFeedState==='DISCONNECTED'?'시세 연결이 지연되고 있습니다.':'실시간 시세 연결 중...';
 
   return <main className={s.page}>
     {msg&&<div className={s.toast}>{msg}</div>}
 
     <section className={s.marketBar}>
-      <div className={s.symbolBox}><CfdMarketSelector products={products} selected={selected} onSelect={p=>setSelected(products.find(x=>x.id===p.id)||null)} onMarkets={setMarkets}/></div>
+      <div className={s.symbolBox}><CfdMarketSelector products={products} selected={selected} onSelect={p=>setSelected(products.find(x=>x.id===p.id)||null)} onMarkets={setMarkets} onFeedState={setMarketFeedState}/></div>
       <div className={s.priceBox}><strong>{fmtPrice(current)}</strong><span>{liveMarket?.changePct!=null?<span style={{color:liveMarket.changePct>=0?'#56d99b':'#ff6b7a'}}>{liveMarket.changePct>=0?'+':''}{liveMarket.changePct.toFixed(2)}%</span>:'현재가'}</span></div>
       <div className={s.metric}><span>24H Change</span><b style={{color:(liveMarket?.changePct||0)>=0?'#56d99b':'#ff6b7a'}}>{liveMarket?`${liveMarket.priceChange>=0?'+':''}${fmtPrice(liveMarket.priceChange)} · ${liveMarket.changePct>=0?'+':''}${liveMarket.changePct.toFixed(2)}%`:'—'}</b></div>
       <div className={s.metric}><span>24H High</span><b>{fmtPrice(liveMarket?.high24h)}</b></div>
@@ -217,7 +208,7 @@ export default function CfdTimedTradingClient(){
     </section>
 
     <div className={s.ticker}>
-      <div className={s.tickerStatus}><span className={s.statusBars}>▥</span><b>실시간 시세</b></div>
+      <div className={s.tickerStatus}><span className={s.statusBars}>▥</span><b>{tickerStatusText}</b></div>
       <div className={s.tickerViewport}>
         {tickerLoop.length?<div className={s.tickerTrack}>{tickerLoop.map((m,i)=><button type="button" key={`${m.symbol}-${i}`} className={s.tickerItem} onClick={()=>{const p=products.find(x=>x.symbol===m.symbol);if(p)setSelected(p)}}><b>{m.displayName}</b><span className={m.changePct>=0?s.tickerUp:s.tickerDown}>{m.changePct>=0?'+':''}{m.changePct.toFixed(2)}%</span><em>{fmtPrice(m.lastPrice)}</em></button>)}</div>:<div className={s.tickerEmpty}>실시간 시세 연결 중…</div>}
       </div>
