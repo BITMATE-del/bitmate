@@ -6,92 +6,99 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon,{type UiIconName} from './UiIcon';
 import s from './AdminControlCenter.module.css';
 
-type Module={
-  title:string;
-  description:string;
-  href:string;
-  icon:UiIconName;
-  group:'거래·상품'|'콘텐츠·성장'|'운영·계정';
-  status:'ACTIVE'|'VIEW';
-};
+type Task={label:string;count:number;href:string;tone:'warn'|'bad'|'info'};
+type Kpi={label:string;value:string;hint?:string};
+type CoreLink={label:string;href:string;icon:UiIconName;desc:string};
 
-const modules:Module[]=[
-  {title:'Futures 관리',description:'선물 심볼, 거래 상태, 수수료, 레버리지, Funding, 포지션 및 계정 조정.',href:'/admin/futures',icon:'futures',group:'거래·상품',status:'ACTIVE'},
-  {title:'CFD Margin 관리',description:'CFD 마켓 설정, 상품 상태, 운영 파라미터와 거래 제어.',href:'/admin/cfd',icon:'margin',group:'거래·상품',status:'ACTIVE'},
-  {title:'AI Trading 관리',description:'AI 전략 상태, 전략 버전, 세션, 리스크 중지 및 운용 현황 관리.',href:'/admin/ai-core',icon:'strategy',group:'거래·상품',status:'ACTIVE'},
-  {title:'Copy Trading 관리',description:'트레이더, 성과, 노출 상태, 카피 운용 및 관련 데이터 관리.',href:'/admin/copy-trading',icon:'copy',group:'거래·상품',status:'ACTIVE'},
-  {title:'Crypto ETF 관리',description:'BITMATE INDEX 상품 구성, 상태 및 사용자 노출 관리.',href:'/admin/index',icon:'etf',group:'거래·상품',status:'ACTIVE'},
-  {title:'Mining 관리',description:'채굴 상품, 보상, 상태, 운영 설정 및 사용자 노출 관리.',href:'/admin/mining',icon:'mining',group:'거래·상품',status:'ACTIVE'},
-  {title:'Crypto Loan 관리',description:'담보 대출 상품, 조건, 상태, 금리 및 운영 데이터 관리.',href:'/admin/crypto-loan',icon:'loan',group:'거래·상품',status:'ACTIVE'},
-  {title:'BTMT Membership',description:'등급, 스테이킹, 혜택 및 멤버십 운영 설정 관리.',href:'/admin/btmt-membership',icon:'membership',group:'거래·상품',status:'ACTIVE'},
-  {title:'Lucky Draw 관리',description:'추첨, 보상, 이벤트 상태 및 행운볼 관련 운영 관리.',href:'/admin/lucky-draw',icon:'lucky',group:'콘텐츠·성장',status:'ACTIVE'},
-  {title:'공지사항 관리',description:'서비스 공지, 점검, 시스템 업데이트 및 사용자 노출 공지 관리.',href:'/admin/notices',icon:'listing',group:'콘텐츠·성장',status:'ACTIVE'},
-  {title:'랜딩 이미지 관리',description:'홈 히어로와 제품 프리뷰 등 랜딩 미디어 슬롯 업로드 및 교체.',href:'/admin/landing-media',icon:'campaign',group:'콘텐츠·성장',status:'ACTIVE'},
-  {title:'Referral / Reward Hub',description:'현재 운영 화면을 확인하고 다음 관리 확장 대상에 포함합니다.',href:'/more/reward-hub',icon:'referral',group:'콘텐츠·성장',status:'VIEW'},
-  {title:'회원 · 자산 · 운영 관리',description:'회원 검색, VIP/프로필, KYC 승인, 삭제 요청, DEMO 잔액/원장, 시스템 스위치 관리.',href:'/admin/operations',icon:'user',group:'운영·계정',status:'ACTIVE'},
-  {title:'회원 서비스 · 리워드 관리',description:'API Key, Sub-account, Referral Code, Referral Reward, 관리자 Audit Log 관리.',href:'/admin/services',icon:'security',group:'운영·계정',status:'ACTIVE'},
-  {title:'입금 · 출금 · 네트워크 관리',description:'BTC/ETH/USDT/TRX/SOL 체인 정책, 확인 수, 최소 수량, 수수료, 출금 요청 상태 관리.',href:'/admin/wallet-ops',icon:'wallet',group:'운영·계정',status:'ACTIVE'},
-  {title:'P2P Markets 관리',description:'P2P 광고 노출, 주문 상태, 결제 확인, 분쟁 및 취소 상태 관리.',href:'/admin/p2p',icon:'market',group:'운영·계정',status:'ACTIVE'},
-  {title:'회원 센터',description:'회원 프로필, 인증, 보안, API, 알림 및 설정 화면 확인.',href:'/member',icon:'user',group:'운영·계정',status:'VIEW'},
-  {title:'지갑 / 자산 센터',description:'Spot, Margin, Futures, Earn, Copy, Strategy, Insurance 계정 화면 확인.',href:'/account',icon:'wallet',group:'운영·계정',status:'VIEW'},
-  {title:'입금 시스템',description:'BTC, ETH, USDT, SOL, TRX 및 네트워크 선택형 입금 화면 확인.',href:'/deposit',icon:'wallet',group:'운영·계정',status:'VIEW'},
-  {title:'P2P Markets',description:'P2P 마켓 사용자 화면 및 현재 서비스 상태 확인.',href:'/p2p-markets',icon:'market',group:'운영·계정',status:'VIEW'},
+const coreLinks:CoreLink[]=[
+  {label:'회원관리',href:'/admin/operations',icon:'user',desc:'회원 검색, KYC, 동결, 비밀번호 초기화, 잔액 확인'},
+  {label:'입출금 관리',href:'/admin/wallet-ops?tab=withdrawals',icon:'order',desc:'입금/출금 요청과 승인 대기 건을 한곳에서 처리'},
+  {label:'지갑 관리',href:'/admin/wallet-ops?tab=balances',icon:'wallet',desc:'회원별 통합 지갑, 잔액 수정, 네트워크와 원장 운영'},
+  {label:'Crypto Loan 관리',href:'/admin/crypto-loan',icon:'loan',desc:'승인 대기, 연장 요청, 연체 검토, 담보 상태 관리'},
+  {label:'공지사항 관리',href:'/admin/notices',icon:'listing',desc:'공지 목록과 게시 내용을 즉시 수정'},
+  {label:'Lucky Draw 관리',href:'/admin/lucky-draw',icon:'lucky',desc:'이벤트, 확률 버전, 보상 지급 상태 관리'},
+  {label:'랜딩 이미지 관리',href:'/admin/landing-media',icon:'campaign',desc:'메인/모바일 랜딩 미디어 미리보기와 교체'},
 ];
-
-const groups:Module['group'][]=['거래·상품','콘텐츠·성장','운영·계정'];
 
 export default function AdminControlCenter(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const [allowed,setAllowed]=useState<boolean|null>(null);
   const [role,setRole]=useState('');
   const [email,setEmail]=useState('');
-  const [query,setQuery]=useState('');
-  const [filter,setFilter]=useState<'ALL'|'ACTIVE'|'VIEW'>('ALL');
+  const [loading,setLoading]=useState(true);
+  const [ops,setOps]=useState<any>({stats:{},users:[],kyc:[],deletions:[]});
+  const [wallet,setWallet]=useState<any>({stats:{},deposits:[],withdrawals:[],balances:[]});
+  const [loan,setLoan]=useState<any>({loans:[]});
 
   useEffect(()=>{
     let alive=true;
-    supabase.auth.getUser().then(({data:{user}})=>{
+    const load=async()=>{
+      const {data:{user}}=await supabase.auth.getUser();
       if(!alive)return;
       const r=String(user?.app_metadata?.role||'').toLowerCase();
       const superadmin=user?.app_metadata?.superadmin===true;
-      setRole(superadmin?'superadmin':r||'user');
-      setEmail(user?.email||'');
-      setAllowed(r==='admin'||r==='superadmin'||superadmin);
-    });
-    return()=>{alive=false};
+      const ok=r==='admin'||r==='superadmin'||superadmin;
+      setRole(superadmin?'superadmin':r||'user');setEmail(user?.email||'');setAllowed(ok);
+      if(!ok){setLoading(false);return}
+      const [{data:o},{data:w},{data:l}]=await Promise.all([
+        supabase.rpc('admin_ops_snapshot',{p_query:''}),
+        supabase.rpc('admin_wallet_ops_snapshot'),
+        supabase.rpc('admin_crypto_loan_snapshot_v2')
+      ]);
+      if(!alive)return;
+      setOps(o||{stats:{}});setWallet(w||{stats:{}});setLoan(l||{loans:[]});setLoading(false);
+    };
+    void load();
+    const id=setInterval(()=>void load(),30000);
+    return()=>{alive=false;clearInterval(id)};
   },[supabase]);
 
-  if(allowed===null)return <main className={`${s.page} ${s.checking}`}><div className={s.gate}><div className={s.adminBadge}><span className={s.dot}/>ACCESS CHECK</div><h1>관리자 권한 확인 중</h1><p>BITMATE 운영 권한과 세션을 확인하고 있습니다.</p></div></main>;
-  if(!allowed)return <main className={`${s.page} ${s.denied}`}><div className={s.gate}><div className={s.adminBadge}>BITMATE ADMIN</div><h1>관리자 권한이 필요합니다.</h1><p>현재 계정에는 관리자 접근 권한이 없습니다. 관리자 또는 슈퍼어드민 계정으로 로그인하세요.</p><Link className={s.btn} href="/">홈으로 이동</Link></div></main>;
+  if(allowed===null||loading)return <main className={`${s.page} ${s.checking}`}><div className={s.gate}><div className={s.adminBadge}><span className={s.dot}/>OPERATIONS CHECK</div><h1>오늘 운영 현황을 불러오는 중</h1><p>회원, 입출금, 지갑, Loan 처리 대기 건을 확인하고 있습니다.</p></div></main>;
+  if(!allowed)return <main className={`${s.page} ${s.denied}`}><div className={s.gate}><div className={s.adminBadge}>BITMATE ADMIN</div><h1>관리자 권한이 필요합니다.</h1><p>현재 계정에는 관리자 접근 권한이 없습니다.</p><Link className={s.btn} href="/">홈으로 이동</Link></div></main>;
 
-  const q=query.trim().toLowerCase();
-  const visible=modules.filter(m=>(filter==='ALL'||m.status===filter)&&(!q||`${m.title} ${m.description} ${m.group}`.toLowerCase().includes(q)));
-  const activeCount=modules.filter(m=>m.status==='ACTIVE').length;
+  const loans=Array.isArray(loan?.loans)?loan.loans:[];
+  const today=new Date().toISOString().slice(0,10);
+  const isToday=(v?:string|null)=>!!v&&String(v).slice(0,10)===today;
+  const pendingWithdraw=Number(wallet?.stats?.withdraw_pending||0);
+  const pendingLoan=loans.filter((x:any)=>x.status==='PENDING').length;
+  const extension=loans.filter((x:any)=>x.status==='EXTENSION_REQUESTED').length;
+  const overdueReview=loans.filter((x:any)=>x.status==='OVERDUE_REVIEW').length;
+  const activeLoan=loans.filter((x:any)=>['ACTIVE','EXTENDED','EXTENSION_OFFERED','EXTENSION_REQUESTED'].includes(String(x.status))).length;
+  const todayDeposits=(wallet?.deposits||[]).filter((x:any)=>isToday(x.created_at)).reduce((a:number,x:any)=>a+Number(x.amount||0),0);
+  const todayWithdrawals=(wallet?.withdrawals||[]).filter((x:any)=>isToday(x.created_at)).reduce((a:number,x:any)=>a+Number(x.amount||0),0);
+  const totalWallet=(wallet?.balances||[]).filter((x:any)=>String(x.asset).toUpperCase()==='USDT').reduce((a:number,x:any)=>a+Number(x.available||0)+Number(x.locked||0),0);
+  const newUsers=(ops?.users||[]).filter((x:any)=>isToday(x.created_at)).length;
+  const tasks:Task[]=[
+    {label:'출금 승인 대기',count:pendingWithdraw,href:'/admin/wallet-ops?tab=withdrawals',tone:'warn'},
+    {label:'대출 승인 대기',count:pendingLoan,href:'/admin/crypto-loan?status=PENDING',tone:'warn'},
+    {label:'Loan 연장 요청',count:extension,href:'/admin/crypto-loan?status=EXTENSION_REQUESTED',tone:'info'},
+    {label:'연체 검토',count:overdueReview,href:'/admin/crypto-loan?status=OVERDUE_REVIEW',tone:'bad'},
+    {label:'KYC 검토',count:Number(ops?.stats?.kyc_pending||0),href:'/admin/operations?tab=kyc',tone:'info'},
+  ];
+  const kpis:Kpi[]=[
+    {label:'전체 회원',value:Number(ops?.stats?.users||0).toLocaleString()},
+    {label:'오늘 신규 가입',value:newUsers.toLocaleString()},
+    {label:'승인 대기 출금',value:pendingWithdraw.toLocaleString()},
+    {label:'승인 대기 대출',value:pendingLoan.toLocaleString()},
+    {label:'오늘 입금',value:`${todayDeposits.toLocaleString()} USDT`},
+    {label:'오늘 출금',value:`${todayWithdrawals.toLocaleString()} USDT`},
+    {label:'전체 지갑 잔액',value:`${totalWallet.toLocaleString()} USDT`},
+    {label:'진행 중 Loan',value:activeLoan.toLocaleString()},
+  ];
 
   return <main className={s.page}><div className={s.shell}>
-    <section className={s.top}>
-      <div><div className={s.eyebrow}>BITMATE OPERATIONS</div><h1>Admin Control Center</h1><p>현재 BITMATE에 구현된 거래, 상품, 랜딩, 공지, 회원·자산 관련 기능을 한 곳에서 점검하고 관리하는 통합 운영 허브입니다. 기존 개별 관리자 페이지는 유지하고 이 화면에서 전체 기능으로 진입합니다.</p></div>
-      <div className={s.topActions}><Link className={s.btnGhost} href="/">사이트 보기</Link><Link className={s.btn} href="/admin/operations">회원·운영 관리</Link></div>
-    </section>
+    <section className={s.top}><div><div className={s.eyebrow}>BITMATE OPERATIONS</div><h1>오늘 처리해야 할 업무</h1><p>운영자가 가장 많이 사용하는 승인, 회원, 지갑, Loan 업무를 먼저 보여줍니다. 기존 관리자 기능과 URL은 그대로 유지됩니다.</p></div><div className={s.identity}><span>접속 관리자</span><b>{email||'—'}</b><small>{role.toUpperCase()}</small></div></section>
 
-    <section className={s.stats}>
-      <div className={s.stat}><small>관리 모듈</small><strong>{modules.length}</strong></div>
-      <div className={s.stat}><small>즉시 수정 가능</small><strong>{activeCount}</strong></div>
-      <div className={s.stat}><small>운영 상태</small><strong className={s.statusGood}>ONLINE</strong></div>
-      <div className={s.stat}><small>접속 계정</small><strong style={{fontSize:15}}>{email||'—'} · {role.toUpperCase()}</strong></div>
-    </section>
+    <section className={s.taskSection}><div className={s.sectionTitle}><div><span>PRIORITY</span><h2>처리 필요</h2></div><small>30초마다 최신 상태 확인</small></div><div className={s.taskGrid}>{tasks.map(t=><Link key={t.label} href={t.href} className={`${s.taskCard} ${s[t.tone]}`}><span>{t.label}</span><strong>{t.count.toLocaleString()}건</strong><em>바로 처리 →</em></Link>)}</div></section>
 
-    <div className={s.toolbar}>
-      <input className={s.search} value={query} onChange={e=>setQuery(e.target.value)} placeholder="관리 기능 검색: Futures, 입금, 공지, 회원..."/>
-      <select className={s.filter} value={filter} onChange={e=>setFilter(e.target.value as 'ALL'|'ACTIVE'|'VIEW')}><option value="ALL">전체</option><option value="ACTIVE">수정 가능</option><option value="VIEW">확인 / 확장 예정</option></select>
-    </div>
+    <section className={s.quickSection}><div className={s.sectionTitle}><div><span>QUICK ACTION</span><h2>빠른 작업</h2></div></div><div className={s.quickGrid}>
+      <Link href="/admin/operations">회원 검색</Link><Link href="/admin/wallet-ops?tab=withdrawals">출금 승인</Link><Link href="/admin/crypto-loan?status=PENDING">대출 승인</Link><Link href="/admin/wallet-ops?tab=balances">잔액 수정</Link><Link href="/admin/notices">공지 관리</Link><Link href="/admin/landing-media">랜딩 이미지 변경</Link><Link href="/admin/lucky-draw">Lucky Draw 관리</Link>
+    </div></section>
 
-    {groups.map(group=>{
-      const rows=visible.filter(m=>m.group===group);
-      if(!rows.length)return null;
-      return <section className={s.section} key={group}><div className={s.sectionHead}><h2>{group}</h2><span>{rows.length} modules</span></div><div className={s.grid}>{rows.map(m=><Link className={s.card} href={m.href} key={m.title}><div className={s.cardTop}><span className={s.icon}><UiIcon name={m.icon} size={20}/></span><span className={`${s.pill} ${m.status==='ACTIVE'?s.pillActive:''}`}>{m.status==='ACTIVE'?'MANAGE':'VIEW'}</span></div><h3>{m.title}</h3><p>{m.description}</p><div className={s.cardFoot}><span>{m.group}</span><strong>{m.status==='ACTIVE'?'관리 열기':'화면 확인'} →</strong></div></Link>)}</div></section>
-    })}
+    <section className={s.stats}>{kpis.map(k=><div className={s.stat} key={k.label}><small>{k.label}</small><strong>{k.value}</strong>{k.hint&&<span>{k.hint}</span>}</div>)}</section>
 
-    <section className={s.coverage}><h2>관리 범위 상태</h2><div className={s.coverageRows}><div className={s.coverageRow}><span>거래 핵심 엔진</span><b>Futures / CFD / AI / Copy 관리 연결</b></div><div className={s.coverageRow}><span>상품 운영</span><b>ETF / Mining / Loan / Membership 연결</b></div><div className={s.coverageRow}><span>콘텐츠 운영</span><b>공지 / 랜딩 이미지 / Lucky Draw 연결</b></div><div className={s.coverageRow}><span>회원·지갑 운영</span><b>회원/KYC/삭제요청/DEMO 원장/시스템 스위치 관리 연결</b></div></div></section>
+    <section className={s.coreSection}><div className={s.sectionTitle}><div><span>CORE OPERATIONS</span><h2>핵심 관리 메뉴</h2></div><small>자주 쓰는 메뉴는 항상 바로 접근</small></div><div className={s.coreGrid}>{coreLinks.map(m=><Link href={m.href} className={s.coreCard} key={m.label}><span className={s.icon}><UiIcon name={m.icon} size={19}/></span><div><h3>{m.label}</h3><p>{m.desc}</p></div><b>→</b></Link>)}</div></section>
+
+    <section className={s.secondary}><div className={s.sectionTitle}><div><span>SECONDARY</span><h2>거래 운영 / 시스템</h2></div></div><div className={s.secondaryLinks}><Link href="/admin/futures">Futures</Link><Link href="/admin/cfd">CFD</Link><Link href="/admin/cfd-rounds">CFD 판정보정</Link><Link href="/admin/index">ETF</Link><Link href="/admin/mining">Mining</Link><Link href="/admin/ai-core">AI Trading</Link><Link href="/admin/copy-trading">Copy Trading</Link><Link href="/admin/services">서비스·권한·로그</Link><Link href="/admin/p2p">P2P</Link></div></section>
   </div></main>;
 }
