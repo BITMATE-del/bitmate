@@ -66,10 +66,21 @@ export default function MarketBoard(){
     let ws:WebSocket|null=null;
     let retry:ReturnType<typeof setTimeout>|null=null;
     let dead=false;
+    let attempt=0;
+    const delays=[1000,2000,4000,8000];
+    const urls=['wss://stream.binance.com:443/ws/!ticker@arr','wss://stream.binance.com:9443/ws/!ticker@arr'];
+
+    const reconnect=()=>{
+      if(dead)return;
+      if(retry)clearTimeout(retry);
+      retry=setTimeout(()=>{retry=null;connect()},delays[Math.min(attempt,delays.length-1)]);
+    };
+
     const connect=()=>{
       if(dead)return;
+      if(ws&&(ws.readyState===WebSocket.OPEN||ws.readyState===WebSocket.CONNECTING))return;
       try{
-        ws=new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+        ws=new WebSocket(urls[Math.min(attempt,urls.length-1)]);
         ws.onmessage=(ev)=>{
           try{
             const payload=JSON.parse(ev.data);
@@ -81,17 +92,48 @@ export default function MarketBoard(){
               const x=live.get(r.symbol) as any;
               return x?{...r,price:Number(x.c)||r.price,changePct:Number(x.P)||0,volume:Number(x.q)||r.volume}:r;
             }));
+            attempt=0;
             setFeedState('live');
           }catch{}
         };
         ws.onerror=()=>ws?.close();
-        ws.onclose=()=>{if(!dead)retry=setTimeout(connect,4000)};
+        ws.onclose=()=>{
+          ws=null;
+          if(!dead){
+            attempt=Math.min(attempt+1,delays.length-1);
+            setFeedState('degraded');
+            reconnect();
+          }
+        };
       }catch{
-        if(!dead)retry=setTimeout(connect,4000);
+        attempt=Math.min(attempt+1,delays.length-1);
+        setFeedState('degraded');
+        reconnect();
       }
     };
+
+    const resume=()=>{
+      if(dead||document.visibilityState==='hidden')return;
+      if(!ws||ws.readyState===WebSocket.CLOSED||ws.readyState===WebSocket.CLOSING){
+        attempt=0;
+        connect();
+      }
+    };
+
     connect();
-    return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()};
+    window.addEventListener('pageshow',resume);
+    window.addEventListener('online',resume);
+    window.addEventListener('bitmate:native-resume',resume as EventListener);
+    document.addEventListener('visibilitychange',resume);
+    return()=>{
+      dead=true;
+      if(retry)clearTimeout(retry);
+      window.removeEventListener('pageshow',resume);
+      window.removeEventListener('online',resume);
+      window.removeEventListener('bitmate:native-resume',resume as EventListener);
+      document.removeEventListener('visibilitychange',resume);
+      if(ws&&ws.readyState<2)ws.close();
+    };
   },[rows.length>0]);
 
   const toggleFavorite=(symbol:string)=>{
