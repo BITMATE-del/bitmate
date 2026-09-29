@@ -33,7 +33,8 @@ export default function AdminWalletOperations(){
   if(error){setMsg(error.message);return}
   setData((snap||{}) as Snap);
  }
- useEffect(()=>{const params=new URLSearchParams(window.location.search);const initialTab=params.get('tab');if(initialTab==='balances'||initialTab==='networks'||initialTab==='addresses'||initialTab==='deposits'||initialTab==='withdrawals')setTab(initialTab);load();fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{})},[]);
+ useEffect(()=>{const params=new URLSearchParams(window.location.search);const initialTab=params.get('tab')||localStorage.getItem('bitmate_admin_wallet_tab');if(initialTab==='balances'||initialTab==='networks'||initialTab==='addresses'||initialTab==='deposits'||initialTab==='withdrawals')setTab(initialTab);load();fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{})},[]);
+ useEffect(()=>{localStorage.setItem('bitmate_admin_wallet_tab',tab)},[tab]);
 
  async function run(name:string,args:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
