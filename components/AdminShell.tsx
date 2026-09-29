@@ -12,7 +12,7 @@ const core:NavItem[]=[
   {href:'/admin',icon:'overview',label:'대시보드'},
   {href:'/admin/operations',icon:'user',label:'회원관리',badgeKey:'members'},
   {href:'/admin/wallet-ops?tab=withdrawals',icon:'order',label:'입출금 관리',badgeKey:'wallet'},
-  {href:'/admin/wallet-ops?tab=balances',icon:'wallet',label:'지갑 관리'},
+  {href:'/admin/wallet',icon:'wallet',label:'지갑 관리'},
   {href:'/admin/crypto-loan',icon:'loan',label:'Crypto Loan 관리',badgeKey:'loan'},
   {href:'/admin/notices',icon:'listing',label:'공지사항 관리'},
   {href:'/admin/lucky-draw',icon:'lucky',label:'Lucky Draw 관리'},
