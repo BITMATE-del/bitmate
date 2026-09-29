@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import {useSearchParams} from 'next/navigation';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
@@ -13,13 +14,16 @@ type KycRow={id:string;user_id:string;email:string|null;country:string;full_name
 type DeletionRow={id:string;user_id:string;email:string|null;reason:string|null;status:string;created_at:string;updated_at:string};
 type Snapshot={users:UserRow[];kyc:KycRow[];deletions:DeletionRow[];settings:Record<string,unknown>;stats:Record<string,number>};
 type Tab='members'|'kyc'|'requests'|'system';
+type MemberFilter='ALL'|'NEW'|'ACTIVE'|'INACTIVE'|'FROZEN'|'KYC';
 
 const boolValue=(v:unknown)=>v===true||v==='true';
 
 export default function AdminOperations(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
+ const searchParams=useSearchParams();
  const [allowed,setAllowed]=useState<boolean|null>(null);
  const [tab,setTab]=useState<Tab>('members');
+ const [memberFilter,setMemberFilter]=useState<MemberFilter>('ALL');
  const [query,setQuery]=useState('');
  const [data,setData]=useState<Snapshot>({users:[],kyc:[],deletions:[],settings:{},stats:{}});
  const [busy,setBusy]=useState(false);
@@ -34,7 +38,13 @@ export default function AdminOperations(){
   if(error){setMsg(error.message);return}
   setData((snap||{}) as Snapshot);
  }
- useEffect(()=>{load('')},[]);
+ useEffect(()=>{
+  const initialQ=searchParams.get('q')||'';
+  const initialTab=searchParams.get('tab');
+  if(initialTab==='kyc'||initialTab==='requests'||initialTab==='system'||initialTab==='members')setTab(initialTab);
+  setQuery(initialQ);
+  load(initialQ);
+ },[]);
 
  async function run(name:string,args:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
@@ -98,6 +108,16 @@ export default function AdminOperations(){
  if(allowed===null)return <main className={s.page}><div className={s.gate}>관리자 권한 확인 중...</div></main>;
  if(!allowed)return <main className={s.page}><div className={s.gate}><h1>관리자 권한이 필요합니다.</h1><Link href="/">홈으로</Link></div></main>;
 
+ const now=Date.now();
+ const filteredUsers=data.users.filter(u=>{
+  if(memberFilter==='ALL')return true;
+  if(memberFilter==='FROZEN')return u.frozen;
+  if(memberFilter==='KYC')return u.kyc_status==='PENDING';
+  if(memberFilter==='NEW')return now-new Date(u.created_at).getTime()<=7*86400000;
+  if(memberFilter==='ACTIVE')return !!u.last_sign_in_at&&now-new Date(u.last_sign_in_at).getTime()<=30*86400000&&!u.frozen;
+  if(memberFilter==='INACTIVE')return !u.last_sign_in_at||now-new Date(u.last_sign_in_at).getTime()>30*86400000;
+  return true;
+ });
  const systemKeys=['VIRTUAL_TRADING_ENABLED','SPOT_VIRTUAL_ENABLED','FUTURES_VIRTUAL_ENABLED','CFD_VIRTUAL_ENABLED','AI_VIRTUAL_ENABLED','COPY_VIRTUAL_ENABLED','WITHDRAW_ENABLED'];
 
  return <main className={s.page}><div className={s.shell}>
@@ -120,9 +140,10 @@ export default function AdminOperations(){
 
   {tab==='members'&&<section className={s.panel}>
    <div className={s.panelHead}><div><h2>회원 관리</h2><p>이메일·UID·닉네임 검색, 프로필/VIP 변경, 통합 잔액 조정, 계정 동결 및 비밀번호 초기화</p></div><div className={s.search}><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="이메일 / UID / 닉네임"/><button onClick={()=>load(query)}>검색</button></div></div>
+   <div className={s.memberFilters}>{([['ALL','전체 회원'],['NEW','신규 가입자'],['ACTIVE','활성 회원'],['INACTIVE','휴면/비활성'],['FROZEN','동결 회원'],['KYC','KYC 대기']] as const).map(([key,label])=><button key={key} className={memberFilter===key?s.activeFilter:''} onClick={()=>setMemberFilter(key)}>{label}</button>)}</div>
    <div className={s.table}>
     <div className={s.th}><span>회원</span><span>상태</span><span>DEMO 자산</span><span>최근 로그인</span><span>관리</span></div>
-    {data.users.map(u=><div className={s.tr} key={u.id}>
+    {filteredUsers.map(u=><div className={s.tr} key={u.id}>
      <span><b>{u.display_name||'이름 없음'}</b><small>{u.email||'—'}</small><em>{u.id.slice(0,8)}…</em></span>
      <span><b>{u.frozen?'FROZEN':(u.vip_level||'BASIC')}</b><small>KYC {u.kyc_status}</small>{u.frozen&&<em>계정 동결</em>}{!u.frozen&&u.role&&<em>{u.role}</em>}</span>
      <span className={s.balanceList}>{u.balances?.length?u.balances.map(b=><small key={b.asset}><b>{b.asset}</b> {Number(b.available||0).toLocaleString()}</small>):<small>잔액 없음</small>}</span>
