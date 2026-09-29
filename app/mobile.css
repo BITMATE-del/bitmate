@@ -284,3 +284,15 @@
 @media (max-width:350px){
   .headerCommonGrid{grid-template-columns:1fr!important}
 }
+
+@media (max-width:700px){
+  .headerTrendingRows>a{
+    grid-template-columns:minmax(0,1fr) auto auto!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  .headerTrendingRows>a>*{min-width:0}
+  .headerTrendingRows>a>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
