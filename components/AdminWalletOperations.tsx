@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import {useSearchParams} from 'next/navigation';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
@@ -17,6 +18,7 @@ type Tab='balances'|'networks'|'addresses'|'deposits'|'withdrawals';
 
 export default function AdminWalletOperations(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
+ const searchParams=useSearchParams();
  const [allowed,setAllowed]=useState<boolean|null>(null);
  const [tab,setTab]=useState<Tab>('balances');
  const [data,setData]=useState<Snap>({networks:[],deposits:[],withdrawals:[],addresses:[],balances:[],stats:{}});
@@ -33,7 +35,7 @@ export default function AdminWalletOperations(){
   if(error){setMsg(error.message);return}
   setData((snap||{}) as Snap);
  }
- useEffect(()=>{load();fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{})},[]);
+ useEffect(()=>{const initialTab=searchParams.get('tab');if(initialTab==='balances'||initialTab==='networks'||initialTab==='addresses'||initialTab==='deposits'||initialTab==='withdrawals')setTab(initialTab);load();fetch('/api/fx/usdt-krw',{cache:'no-store'}).then(r=>r.ok?r.json():null).then(v=>{const rate=Number(v?.rate||0);if(rate>0)setKrwRate(rate)}).catch(()=>{})},[]);
 
  async function run(name:string,args:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
