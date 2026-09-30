@@ -23,7 +23,7 @@ export default function MemberCenterClient(){
  const supabase=createBrowserSupabase();
  const wallet=useUnifiedWalletDisplay();
  const [view,setView]=useState<View>('overview');
- const [email,setEmail]=useState(''); const [phone,setPhone]=useState(''); const [uid,setUid]=useState(''); const [emailVerified,setEmailVerified]=useState(false); const [phoneVerified,setPhoneVerified]=useState(false); const [emailVerified,setEmailVerified]=useState(false); const [phoneVerified,setPhoneVerified]=useState(false);
+ const [email,setEmail]=useState(''); const [phone,setPhone]=useState(''); const [uid,setUid]=useState(''); const [emailVerified,setEmailVerified]=useState(false); const [phoneVerified,setPhoneVerified]=useState(false);
  const [nickname,setNickname]=useState('BITMATE User'); const [avatarUrl,setAvatarUrl]=useState('');
  const [marketing,setMarketing]=useState(true); const [depositMail,setDepositMail]=useState(true); const [withdrawMail,setWithdrawMail]=useState(true); const [language,setLanguage]=useState('ko');
  const [mfaEnabled,setMfaEnabled]=useState(false); const [antiPhishing,setAntiPhishing]=useState(''); const [quickWithdrawal,setQuickWithdrawal]=useState(false); const [trustedAddress,setTrustedAddress]=useState('');
