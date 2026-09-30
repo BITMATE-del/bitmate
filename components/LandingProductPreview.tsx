@@ -1,7 +1,3 @@
-import LandingMediaOverlay from './LandingMediaOverlay';
-import UiIcon from './UiIcon';
-import QrFloatingCard from './QrFloatingCard';
-import { mobilePromo } from '@/lib/mobilePromo';
 import s from './LandingProductPreview.module.css';
 
 const candles=[
@@ -105,83 +101,75 @@ export function DesktopTradingPreview(){
   </div>
 }
 
-function PhoneMockup(){
+function PremiumMobileVisual(){
   const assets=[
-    {symbol:'BTC',name:'Bitcoin',amount:'0.0421',value:'₩4,216,000',change:'+2.18%',tone:'btc'},
-    {symbol:'ETH',name:'Ethereum',amount:'0.82',value:'₩2,941,000',change:'+1.67%',tone:'eth'},
-    {symbol:'SOL',name:'Solana',amount:'18.4',value:'₩1,844,000',change:'+3.21%',tone:'sol'}
+    {symbol:'BTC',name:'Bitcoin',value:'₩4,216,000',change:'+2.19%',tone:'btc'},
+    {symbol:'ETH',name:'Ethereum',value:'₩2,941,000',change:'+1.67%',tone:'eth'},
+    {symbol:'SOL',name:'Solana',value:'₩1,844,000',change:'+3.21%',tone:'sol'}
   ];
+
   return (
-    <div className={s.phone}>
-      <div className={s.phoneHeader}>
-        <div className={s.phoneBrand}><span className={s.phoneLogo}>B</span><b>BITMATE</b></div>
-        <button className={s.phoneIconButton} aria-label="Notifications"><UiIcon name="bell" size={14}/><i/></button>
+    <div className={s.premiumVisual}>
+      <div className={s.premiumGlow} aria-hidden="true"/>
+      <div className={s.deviceWrap}>
+        <div className={s.deviceFrame}>
+          <div className={s.deviceNotch} aria-hidden="true"/>
+          <div className={s.deviceScreen}>
+            <header className={s.deviceHeader}>
+              <div className={s.deviceBrand}><span>B</span><b>BITMATE</b></div>
+              <span className={s.deviceLive}><i/> LIVE</span>
+            </header>
+
+            <section className={s.deviceBalance}>
+              <small>Total Assets</small>
+              <strong>₩10,000,000</strong>
+              <div><b>+2.18%</b><span>+₩213,000 today</span></div>
+            </section>
+
+            <section className={s.deviceChartCard}>
+              <div className={s.deviceChartHead}><span>Portfolio Trend</span><b>7D</b></div>
+              <svg className={s.deviceChart} viewBox="0 0 300 112" preserveAspectRatio="none" aria-hidden="true">
+                <defs>
+                  <linearGradient id="bitmatePremiumFill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#b9ff31" stopOpacity=".26"/>
+                    <stop offset="100%" stopColor="#b9ff31" stopOpacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0 86 C24 82 35 66 56 69 S91 86 112 61 S148 34 169 47 S202 72 221 48 S253 25 272 31 S288 21 300 13 L300 112 L0 112 Z" fill="url(#bitmatePremiumFill)"/>
+                <path d="M0 86 C24 82 35 66 56 69 S91 86 112 61 S148 34 169 47 S202 72 221 48 S253 25 272 31 S288 21 300 13" fill="none" stroke="#b9ff31" strokeWidth="2.8" strokeLinecap="round"/>
+              </svg>
+            </section>
+
+            <section className={s.deviceHoldings}>
+              <div className={s.deviceSectionHead}><b>Top Holdings</b><span>Portfolio</span></div>
+              {assets.map(asset=><div className={s.deviceAssetRow} key={asset.symbol}>
+                <span className={s.deviceCoin} data-tone={asset.tone}>{asset.symbol.slice(0,1)}</span>
+                <div><b>{asset.symbol}</b><small>{asset.name}</small></div>
+                <div><strong>{asset.value}</strong><small>{asset.change}</small></div>
+              </div>)}
+            </section>
+
+            <footer className={s.deviceSummary}>
+              <div><small>Available</small><b>₩7.82M</b></div>
+              <div><small>24h PNL</small><b>+₩213K</b></div>
+            </footer>
+          </div>
+        </div>
       </div>
 
-      <section className={s.balance}>
-        <small>Total Assets</small>
-        <strong>₩10,000,000</strong>
-        <span>+2.18%</span>
-      </section>
-
-      <section className={s.mobileMarketCard}>
-        <div className={s.mobileMarketHead}>
-          <div>
-            <small>BTC / USDT</small>
-            <strong>76,526.10</strong>
-          </div>
-          <span>+2.19%</span>
-        </div>
-        <svg className={s.mobileSparkline} viewBox="0 0 240 72" preserveAspectRatio="none" aria-hidden="true">
-          <defs>
-            <linearGradient id="bitmateMobileSpark" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#b9ff31" stopOpacity=".22"/>
-              <stop offset="100%" stopColor="#b9ff31" stopOpacity="0"/>
-            </linearGradient>
-          </defs>
-          <path d="M0 58 C18 54 24 49 38 52 S61 61 75 45 S98 26 112 34 S136 52 151 36 S177 18 194 24 S218 16 240 8 L240 72 L0 72 Z" fill="url(#bitmateMobileSpark)"/>
-          <path d="M0 58 C18 54 24 49 38 52 S61 61 75 45 S98 26 112 34 S136 52 151 36 S177 18 194 24 S218 16 240 8" fill="none" stroke="#b9ff31" strokeWidth="2.2" strokeLinecap="round"/>
+      <aside className={s.marketFloat}>
+        <div className={s.marketFloatHead}><span><i/> LIVE MARKET</span><b>BTC / USDT</b></div>
+        <strong>76,526.10</strong>
+        <div className={s.marketFloatChange}><b>+2.19%</b><span>24h</span></div>
+        <svg className={s.marketFloatChart} viewBox="0 0 160 48" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M0 39 C17 34 20 25 35 29 S56 40 70 25 S93 13 106 18 S129 27 160 7" fill="none" stroke="#b9ff31" strokeWidth="2.2" strokeLinecap="round"/>
         </svg>
-        <div className={s.mobileMarketActions}>
-          <button>Buy</button>
-          <button>Trade</button>
-        </div>
-      </section>
-
-      <section className={s.mobileAssets}>
-        <div className={s.mobileAssetsHead}><b>Assets</b><span>Portfolio</span></div>
-        {assets.map(asset=>(
-          <div className={s.mobileAssetRow} key={asset.symbol}>
-            <span className={s.assetCoin} data-tone={asset.tone}>{asset.symbol.slice(0,1)}</span>
-            <div className={s.assetIdentity}><b>{asset.symbol}</b><small>{asset.name}</small></div>
-            <div className={s.assetAmount}><b>{asset.amount}</b><small>{asset.change}</small></div>
-            <strong>{asset.value}</strong>
-          </div>
-        ))}
-      </section>
-
-      <nav className={s.mobileNav}>
-        <span className={s.mobileNavActive}><UiIcon name="overview" size={14}/><small>Home</small></span>
-        <span><UiIcon name="market" size={14}/><small>Markets</small></span>
-        <span><UiIcon name="futures" size={14}/><small>Trade</small></span>
-        <span><UiIcon name="wallet" size={14}/><small>Assets</small></span>
-      </nav>
-    </div>
-  );
-}
-
-function MobileVisualGroup(){
-  return (
-    <div className={s.mobileVisualGroup}>
-      <div className={s.phoneMockup}>
-        <PhoneMockup/>
-        <LandingMediaOverlay slotKey="home_mobile_preview" alt="BITMATE mobile product preview"/>
-      </div>
-      <QrFloatingCard {...mobilePromo}/>
+        <div className={s.marketFloatFooter}><span>Market status</span><b><i/> Open</b></div>
+      </aside>
     </div>
   );
 }
 
 export function MobileAccessPreview(){
-  return <MobileVisualGroup/>;
+  return <PremiumMobileVisual/>;
 }
