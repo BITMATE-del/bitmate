@@ -101,75 +101,14 @@ export function DesktopTradingPreview(){
   </div>
 }
 
-function PremiumMobileVisual(){
-  const assets=[
-    {symbol:'BTC',name:'Bitcoin',value:'₩4,216,000',change:'+2.19%',tone:'btc'},
-    {symbol:'ETH',name:'Ethereum',value:'₩2,941,000',change:'+1.67%',tone:'eth'},
-    {symbol:'SOL',name:'Solana',value:'₩1,844,000',change:'+3.21%',tone:'sol'}
-  ];
-
+export function MobileAccessPreview(){
   return (
-    <div className={s.premiumVisual}>
-      <div className={s.premiumGlow} aria-hidden="true"/>
-      <div className={s.deviceWrap}>
-        <div className={s.deviceFrame}>
-          <div className={s.deviceNotch} aria-hidden="true"/>
-          <div className={s.deviceScreen}>
-            <header className={s.deviceHeader}>
-              <div className={s.deviceBrand}><span>B</span><b>BITMATE</b></div>
-              <span className={s.deviceLive}><i/> LIVE</span>
-            </header>
-
-            <section className={s.deviceBalance}>
-              <small>Total Assets</small>
-              <strong>₩10,000,000</strong>
-              <div><b>+2.18%</b><span>+₩213,000 today</span></div>
-            </section>
-
-            <section className={s.deviceChartCard}>
-              <div className={s.deviceChartHead}><span>Portfolio Trend</span><b>7D</b></div>
-              <svg className={s.deviceChart} viewBox="0 0 300 112" preserveAspectRatio="none" aria-hidden="true">
-                <defs>
-                  <linearGradient id="bitmatePremiumFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#b9ff31" stopOpacity=".26"/>
-                    <stop offset="100%" stopColor="#b9ff31" stopOpacity="0"/>
-                  </linearGradient>
-                </defs>
-                <path d="M0 86 C24 82 35 66 56 69 S91 86 112 61 S148 34 169 47 S202 72 221 48 S253 25 272 31 S288 21 300 13 L300 112 L0 112 Z" fill="url(#bitmatePremiumFill)"/>
-                <path d="M0 86 C24 82 35 66 56 69 S91 86 112 61 S148 34 169 47 S202 72 221 48 S253 25 272 31 S288 21 300 13" fill="none" stroke="#b9ff31" strokeWidth="2.8" strokeLinecap="round"/>
-              </svg>
-            </section>
-
-            <section className={s.deviceHoldings}>
-              <div className={s.deviceSectionHead}><b>Top Holdings</b><span>Portfolio</span></div>
-              {assets.map(asset=><div className={s.deviceAssetRow} key={asset.symbol}>
-                <span className={s.deviceCoin} data-tone={asset.tone}>{asset.symbol.slice(0,1)}</span>
-                <div><b>{asset.symbol}</b><small>{asset.name}</small></div>
-                <div><strong>{asset.value}</strong><small>{asset.change}</small></div>
-              </div>)}
-            </section>
-
-            <footer className={s.deviceSummary}>
-              <div><small>Available</small><b>₩7.82M</b></div>
-              <div><small>24h PNL</small><b>+₩213K</b></div>
-            </footer>
-          </div>
-        </div>
-      </div>
-
-      <aside className={s.marketFloat}>
-        <div className={s.marketFloatHead}><span><i/> LIVE MARKET</span><b>BTC / USDT</b></div>
-        <strong>76,526.10</strong>
-        <div className={s.marketFloatChange}><b>+2.19%</b><span>24h</span></div>
-        <svg className={s.marketFloatChart} viewBox="0 0 160 48" preserveAspectRatio="none" aria-hidden="true">
-          <path d="M0 39 C17 34 20 25 35 29 S56 40 70 25 S93 13 106 18 S129 27 160 7" fill="none" stroke="#b9ff31" strokeWidth="2.2" strokeLinecap="round"/>
-        </svg>
-        <div className={s.marketFloatFooter}><span>Market status</span><b><i/> Open</b></div>
-      </aside>
+    <div className={s.mobilePromoAsset}>
+      <img
+        src="/assets/bitmate-mobile-promo.svg"
+        alt="BITMATE mobile trading experience"
+        className={s.mobilePromoImage}
+      />
     </div>
   );
-}
-
-export function MobileAccessPreview(){
-  return <PremiumMobileVisual/>;
 }
