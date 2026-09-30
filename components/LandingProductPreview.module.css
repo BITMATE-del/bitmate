@@ -83,273 +83,222 @@
   .marketHeader,.workspaceBody,.accountStatus{min-width:700px}
 }
 
-.mobileVisualGroup{
+.premiumVisual{
   position:relative;
   width:100%;
   max-width:620px;
-  min-height:520px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:visible;
+  min-height:540px;
+  display:grid;
+  place-items:center;
   isolation:isolate;
+  box-sizing:border-box;
+  padding:12px 54px 18px 18px;
 }
-.mobileVisualGroup:before{
+.premiumGlow{
+  position:absolute;
+  width:430px;
+  height:430px;
+  left:4%;
+  top:11%;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(185,255,49,.12) 0%,rgba(185,255,49,.04) 38%,transparent 70%);
+  filter:blur(28px);
+  pointer-events:none;
+  z-index:0;
+}
+.deviceWrap{
+  position:relative;
+  z-index:2;
+  width:316px;
+  max-width:100%;
+  transform:translateX(-42px) rotate(-1.5deg);
+}
+.deviceFrame{
+  position:relative;
+  width:100%;
+  padding:9px;
+  border-radius:42px;
+  background:linear-gradient(145deg,#3a4145 0%,#111619 38%,#2a3034 100%);
+  box-shadow:0 28px 70px rgba(0,0,0,.48),0 0 0 1px rgba(255,255,255,.05);
+  box-sizing:border-box;
+}
+.deviceFrame:before,.deviceFrame:after{
   content:'';
   position:absolute;
-  width:74%;
-  height:64%;
-  left:8%;
-  top:17%;
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(185,255,49,.075) 0%,rgba(185,255,49,.025) 44%,transparent 72%);
-  filter:blur(28px);
-  z-index:0;
-  pointer-events:none;
+  left:-3px;
+  width:3px;
+  border-radius:3px 0 0 3px;
+  background:#3f474b;
 }
-.phoneMockup{
+.deviceFrame:before{top:104px;height:52px}
+.deviceFrame:after{top:168px;height:72px}
+.deviceNotch{
+  position:absolute;
+  top:17px;
+  left:50%;
+  transform:translateX(-50%);
+  width:92px;
+  height:24px;
+  border-radius:999px;
+  background:#050708;
+  z-index:5;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.025);
+}
+.deviceScreen{
   position:relative;
-  width:312px;
-  z-index:2;
-  transform:translateX(-42px);
-  flex:0 0 auto;
-}
-.phone{
-  width:312px;
-  height:515px;
-  border:3px solid #252e32;
-  border-radius:36px;
-  background:linear-gradient(180deg,#0d1214 0%,#090d0f 100%);
-  padding:18px 18px 12px;
-  box-shadow:0 28px 58px rgba(0,0,0,.36);
-  display:flex;
-  flex-direction:column;
+  min-height:510px;
+  padding:26px 17px 16px;
+  border-radius:34px;
   overflow:hidden;
+  background:linear-gradient(180deg,#0b1012 0%,#080c0e 100%);
+  box-sizing:border-box;
+  border:1px solid rgba(255,255,255,.035);
 }
-.phoneHeader{
-  min-height:28px;
+.deviceHeader{
   display:flex;
   align-items:center;
-  justify-content:space-between;
-}
-.phoneBrand{display:flex;align-items:center;gap:8px}
-.phoneLogo{
-  width:24px;
-  height:24px;
-  border-radius:8px;
-  display:grid;
-  place-items:center;
-  background:#b9ff31;
-  color:#0b0d0e;
-  font-size:12px;
-  font-weight:950;
-  font-style:italic;
-}
-.phoneBrand b{font-size:13px;letter-spacing:.02em}
-.phoneIconButton{
-  position:relative;
-  width:29px;
-  height:29px;
-  border:0;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  background:#141b1e;
-  color:#dce3e5;
-  padding:0;
-}
-.phoneIconButton i{
-  position:absolute;
-  width:5px;
-  height:5px;
-  border-radius:50%;
-  background:#b9ff31;
-  right:4px;
-  top:4px;
-}
-.balance{margin:22px 0 18px}
-.balance small{display:block;color:#718087;font-size:8px;letter-spacing:.02em}
-.balance strong{display:block;font-size:28px;line-height:1.02;margin:6px 0 5px;letter-spacing:-.035em}
-.balance span{display:inline-flex;color:#63e59d;font-size:9px;font-weight:750}
-.mobileMarketCard{
-  background:linear-gradient(145deg,#131a1d,#0e1416);
-  border-radius:22px;
-  padding:15px 15px 13px;
-  box-shadow:inset 0 0 0 1px rgba(255,255,255,.045);
-}
-.mobileMarketHead{
-  display:flex;
-  align-items:flex-start;
   justify-content:space-between;
   gap:12px;
+  margin:3px 0 24px;
 }
-.mobileMarketHead>div{display:grid;gap:4px}
-.mobileMarketHead small{font-size:8px;color:#93a0a5;font-weight:750;letter-spacing:.025em}
-.mobileMarketHead strong{font-size:18px;line-height:1;color:#fff}
-.mobileMarketHead>span{
-  font-size:8px;
-  color:#71e5a6;
-  background:rgba(78,216,145,.09);
-  border-radius:999px;
-  padding:5px 7px;
-  font-weight:800;
+.deviceBrand{display:flex;align-items:center;gap:9px}
+.deviceBrand>span{
+  width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
+  background:#b9ff31;color:#071009;font-size:13px;font-weight:950;font-style:italic;
+  box-shadow:0 8px 24px rgba(185,255,49,.16);
 }
-.mobileSparkline{
-  display:block;
-  width:100%;
-  height:62px;
-  margin:10px 0 7px;
+.deviceBrand b{font-size:13px;letter-spacing:.035em;color:#f5f7f8}
+.deviceLive{
+  display:inline-flex;align-items:center;gap:5px;color:#8b969b;
+  font-size:7px;font-weight:800;letter-spacing:.08em;
 }
-.mobileMarketActions{
+.deviceLive i,.marketFloatHead i,.marketFloatFooter i{
+  width:6px;height:6px;border-radius:50%;background:#b9ff31;display:inline-block;
+  box-shadow:0 0 12px rgba(185,255,49,.5);
+}
+.deviceBalance{margin-bottom:17px}
+.deviceBalance>small{display:block;color:#6e7a80;font-size:8px;margin-bottom:6px}
+.deviceBalance>strong{display:block;color:#fff;font-size:30px;line-height:1;letter-spacing:-.045em}
+.deviceBalance>div{display:flex;align-items:center;gap:9px;margin-top:8px;font-size:8px}
+.deviceBalance>div b{color:#64e7a2}
+.deviceBalance>div span{color:#66747a}
+.deviceChartCard{
+  border:1px solid rgba(255,255,255,.055);
+  background:linear-gradient(145deg,#101719,#0b1113);
+  border-radius:20px;
+  padding:14px 13px 9px;
+  box-shadow:0 14px 34px rgba(0,0,0,.18);
+}
+.deviceChartHead{display:flex;justify-content:space-between;align-items:center}
+.deviceChartHead span{color:#cbd3d6;font-size:8px;font-weight:700}
+.deviceChartHead b{color:#9ea9ae;font-size:7px;font-weight:700}
+.deviceChart{width:100%;height:92px;display:block;margin-top:8px}
+.deviceHoldings{margin-top:17px}
+.deviceSectionHead{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.deviceSectionHead b{font-size:9px;color:#e8edef}
+.deviceSectionHead span{font-size:7px;color:#5f6c72}
+.deviceAssetRow{
+  min-height:44px;
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  border-bottom:1px solid rgba(255,255,255,.045);
+}
+.deviceAssetRow:last-child{border-bottom:0}
+.deviceCoin{
+  width:28px;height:28px;border-radius:10px;display:grid;place-items:center;
+  color:#fff;font-size:9px;font-weight:900;background:#1c262a;
+}
+.deviceCoin[data-tone="btc"]{background:linear-gradient(145deg,#f6a11a,#cf7200)}
+.deviceCoin[data-tone="eth"]{background:linear-gradient(145deg,#687fff,#3547ac)}
+.deviceCoin[data-tone="sol"]{background:linear-gradient(145deg,#161d28,#0d1218);color:#b9ff31}
+.deviceAssetRow>div{display:grid;gap:2px}
+.deviceAssetRow>div b{font-size:8px;color:#eef2f3}
+.deviceAssetRow>div small{font-size:6.5px;color:#617078}
+.deviceAssetRow>div:last-child{text-align:right}
+.deviceAssetRow>div:last-child strong{font-size:8px;color:#e9edef}
+.deviceAssetRow>div:last-child small{color:#61dda0}
+.deviceSummary{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:7px;
-}
-.mobileMarketActions button{
-  height:31px;
-  border:0;
-  border-radius:11px;
-  background:#1a2225;
-  color:#dfe6e8;
-  font-size:8px;
-  font-weight:800;
-}
-.mobileMarketActions button:first-child{
-  background:#b9ff31;
-  color:#0b0e0d;
-}
-.mobileAssets{margin-top:17px}
-.mobileAssetsHead{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  margin-bottom:5px;
-}
-.mobileAssetsHead b{font-size:10px}
-.mobileAssetsHead span{font-size:7px;color:#65757b}
-.mobileAssetRow{
-  min-height:48px;
-  display:grid;
-  grid-template-columns:26px 1fr .72fr 1fr;
-  align-items:center;
   gap:8px;
+  margin-top:13px;
 }
-.assetCoin{
-  width:26px;
-  height:26px;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  font-size:9px;
-  font-weight:900;
-  color:#fff;
-  background:#20282c;
+.deviceSummary>div{
+  border:1px solid rgba(255,255,255,.05);
+  background:#0e1416;
+  border-radius:12px;
+  padding:10px;
 }
-.assetCoin[data-tone="btc"]{background:linear-gradient(145deg,#f5a623,#d87900)}
-.assetCoin[data-tone="eth"]{background:linear-gradient(145deg,#6d85ff,#394cb0)}
-.assetCoin[data-tone="sol"]{background:linear-gradient(145deg,#1b2440,#0e151d);color:#b9ff31}
-.assetIdentity,.assetAmount{display:grid;gap:2px}
-.assetIdentity b,.assetAmount b{font-size:8px}
-.assetIdentity small,.assetAmount small{font-size:6.8px;color:#66767c}
-.assetAmount{text-align:right}
-.assetAmount small{color:#59d995}
-.mobileAssetRow>strong{text-align:right;font-size:7.6px;color:#dce3e5}
-.mobileNav{
-  margin-top:auto;
-  min-height:48px;
-  padding:9px 2px 2px;
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  align-items:center;
-  color:#59696f;
-}
-.mobileNav>span{
-  display:grid;
-  justify-items:center;
-  gap:4px;
-}
-.mobileNav small{font-size:6.6px}
-.mobileNavActive{color:#b9ff31!important}
-.qrFloatingCard{
+.deviceSummary small{display:block;color:#65747a;font-size:6.5px;margin-bottom:5px}
+.deviceSummary b{color:#f1f4f5;font-size:9px}
+.marketFloat{
   position:absolute;
-  width:166px;
-  right:38px;
-  bottom:50px;
-  z-index:4;
-  background:#0b1214;
-  border:1px solid #273238;
-  border-radius:15px;
-  padding:12px;
-  box-shadow:0 15px 34px rgba(0,0,0,.28);
+  z-index:3;
+  width:190px;
+  right:12px;
+  top:104px;
+  padding:16px;
+  border-radius:20px;
+  background:linear-gradient(145deg,rgba(17,24,26,.98),rgba(9,14,16,.98));
+  border:1px solid rgba(185,255,49,.16);
+  box-shadow:0 24px 52px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.035);
+  box-sizing:border-box;
 }
-.qr{
-  width:114px;
-  height:114px;
-  margin:0 auto 10px;
-  background:#f1f5f4;
-  border-radius:9px;
-  padding:7px;
-  display:grid;
-  place-items:center;
+.marketFloatHead{display:flex;flex-direction:column;gap:8px}
+.marketFloatHead>span{display:flex;align-items:center;gap:6px;color:#7b898f;font-size:7px;letter-spacing:.12em;font-weight:800}
+.marketFloatHead>b{font-size:9px;color:#e9eef0}
+.marketFloat>strong{display:block;margin-top:8px;font-size:24px;letter-spacing:-.035em;color:#fff}
+.marketFloatChange{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:8px}
+.marketFloatChange b{color:#62e49f}
+.marketFloatChange span{color:#69777c}
+.marketFloatChart{width:100%;height:46px;display:block;margin:10px 0 6px}
+.marketFloatFooter{
+  display:flex;align-items:center;justify-content:space-between;
+  padding-top:10px;border-top:1px solid rgba(255,255,255,.05);
+  font-size:7px;
 }
-.qrSvg,.qrImage{display:block;width:100%;height:100%;object-fit:contain}
-.qrFloatingCard small{display:block;color:#718087;font-size:6.8px;letter-spacing:.12em}
-.qrFloatingCard b{display:block;font-size:12px;margin:5px 0}
-.qrFloatingCard p{color:#74848a;font-size:8px;line-height:1.4;margin:0}
-.qrFloatingCard a{display:inline-flex;margin-top:6px;color:#b9ff31;font-size:8px;font-weight:800}
+.marketFloatFooter>span{color:#6d7a80}
+.marketFloatFooter>b{display:flex;align-items:center;gap:5px;color:#b9ff31;font-size:7px}
 
 @media(max-width:900px){
-  .mobileVisualGroup{
-    max-width:560px;
-    min-height:505px;
-    margin:0 auto;
-  }
-  .phoneMockup{
-    width:300px;
-    transform:translateX(-30px);
-  }
-  .phone{
-    width:300px;
-    height:500px;
-  }
-  .qrFloatingCard{
-    width:160px;
-    right:20px;
-    bottom:42px;
-  }
-  .qr{
-    width:110px;
-    height:110px;
-  }
+  .premiumVisual{max-width:560px;min-height:510px;padding-right:42px}
+  .deviceWrap{width:296px;transform:translateX(-30px) rotate(-1deg)}
+  .deviceScreen{min-height:480px}
+  .marketFloat{width:176px;right:4px;top:96px}
 }
 @media(max-width:620px){
-  .mobileVisualGroup{
+  .premiumVisual{
+    width:100%;
     max-width:100%;
-    min-height:475px;
+    min-height:445px;
+    padding:4px 8px 18px;
+    overflow:hidden;
   }
-  .phoneMockup{
-    width:278px;
-    transform:translateX(-16px);
-  }
-  .phone{
-    width:278px;
-    height:472px;
-    border-radius:33px;
-    padding:16px 16px 11px;
-  }
-  .balance{margin:18px 0 15px}
-  .balance strong{font-size:25px}
-  .mobileMarketCard{padding:13px 13px 11px;border-radius:20px}
-  .mobileSparkline{height:54px}
-  .mobileAssetRow{min-height:44px}
-  .qrFloatingCard{
-    width:152px;
+  .premiumGlow{width:330px;height:330px;left:2%;top:8%}
+  .deviceWrap{width:min(268px,72vw);transform:translateX(-24px) rotate(-.6deg)}
+  .deviceFrame{border-radius:34px;padding:7px}
+  .deviceNotch{width:76px;height:20px;top:14px}
+  .deviceScreen{min-height:422px;border-radius:28px;padding:23px 14px 13px}
+  .deviceHeader{margin-bottom:18px}
+  .deviceBalance>strong{font-size:24px}
+  .deviceChart{height:68px}
+  .deviceAssetRow{min-height:38px}
+  .deviceSummary{display:none}
+  .marketFloat{
+    width:146px;
     right:0;
-    bottom:28px;
-    padding:11px;
+    top:90px;
+    padding:12px;
+    border-radius:16px;
   }
-  .qr{
-    width:104px;
-    height:104px;
-  }
+  .marketFloat>strong{font-size:18px}
+  .marketFloatChart{height:36px}
+}
+@media(max-width:390px){
+  .premiumVisual{min-height:420px}
+  .deviceWrap{width:244px;transform:translateX(-28px)}
+  .deviceScreen{min-height:398px}
+  .marketFloat{width:132px;top:96px;right:-2px}
 }
