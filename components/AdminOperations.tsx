@@ -8,7 +8,7 @@ import {siteAlert,siteConfirm,sitePrompt} from './SiteDialog';
 import s from './AdminOperations.module.css';
 
 type Balance={asset:string;available:number;locked:number};
-type UserRow={id:string;email:string|null;phone:string|null;created_at:string;last_sign_in_at:string|null;role:string|null;display_name:string|null;vip_level:string|null;kyc_status:string;frozen:boolean;banned_until:string|null;balances:Balance[]};
+type UserRow={id:string;email:string|null;phone:string|null;email_confirmed_at:string|null;phone_confirmed_at:string|null;created_at:string;last_sign_in_at:string|null;role:string|null;display_name:string|null;vip_level:string|null;kyc_status:string;frozen:boolean;banned_until:string|null;balances:Balance[]};
 type KycRow={id:string;user_id:string;email:string|null;country:string;full_name:string;status:string;submitted_at:string;reviewed_at:string|null};
 type DeletionRow={id:string;user_id:string;email:string|null;reason:string|null;status:string;created_at:string;updated_at:string};
 type Snapshot={users:UserRow[];kyc:KycRow[];deletions:DeletionRow[];settings:Record<string,unknown>;stats:Record<string,number>};
@@ -146,7 +146,7 @@ export default function AdminOperations(){
     <div className={s.th}><span>회원</span><span>상태</span><span>DEMO 자산</span><span>최근 로그인</span><span>관리</span></div>
     {filteredUsers.map(u=><div className={s.tr} key={u.id}>
      <span><Link className={s.memberLink} href={'/admin/member/'+u.id}><b>{u.display_name||'이름 없음'}</b><small>{u.email||'—'}</small><em>{u.id.slice(0,8)}…</em></Link></span>
-     <span><b>{u.frozen?'FROZEN':(u.vip_level||'BASIC')}</b><small>KYC {u.kyc_status}</small>{u.frozen&&<em>계정 동결</em>}{!u.frozen&&u.role&&<em>{u.role}</em>}</span>
+     <span><b>{u.frozen?'FROZEN':(u.vip_level||'BASIC')}</b><small>KYC {u.kyc_status}</small><small>이메일 인증 {u.email_confirmed_at?'완료':'미완료'}</small><small>휴대폰 인증 {u.phone_confirmed_at?'완료':'미완료'}</small>{u.frozen&&<em>계정 동결</em>}{!u.frozen&&u.role&&<em>{u.role}</em>}</span>
      <span className={s.balanceList}>{u.balances?.length?u.balances.map(b=><small key={b.asset}><b>{b.asset}</b> {Number(b.available||0).toLocaleString()}</small>):<small>잔액 없음</small>}</span>
      <span><small>{u.last_sign_in_at?new Date(u.last_sign_in_at).toLocaleString():'—'}</small><em>가입 {new Date(u.created_at).toLocaleDateString()}</em></span>
      <span className={s.rowActions}><button onClick={()=>editProfile(u)}>프로필</button><button className={s.primary} onClick={()=>adjust(u)}>잔액 조정</button><button disabled={busy} onClick={()=>resetPassword(u)}>비밀번호 초기화</button><button disabled={busy} className={u.frozen?s.unfreeze:s.freeze} onClick={()=>toggleFreeze(u)}>{u.frozen?'동결 해제':'계정 동결'}</button></span>
