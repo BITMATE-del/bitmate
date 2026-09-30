@@ -105,8 +105,8 @@ export function MobileAccessPreview(){
   return (
     <div className={s.mobilePromoAsset}>
       <img
-        src="/assets/bitmate-mobile-promo.svg"
-        alt="BITMATE mobile trading experience"
+        src="/assets/bitmate-mobile-promo.png"
+        alt="BITMATE Mobile Trading"
         className={s.mobilePromoImage}
       />
     </div>
