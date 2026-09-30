@@ -11,3 +11,12 @@
   .phoneVerifyRow{grid-template-columns:1fr}
   .sendOtp{width:100%;min-height:46px}
 }
+
+.phoneVerifyRow{display:grid;grid-template-columns:102px minmax(0,1fr) 112px;gap:8px;align-items:center}
+.sendOtp{height:48px;border:1px solid #45641c;border-radius:7px;background:#17210f;color:#bdff75;font-size:12px;font-weight:850;cursor:pointer;padding:0 10px;white-space:nowrap}
+.sendOtp:disabled{opacity:.55;cursor:not-allowed}
+.phoneHint{display:block;margin-top:7px;color:#68777d;font-size:10px;line-height:1.45}
+@media(max-width:560px){
+  .phoneVerifyRow{grid-template-columns:92px minmax(0,1fr)}
+  .phoneVerifyRow .sendOtp{grid-column:1/-1;width:100%;min-height:46px}
+}
