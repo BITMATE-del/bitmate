@@ -215,7 +215,7 @@ export default function AuthPortal({mode}:Props){
           {signup&&<small className={s.phoneHint}>입력한 번호는 전송 전에 {fullPhone()||'+821012345678'} 형식으로 변환됩니다.</small>}
         </label>}
 
-        <label><span>비밀번호</span><input type="password" autoComplete={signup?'new-password':'current-password'} placeholder="8자 이상 입력" value={password} onChange={e=>{setPassword(e.target.value);if(signup){setOtpPending(false);setPhoneVerified(false);setOtp('')}}} required/></label>
+        <label><span>비밀번호</span><input type="password" autoComplete={signup?'new-password':'current-password'} placeholder="8자 이상 입력" value={password} onChange={e=>setPassword(e.target.value)} required/></label>
         {signup&&<label><span>비밀번호 확인</span><input type="password" autoComplete="new-password" placeholder="비밀번호 다시 입력" value={confirm} onChange={e=>setConfirm(e.target.value)} required/></label>}
 
         {signup&&otpPending&&<div className={s.otpBox}>
