@@ -85,7 +85,7 @@
 
 .mobilePromoAsset{
   width:100%;
-  max-width:620px;
+  max-width:600px;
   min-width:0;
   display:flex;
   align-items:center;
@@ -96,24 +96,23 @@
 .mobilePromoImage{
   display:block;
   width:100%;
-  max-width:600px;
+  max-width:560px;
   height:auto;
   object-fit:contain;
 }
 @media(max-width:900px){
-  .mobilePromoAsset{max-width:540px}
-  .mobilePromoImage{max-width:520px}
+  .mobilePromoAsset{max-width:520px}
+  .mobilePromoImage{max-width:500px}
 }
 @media(max-width:620px){
   .mobilePromoAsset{
     width:100%;
     max-width:100%;
     padding:0;
-    overflow:hidden;
   }
   .mobilePromoImage{
     width:100%;
-    max-width:360px;
+    max-width:350px;
     height:auto;
   }
 }
