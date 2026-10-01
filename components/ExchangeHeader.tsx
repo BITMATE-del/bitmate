@@ -4,6 +4,7 @@ import {useEffect,useMemo,useRef,useState,type CSSProperties,type Dispatch,type 
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import HeaderUserTools from './HeaderUserTools';
 import UiIcon,{type UiIconName} from './UiIcon';
+import BrandLogo from './BrandLogo';
 
 const desktopMenuStyle={whiteSpace:'nowrap',flexShrink:0} as const;
 const dropdownStyle={width:'360px',maxWidth:'calc(100vw - 24px)',boxSizing:'border-box',padding:'14px'} as const;
@@ -128,9 +129,10 @@ export default function ExchangeHeader(){
   const hotSymbol=markets[0]?.symbol||'BTC';
 
   return <header className="xtHeader"><div className="xtShell xtHeaderInner" style={{width:'100%',maxWidth:'none',margin:0,padding:'0 24px',gap:'22px',boxSizing:'border-box'}}>
-    <Link className="xtBrand" href="/" onClick={closeMenus} style={{flexShrink:0}}><span className="xtLogo">B</span><b>BITMATE</b></Link>
+    <Link className="xtBrand" href="/" onClick={closeMenus} style={{flexShrink:0}}><BrandLogo variant="horizontal"/></Link>
     <button className="mobileToggle" onClick={()=>setMobileOpen(v=>!v)} aria-label="Toggle menu"><UiIcon name="menu" size={20}/></button>
     <nav className={mobileOpen?'mobileOpen':''} style={{flex:'0 1 auto',flexWrap:'nowrap',minWidth:0}}>
+      <Link className="mobileDrawerBrand" href="/" onClick={closeMenus}><BrandLogo variant="horizontal" height={34}/></Link>
       <Link style={desktopMenuStyle} href="/futures" onClick={closeMenus}>Futures</Link>
       <Link style={desktopMenuStyle} href="/cfd" onClick={closeMenus}>CFD Margin</Link>
 
