@@ -1,5 +1,9 @@
-.xtBrand{width:172px;height:46px;display:inline-flex;align-items:center;justify-content:flex-start;flex-shrink:0;background:url('/bitmate-wordmark.svg') left center/contain no-repeat;overflow:hidden;text-indent:-9999px;gap:0!important}
-.xtBrand .xtLogo,.xtBrand>b{display:none!important}
-.footerTop .xtBrand{width:196px;height:58px}
-@media(max-width:900px){.xtBrand{width:154px;height:42px}.footerTop .xtBrand{width:176px;height:52px}}
-@media(max-width:560px){.xtBrand{width:142px;height:38px}}
+.xtBrand{height:42px;display:inline-flex;align-items:center;justify-content:flex-start;flex-shrink:0;overflow:hidden;gap:0!important}
+.xtBrand img{display:block;width:auto;height:100%;max-width:100%;object-fit:contain}
+.footerTop .xtBrand{height:48px}
+.mobileDrawerBrand{display:none!important}
+@media(max-width:1480px){
+  .mobileDrawerBrand{display:flex!important;align-items:center!important;justify-content:flex-start!important;width:auto!important;min-height:44px!important;padding:4px 10px 10px!important;margin:0 0 6px!important;border-bottom:1px solid #20282c;border-radius:0!important}
+}
+@media(max-width:900px){.xtBrand{height:38px}.footerTop .xtBrand{height:44px}}
+@media(max-width:560px){.xtBrand{height:34px}}
