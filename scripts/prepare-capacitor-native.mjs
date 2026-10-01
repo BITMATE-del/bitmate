@@ -1,5 +1,12 @@
 import fs from 'node:fs';
 
+const officialSymbol='public/assets/brand/bitmate-symbol.png';
+if(fs.existsSync(officialSymbol)){
+  fs.mkdirSync('assets',{recursive:true});
+  fs.copyFileSync(officialSymbol,'assets/icon.png');
+  fs.copyFileSync(officialSymbol,'assets/splash.png');
+}
+
 function patchFile(path,fn){
   if(!fs.existsSync(path))return false;
   const before=fs.readFileSync(path,'utf8');
