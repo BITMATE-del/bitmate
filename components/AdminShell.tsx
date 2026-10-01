@@ -6,6 +6,7 @@ import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon,{type UiIconName} from './UiIcon';
 import s from './AdminShell.module.css';
+import BrandLogo from './BrandLogo';
 
 type NavItem={href:string;icon:UiIconName;label:string;badgeKey?:'members'|'wallet'|'loan'};
 const core:NavItem[]=[
@@ -102,7 +103,7 @@ export default function AdminShell({children}:{children:React.ReactNode}){
 
   return <div className={s.adminRoot}>
     <aside className={`${s.sidebar} ${mobileOpen?s.sidebarOpen:''}`}>
-      <div className={s.sideHead}><Link href="/admin" className={s.brand}><span>B</span><div><b>BITMATE</b><small>ADMIN CONSOLE</small></div></Link><button className={s.closeMobile} onClick={()=>setMobileOpen(false)}>×</button></div>
+      <div className={s.sideHead}><Link href="/admin" className={s.brand}><div><BrandLogo variant="horizontal" height={30}/><small>ADMIN CONSOLE</small></div></Link><button className={s.closeMobile} onClick={()=>setMobileOpen(false)}>×</button></div>
       <div className={s.priorityLabel}>핵심 운영</div>
       <nav className={s.nav}>{core.map(navItem)}</nav>
       <div className={s.group}>
