@@ -31,8 +31,8 @@ jobs:
           test -d android || npx cap add android
           test -d ios || npx cap add ios
           npx cap sync
-          npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
           node scripts/prepare-capacitor-native.mjs
+          npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
       - name: Commit generated Android and iOS projects
         shell: bash
         run: |
