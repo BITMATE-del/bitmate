@@ -85,8 +85,9 @@
 
 .mobilePromoAsset{
   width:100%;
-  max-width:620px;
+  max-width:680px;
   min-width:0;
+  min-height:600px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -98,33 +99,34 @@
 .mobilePromoImage{
   display:block;
   width:100%;
-  max-width:600px;
+  max-width:680px;
   height:auto;
   object-fit:contain;
+  margin:0 auto;
   background:transparent;
   transform:none;
   filter:none;
 }
-@media(max-width:900px){
+@media(max-width:1100px){
   .mobilePromoAsset{
-    width:100%;
-    max-width:560px;
+    max-width:600px;
+    min-height:520px;
   }
   .mobilePromoImage{
-    width:100%;
-    max-width:520px;
+    max-width:600px;
   }
 }
 @media(max-width:620px){
   .mobilePromoAsset{
     width:100%;
     max-width:100%;
+    min-height:0;
     padding:0;
     overflow:hidden;
   }
   .mobilePromoImage{
-    width:100%;
-    max-width:350px;
+    width:min(90vw,380px);
+    max-width:380px;
     height:auto;
     margin:0 auto;
   }
