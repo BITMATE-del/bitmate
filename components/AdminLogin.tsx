@@ -5,6 +5,7 @@ import {useRouter,useSearchParams} from 'next/navigation';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
 import s from './AdminLogin.module.css';
+import BrandLogo from './BrandLogo';
 
 export default function AdminLogin(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
@@ -44,7 +45,7 @@ export default function AdminLogin(){
 
   return <main className={s.page}>
     <section className={s.panel}>
-      <div className={s.brand}><span>B</span><div><b>BITMATE</b><small>ADMIN CONSOLE</small></div></div>
+      <div className={s.brand}><div><BrandLogo variant="horizontal" height={36}/><small>ADMIN CONSOLE</small></div></div>
       <div className={s.secure}><UiIcon name="security" size={16}/> 관리자 전용 접근</div>
       <h1>관리자 로그인</h1>
       <p>공개 사이트와 분리된 운영 콘솔입니다. 관리자 또는 슈퍼어드민 계정만 접근할 수 있습니다.</p>
