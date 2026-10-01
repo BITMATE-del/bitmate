@@ -5,6 +5,7 @@ import {useMemo,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './AuthPortal.module.css';
+import BrandLogo from './BrandLogo';
 
 type Props={mode:'login'|'signup'};
 
@@ -71,7 +72,7 @@ export default function AuthPortal({mode}:Props){
 
   return <main className={s.page}>
     <section className={s.card}>
-      <Link href="/" className={s.brand}><span>B</span><b>BITMATE</b></Link>
+      <Link href="/" className={s.brand}><BrandLogo variant="horizontal" height={38}/></Link>
       <div className={s.heading}>
         <h1>{signup?'회원 가입':'로그인'}</h1>
         <p>{signup?'이메일로 BITMATE 계정을 만들고 거래를 시작하세요.':'BITMATE 계정에 로그인하세요.'}</p>
