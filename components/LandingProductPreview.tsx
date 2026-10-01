@@ -105,10 +105,10 @@ export function MobileAccessPreview(){
   return (
     <div className={s.mobilePromoAsset}>
       <img
-        src="/assets/bitmate-mobile-promo.png"
+        src="/assets/bitmate-trade-anywhere.webp"
         alt="BITMATE Mobile Trading"
-        width={1800}
-        height={1199}
+        width={1200}
+        height={1267}
         loading="lazy"
         decoding="async"
         className={s.mobilePromoImage}
