@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon,{type UiIconName} from './UiIcon';
+import {QRCodeSVG} from 'qrcode.react';
 import s from './HeaderUserTools.module.css';
 
 type Panel='currency'|'wallet'|'account'|'notifications'|'download'|null;
@@ -151,7 +152,7 @@ export default function HeaderUserTools(){
     </div>
     <div className={s.rel}>
       <button className={`${s.icon} ${panel==='download'?s.active:''}`} onClick={()=>toggle('download')} aria-label="Download app"><UiIcon name="download" size={18}/></button>
-      {panel==='download'&&<div className={`${s.panel} ${s.downloadPanel}`}><div className={s.qr} aria-label="App QR placeholder"><div className={s.qrGrid}><UiIcon name="overview" size={54}/></div></div><b>Scan to Download the<br/>BITMATE APP</b><button className={s.moreOptions}>More Options</button></div>}
+      {panel==='download'&&<div className={`${s.panel} ${s.downloadPanel}`}><div className={s.qr} aria-label="BITMATE Android APK QR"><QRCodeSVG value="https://bitmate.co.kr/downloads/bitmate-latest.apk" size={144} level="M" bgColor="#ffffff" fgColor="#0b0d0e" includeMargin={false}/></div><b>Scan to Download the<br/>BITMATE APP</b><a className={s.moreOptions} href="/downloads/bitmate-latest.apk" download>Download APK</a></div>}
     </div>
     <span className={s.lang} aria-label="Language"><UiIcon name="globe" size={18}/></span>
   </div>
