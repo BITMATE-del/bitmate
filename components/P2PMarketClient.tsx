@@ -123,7 +123,7 @@ export default function P2PMarketClient(){
      <section className={s.sectionHead}><div><span>LIVE SELLERS</span><h2>판매자 플레이어</h2></div><p>수수료 · 판매코인 · 결제수단 · 거래한도를 비교하고 거래를 요청하세요.</p></section>
      <section className={s.cards}>
        {data.ads.length?data.ads.map(a=><article key={a.id} className={s.playerCard}>
-         <div className={s.cardTop}><div className={s.avatar}>{(a.nickname||'P').slice(0,1).toUpperCase()}</div><div className={s.identity}><b>{a.nickname||'BITMATE Player'}</b><span>{a.completed_orders||0}회 거래 완료</span></div><span className={s.online}>ACTIVE</span></div>
+         <div className={s.cardTop}><div className={s.avatar}>{(a.nickname||'P').slice(0,1).toUpperCase()}</div><div className={s.identity}><b>{a.nickname||'BITMATE Player'}</b></div><span className={s.online}>ACTIVE</span></div>
          <h3>{a.headline||'P2P 판매 플레이어'}</h3>
          <div className={s.cardMetrics}><div><span>판매코인</span><b>{a.asset}</b></div><div><span>판매가격</span><b>{money(a.price)} {a.fiat}</b></div><div><span>수수료</span><b>{Number(a.fee_rate||0).toFixed(2)}%</b></div><div><span>판매가능</span><b>{money(a.available_amount)} {a.asset}</b></div></div>
          <div className={s.limit}><span>거래한도</span><b>{money(a.min_order)} ~ {money(a.max_order)} KRW</b></div>
