@@ -58,6 +58,7 @@ export default function HeaderUserTools(){
   const [wallet,setWallet]=useState<WalletSnapshot>({spot:[],futures_usdt:0});
   const [walletLoading,setWalletLoading]=useState(false);
   const root=useRef<HTMLDivElement>(null);
+  const panelCloseTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
   useEffect(()=>{supabase.auth.getUser().then(({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'')}})},[supabase]);
   useEffect(()=>{
@@ -71,7 +72,7 @@ export default function HeaderUserTools(){
     window.dispatchEvent(new CustomEvent('bitmate:display-currency',{detail:{currency:next}}));
     setPanel(null);
   };
-  useEffect(()=>{const close=(e:MouseEvent)=>{if(root.current&&!root.current.contains(e.target as Node))setPanel(null)};document.addEventListener('mousedown',close);return()=>document.removeEventListener('mousedown',close)},[]);
+  useEffect(()=>{const close=(e:MouseEvent)=>{if(root.current&&!root.current.contains(e.target as Node)){clearPanelCloseTimer();setPanel(null)}};document.addEventListener('mousedown',close);return()=>{document.removeEventListener('mousedown',close);clearPanelCloseTimer()}},[]);
   useEffect(()=>{
     if(panel!=='wallet'||!uid)return;
     let alive=true;
@@ -90,7 +91,10 @@ export default function HeaderUserTools(){
     return()=>{alive=false};
   },[panel,uid,supabase]);
 
-  const toggle=(next:Panel)=>setPanel(v=>v===next?null:next);
+  const clearPanelCloseTimer=()=>{if(panelCloseTimer.current){clearTimeout(panelCloseTimer.current);panelCloseTimer.current=null}};
+  const openHoverPanel=(next:Panel)=>{clearPanelCloseTimer();setPanel(next)};
+  const schedulePanelClose=(next:Panel)=>{clearPanelCloseTimer();panelCloseTimer.current=setTimeout(()=>{setPanel(v=>v===next?null:v);panelCloseTimer.current=null},650)};
+  const toggle=(next:Panel)=>{clearPanelCloseTimer();setPanel(v=>v===next?null:next)};
   const logout=async()=>{await supabase.auth.signOut();location.href='/'};
   const usdt=wallet.spot.find(x=>x.asset==='USDT');
   const spotAvailable=Number(usdt?.available||0);
@@ -109,9 +113,9 @@ export default function HeaderUserTools(){
     </div>
     <Link className={s.deposit} href="/deposit">Deposit</Link>
 
-    <div className={s.rel} onMouseEnter={()=>setPanel('wallet')} onMouseLeave={()=>setPanel(v=>v==='wallet'?null:v)}>
+    <div className={s.rel} onMouseEnter={()=>openHoverPanel('wallet')} onMouseLeave={()=>schedulePanelClose('wallet')}>
       <button className={`${s.icon} ${panel==='wallet'?s.active:''}`} onClick={()=>toggle('wallet')} aria-label="Wallet"><UiIcon name="wallet" size={18}/></button>
-      {panel==='wallet'&&<div className={`${s.panel} ${s.walletPanel}`}>
+      {panel==='wallet'&&<div className={`${s.panel} ${s.walletPanel}`} onMouseEnter={clearPanelCloseTimer} onMouseLeave={()=>schedulePanelClose('wallet')}>
         <div className={s.walletSummary}>
           <div className={s.walletSummaryHead}><small>My Wallet</small><Link href="/account?view=overview" onClick={()=>setPanel(null)}>Overview <UiIcon name="chevronRight" size={12}/></Link></div>
           <span className={s.walletLabel}>{displayCurrency==='KRW'?'Wallet Balance':'USDT Available'}</span>
@@ -129,9 +133,9 @@ export default function HeaderUserTools(){
       </div>}
     </div>
 
-    <div className={s.rel} onMouseEnter={()=>setPanel('account')} onMouseLeave={()=>setPanel(v=>v==='account'?null:v)}>
+    <div className={s.rel} onMouseEnter={()=>openHoverPanel('account')} onMouseLeave={()=>schedulePanelClose('account')}>
       <button className={`${s.icon} ${panel==='account'?s.active:''}`} onClick={()=>toggle('account')} aria-label="Account"><UiIcon name="user" size={18}/></button>
-      {panel==='account'&&<div className={`${s.panel} ${s.memberPanel}`}>
+      {panel==='account'&&<div className={`${s.panel} ${s.memberPanel}`} onMouseEnter={clearPanelCloseTimer} onMouseLeave={()=>schedulePanelClose('account')}>
         <div className={s.memberHead}><div className={s.avatar}><UiIcon name="user" size={22}/></div><div className={s.memberIdentity}><b>{email?maskEmail(email):'Member'}</b><span>UID: {uid?uid.slice(0,16):'—'}</span><div><em>Unverified</em><strong>VIP 0</strong></div></div></div>
         <div className={s.memberList}>{memberItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></Link>)}</div>
         <button className={s.logout} onClick={logout}>Log Out</button>
