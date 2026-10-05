@@ -16,6 +16,19 @@ const payments=['계좌이체','카카오페이','토스'];
 const statusLabel:Record<string,string>={REQUESTED:'거래 요청',ACCEPTED:'판매자 승인',PAID:'입금 완료',RELEASED:'거래 완료',REJECTED:'요청 거절',CANCELLED:'취소',DISPUTED:'분쟁',REFUNDED:'환불'};
 const statusStep=(status:string)=>status==='REQUESTED'?1:status==='ACCEPTED'?2:status==='PAID'?3:status==='RELEASED'?4:0;
 const money=(v:number)=>Number(v||0).toLocaleString('ko-KR');
+const p2pErrorMessage=(code:string)=>{
+ const map:Record<string,string>={
+  insufficient_ad_amount:'판매 가능한 코인 수량이 부족합니다. 판매자의 판매 가능 수량과 거래 한도를 확인해주세요.',
+  outside_order_limit:'거래 요청 금액이 판매자가 설정한 거래 한도를 벗어났습니다.',
+  payment_method_not_allowed:'선택한 결제수단은 이 판매자가 지원하지 않습니다.',
+  self_trade_not_allowed:'본인이 등록한 판매 카드에는 거래 요청을 보낼 수 없습니다.',
+  ad_not_available:'현재 거래할 수 없는 판매 카드입니다.',
+  min_order_exceeds_available_value:'최소 거래금액이 현재 판매 가능 수량의 총 가치보다 큽니다. 판매가격·판매가능 수량·최소 거래금액을 다시 확인해주세요.',
+  invalid_order_limit:'최소/최대 거래금액 설정을 확인해주세요.',
+  invalid_amount:'판매가격 또는 판매가능 수량을 확인해주세요.'
+ };
+ return map[code]||code;
+};
 
 export default function P2PMarketClient(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
@@ -81,12 +94,12 @@ export default function P2PMarketClient(){
  async function applyPlayer(){
    if(!await requireLogin())return;setBusy(true);setMsg('');
    const {error}=await supabase.rpc('p2p_apply_player',{p_nickname:nickname,p_fee_rate:Number(fee),p_primary_asset:asset,p_payment_methods:payMethods,p_min_order:Number(minOrder),p_max_order:Number(maxOrder),p_bio:bio});
-   setBusy(false);if(error){setMsg(error.message);return}setApplyOpen(false);setMsg('P2P 플레이어 신청이 접수되었습니다.');await load();
+   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setApplyOpen(false);setMsg('P2P 플레이어 신청이 접수되었습니다.');await load();
  }
  async function createAd(){
    setBusy(true);setMsg('');
    const {error}=await supabase.rpc('p2p_create_ad',{p_price:Number(price),p_available_amount:Number(available),p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,p_fee_rate:Number(fee),p_headline:headline,p_terms:terms});
-   setBusy(false);if(error){setMsg(error.message);return}setAdOpen(false);setMsg('판매 카드가 등록되었습니다.');await load();
+   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setAdOpen(false);setMsg('판매 카드가 등록되었습니다.');await load();
  }
  function openEditAd(ad:Ad){
    setEditingAd(ad);
@@ -107,29 +120,29 @@ export default function P2PMarketClient(){
      p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,
      p_fee_rate:Number(fee),p_headline:headline,p_terms:terms
    });
-   setBusy(false);if(error){setMsg(error.message);return}
+   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}
    setEditingAd(null);setMsg('판매 카드가 수정되었습니다.');await load();
  }
  async function changeAdStatus(ad:Ad,status:'ACTIVE'|'PAUSED'|'CLOSED'){
    setBusy(true);setMsg('');
    const {error}=await supabase.rpc('p2p_set_my_ad_status',{p_id:ad.id,p_status:status});
-   setBusy(false);if(error){setMsg(error.message);return}
+   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}
    setMsg(status==='ACTIVE'?'판매 카드가 다시 노출됩니다.':status==='PAUSED'?'판매 카드 노출을 일시중지했습니다.':'판매 카드를 종료했습니다.');
    await load();
  }
  async function requestTrade(){
    if(!orderAd||!await requireLogin())return;setBusy(true);setMsg('');
    const {error}=await supabase.rpc('p2p_create_order',{p_ad_id:orderAd.id,p_fiat_amount:Number(orderKrw),p_payment_method:orderPayment});
-   setBusy(false);if(error){setMsg(error.message);return}setOrderAd(null);setTab('mine');setMsg('거래 요청을 전송했습니다.');await load();
+   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setOrderAd(null);setTab('mine');setMsg('거래 요청을 전송했습니다.');await load();
  }
  async function orderAction(order:Order,action:string){
    setBusy(true);setMsg('');const {error}=await supabase.rpc('p2p_order_action',{p_order_id:order.id,p_action:action});setBusy(false);
-   if(error){setMsg(error.message);return}await load();
+   if(error){setMsg(p2pErrorMessage(error.message));return}await load();
  }
  async function sendMessage(){
    if(!chatOrder||!chatText.trim())return;const value=chatText.trim();setChatText('');
    const {error}=await supabase.rpc('p2p_send_message',{p_order_id:chatOrder.id,p_message:value});
-   if(error){setMsg(error.message);return}
+   if(error){setMsg(p2pErrorMessage(error.message));return}
    const {data:m}=await supabase.rpc('p2p_order_messages',{p_order_id:chatOrder.id});setMessages((m||[]) as Message[]);
  }
 
@@ -252,8 +265,9 @@ export default function P2PMarketClient(){
 
    {orderAd&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setOrderAd(null)}}><div className={s.modal}>
      <div className={s.modalHead}><div><span>TRADE REQUEST</span><h2>{orderAd.nickname||'판매자'}에게 거래 요청</h2></div><button onClick={()=>setOrderAd(null)}>×</button></div>
-     <div className={s.quote}><span>판매코인 <b>{orderAd.asset}</b></span><span>가격 <b>{money(orderAd.price)} KRW</b></span><span>수수료 <b>{Number(orderAd.fee_rate||0).toFixed(2)}%</b></span><span>한도 <b>{money(orderAd.min_order)} ~ {money(orderAd.max_order)}</b></span></div>
-     <label className={s.singleField}>구매금액 (KRW)<input inputMode="numeric" value={orderKrw} onChange={e=>setOrderKrw(e.target.value)}/></label>
+     <div className={s.quote}><span>판매코인 <b>{orderAd.asset}</b></span><span>가격 <b>{money(orderAd.price)} KRW</b></span><span>수수료 <b>{Number(orderAd.fee_rate||0).toFixed(2)}%</b></span><span>한도 <b>{money(orderAd.min_order)} ~ {money(Math.min(orderAd.max_order,orderAd.price*orderAd.available_amount))}</b></span></div>
+     <div className={s.capacityNotice}>현재 판매 가능 가치 <b>{money(orderAd.price*orderAd.available_amount)} KRW</b> · 요청 가능 최대 <b>{money(Math.min(orderAd.max_order,orderAd.price*orderAd.available_amount))} KRW</b></div>
+     <label className={s.singleField}>구매금액 (KRW)<input inputMode="numeric" value={orderKrw} onChange={e=>setOrderKrw(e.target.value)}/><small>예상 수량 {orderAd.price>0?Number(Number(orderKrw||0)/orderAd.price).toLocaleString('ko-KR',{maximumFractionDigits:8}):'—'} {orderAd.asset}</small></label>
      <label className={s.singleField}>결제수단<select value={orderPayment} onChange={e=>setOrderPayment(e.target.value)}>{orderAd.payment_methods.map(x=><option key={x}>{x}</option>)}</select></label>
      {orderAd.terms&&<div className={s.terms}><b>판매자 거래 조건</b><p>{orderAd.terms}</p></div>}
      <div className={s.modalActions}><button onClick={()=>setOrderAd(null)}>취소</button><button className={s.primary} disabled={busy} onClick={requestTrade}>거래 요청 보내기</button></div>
