@@ -6,7 +6,7 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import {siteConfirm} from '@/components/SiteDialog';
 import s from './P2PMarket.module.css';
 
-type Ad={id:string;user_id:string;asset:string;fiat:string;price:number;available_amount:number;min_order:number;max_order:number;payment_methods:string[];fee_rate:number;headline:string;terms:string;nickname:string|null;bio:string|null;completed_orders:number;created_at:string};
+type Ad={id:string;user_id:string;asset:string;fiat:string;price:number;available_amount:number;min_order:number;max_order:number;payment_methods:string[];fee_rate:number;headline:string;terms:string;nickname:string|null;bio:string|null;completed_orders:number;status:string;created_at:string};
 type Player={id:string;user_id:string;nickname:string;status:string;fee_rate:number;primary_asset:string;payment_methods:string[];min_order:number;max_order:number;bio:string;completed_orders:number};
 type Order={id:string;ad_id:string|null;buyer_id:string;seller_id:string;asset:string;fiat:string;price:number;asset_amount:number;fiat_amount:number;payment_method:string|null;status:string;created_at:string;paid_at:string|null;completed_at:string|null;buyer_nickname:string|null;seller_nickname:string|null};
 type Message={id:string;sender_id:string;message:string;created_at:string};
