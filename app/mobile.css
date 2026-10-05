@@ -327,3 +327,477 @@
   .noticeListRow>span:nth-child(3){grid-column:2!important;grid-row:2!important;white-space:nowrap!important}
   .noticeListRow small{max-width:100%!important}
 }
+
+
+/* =========================================================
+   2026-10 Whole-site mobile UX normalization
+   Mobile/tablet presentation only. No business logic changes.
+   ========================================================= */
+@media (max-width:1060px){
+  html,body{
+    width:100%;
+    max-width:100%;
+    overflow-x:clip;
+  }
+  body{
+    -webkit-text-size-adjust:100%;
+    text-size-adjust:100%;
+    overscroll-behavior-x:none;
+  }
+  body>*,main,section,article,aside,header,footer,nav{
+    min-width:0;
+  }
+  img,video,canvas{
+    max-width:100%;
+  }
+  input,select,textarea,button{
+    max-width:100%;
+  }
+  [class*="tableWrap"],
+  [class*="TableWrap"],
+  [class*="history"],
+  [class*="History"]{
+    max-width:100%;
+  }
+  [class*="modalBack"],
+  [class*="modalBackdrop"],
+  [class*="backdrop"]{
+    max-width:100vw;
+  }
+}
+
+@media (max-width:700px){
+  html,body{
+    min-height:100%;
+    overflow-x:clip!important;
+  }
+  body{
+    padding-bottom:calc(72px + env(safe-area-inset-bottom));
+  }
+
+  /* Common content width / safe edges */
+  .xtShell,
+  [class*="_shell__"],
+  [class*="_hero__"],
+  [class*="_steps__"],
+  [class*="_launchGrid__"],
+  [class*="_strategySection__"],
+  [class*="_riskSetup__"],
+  [class*="_dashboardTop__"],
+  [class*="_activeGrid__"],
+  [class*="_positions__"],
+  [class*="_controlBar__"],
+  [class*="_portStats__"],
+  [class*="_adminGrid__"]{
+    max-width:100%!important;
+  }
+
+  /* Typography must wrap instead of widening the viewport. */
+  h1,h2,h3,h4,p,span,b,strong,small,em,label{
+    overflow-wrap:anywhere;
+  }
+  pre,code{
+    max-width:100%;
+    overflow-x:auto;
+  }
+
+  /* Prevent iOS/Android form zoom and improve touch targets. */
+  input,select,textarea{
+    font-size:16px!important;
+  }
+  input,select,textarea{
+    min-width:0;
+  }
+  button,
+  input[type="button"],
+  input[type="submit"],
+  select{
+    touch-action:manipulation;
+  }
+
+  /* Fixed/sticky overlays stay inside the visual viewport. */
+  [class*="modalBack"],
+  [class*="modalBackdrop"],
+  [class*="backdrop"]{
+    padding:10px!important;
+    align-items:end!important;
+    box-sizing:border-box!important;
+  }
+  [class*="_modal__"],
+  [class*="_modalCard__"],
+  [class*="_dialog__"],
+  [class*="tpslModal"]{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:90dvh!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain;
+    border-radius:16px 16px 0 0!important;
+  }
+
+  /* Tables scroll internally; the page itself never widens. */
+  [class*="tableWrap"],
+  [class*="TableWrap"]{
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior-x:contain;
+  }
+  table{
+    max-width:none;
+  }
+
+  /* Horizontal tab/filter strips stay usable on narrow screens. */
+  [class*="_tabs__"],
+  [class*="_bottomTabs__"],
+  [class*="_filters__"],
+  [class*="_pairs__"],
+  [class*="_side__"]{
+    max-width:100%;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  [class*="_tabs__"]::-webkit-scrollbar,
+  [class*="_bottomTabs__"]::-webkit-scrollbar,
+  [class*="_filters__"]::-webkit-scrollbar,
+  [class*="_pairs__"]::-webkit-scrollbar,
+  [class*="_side__"]::-webkit-scrollbar{
+    display:none;
+  }
+
+  /* Cards/panels never force page width. */
+  [class*="_panel__"],
+  [class*="_card__"],
+  [class*="_formCard__"],
+  [class*="_sideCard__"],
+  [class*="_balanceCard__"],
+  [class*="_marketCard__"],
+  [class*="_history__"]{
+    min-width:0;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  /* Toasts sit above bottom navigation and respect safe-area. */
+  [class*="_toast__"]{
+    left:12px!important;
+    right:12px!important;
+    bottom:calc(80px + env(safe-area-inset-bottom))!important;
+    max-width:none!important;
+    width:auto!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Header: compact official logo + reliable mobile controls. */
+  .xtHeader{
+    width:100%;
+    max-width:100%;
+  }
+  .xtHeaderInner{
+    width:100%!important;
+    max-width:100%!important;
+    padding-left:max(10px,env(safe-area-inset-left))!important;
+    padding-right:max(10px,env(safe-area-inset-right))!important;
+  }
+  .xtBrand{
+    max-width:min(42vw,150px)!important;
+    min-width:0!important;
+    overflow:hidden!important;
+  }
+  .xtBrand img{
+    max-width:100%!important;
+    width:auto!important;
+    height:32px!important;
+    object-fit:contain!important;
+  }
+  .mobileToggle{
+    flex:0 0 44px!important;
+  }
+  .xtHeaderTools{
+    flex:0 1 auto!important;
+    min-width:44px!important;
+  }
+
+  /* Bottom nav remains reachable above native safe area. */
+  .mobileBottomNav{
+    width:100%;
+    max-width:100%;
+    padding-left:max(6px,env(safe-area-inset-left));
+    padding-right:max(6px,env(safe-area-inset-right));
+  }
+  .mobileBottomNav>a{
+    min-width:0;
+    overflow:hidden;
+  }
+  .mobileBottomNav>a span{
+    max-width:100%;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+
+  /* Landing page */
+  .signupBar{
+    width:100%;
+    max-width:100%;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+  }
+  .signupField{
+    min-width:0;
+    padding:0 12px!important;
+  }
+  .signupBar .limeBtn{
+    min-width:112px!important;
+    padding:0 14px!important;
+  }
+  .storeRow{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+  .storeRow span{
+    min-width:0;
+    text-align:center;
+  }
+  .phone{
+    left:50%!important;
+    transform:translateX(-50%);
+    width:min(250px,72vw)!important;
+  }
+  .qrMock{
+    display:none!important;
+  }
+
+  /* Futures terminals: contain all desktop-width internals. */
+  [class*="FuturesTrading_page"],
+  [class*="FuturesTradingV2_page"],
+  [class*="SpotTrading_page"]{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="FuturesTrading_marketHeader"],
+  [class*="FuturesTradingV2_marketHeader"]{
+    width:100%;
+    max-width:100%;
+    position:relative;
+  }
+  [class*="FuturesTrading_terminal"],
+  [class*="FuturesTradingV2_terminal"],
+  [class*="SpotTrading_workspace"]{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+  [class*="FuturesTrading_chartStage"],
+  [class*="FuturesTradingV2_chartStage"]{
+    width:100%;
+    max-width:100%;
+    overflow:hidden;
+  }
+  [class*="FuturesTrading_orderPanel"],
+  [class*="FuturesTradingV2_orderPanel"],
+  [class*="SpotTrading_orderPanel"]{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow-x:hidden;
+  }
+  [class*="FuturesTrading_accountStrip"],
+  [class*="FuturesTradingV2_accountStrip"],
+  [class*="SpotTrading_balanceCards"]{
+    width:100%;
+    max-width:100%;
+  }
+
+  /* AI Core */
+  [class*="AICore_page"]{
+    overflow-x:hidden;
+    padding-bottom:calc(88px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="AICore_heroCopy"] h1{
+    font-size:clamp(48px,16vw,62px)!important;
+  }
+  [class*="AICore_coreVisual"]{
+    max-width:88vw!important;
+  }
+  [class*="AICore_panel"],
+  [class*="AICore_strategyCard"],
+  [class*="AICore_positions"],
+  [class*="AICore_controlBar"]{
+    min-width:0;
+    max-width:100%;
+  }
+  [class*="AICore_positionTable"]{
+    max-width:100%;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Copy Trading */
+  [class*="CopyTrading_page"]{
+    overflow-x:hidden;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="CopyTrading_heroTop"],
+  [class*="CopyTrading_sectionTitle"]{
+    gap:12px!important;
+  }
+  [class*="CopyTrading_filters"] select,
+  [class*="CopyTrading_filters"] button{
+    min-height:44px;
+  }
+  [class*="CopyTrading_card"],
+  [class*="CopyTrading_panel"]{
+    width:100%;
+    max-width:100%;
+  }
+
+  /* Crypto ETF */
+  [class*="Index_page"]{
+    overflow-x:hidden;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="Index_heroRow"],
+  [class*="Index_toolbar"]{
+    align-items:stretch!important;
+    flex-direction:column!important;
+  }
+  [class*="Index_heroActions"]{
+    display:grid!important;
+    grid-template-columns:1fr 1fr;
+    width:100%;
+  }
+  [class*="Index_btn"],
+  [class*="Index_ghost"]{
+    min-height:44px;
+  }
+
+  /* Wallet / deposit / withdraw */
+  [class*="WalletCenter_page"],
+  [class*="WalletActions_page"],
+  [class*="Deposit_page"]{
+    overflow-x:hidden;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="WalletActions_head"],
+  [class*="Deposit_heroRow"]{
+    min-width:0;
+    max-width:100%;
+  }
+  [class*="WalletActions_available"]{
+    flex-wrap:wrap;
+  }
+  [class*="WalletActions_available"] span{
+    margin-left:0!important;
+    width:100%;
+  }
+  [class*="WalletActions_amount"]{
+    width:100%;
+    min-width:0;
+  }
+
+  /* Loan */
+  [class*="CryptoLoan_page"]{
+    overflow-x:hidden;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="CryptoLoan_hero"]{
+    padding-top:34px!important;
+  }
+  [class*="CryptoLoan_title"]{
+    font-size:clamp(36px,11vw,48px)!important;
+  }
+  [class*="CryptoLoan_badges"]{
+    gap:10px 16px!important;
+  }
+
+  /* Member center */
+  [class*="MemberCenter_page"]{
+    overflow-x:hidden;
+  }
+  [class*="MemberCenter_profileBar"],
+  [class*="MemberCenter_plain"],
+  [class*="MemberCenter_balanceCard"],
+  [class*="MemberCenter_sideCard"],
+  [class*="MemberCenter_marketCard"]{
+    width:100%;
+    max-width:100%;
+  }
+  [class*="MemberCenter_marketRow"]>*{
+    min-width:0;
+  }
+
+  /* Lucky Draw */
+  [class*="LuckyDraw_page"]{
+    overflow-x:hidden;
+    padding-bottom:calc(86px + env(safe-area-inset-bottom))!important;
+  }
+  [class*="LuckyDraw_heroPanel"],
+  [class*="LuckyDraw_panel"],
+  [class*="LuckyDraw_statCard"]{
+    max-width:100%;
+  }
+  [class*="LuckyDraw_tableWrap"]{
+    max-width:100%;
+    overflow-x:auto!important;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  /* Global dialogs */
+  [class*="SiteDialog_backdrop"]{
+    padding:10px!important;
+    align-items:end!important;
+  }
+  [class*="SiteDialog_dialog"]{
+    width:100%!important;
+    max-width:100%!important;
+    max-height:90dvh!important;
+    overflow-y:auto!important;
+    border-radius:16px 16px 0 0!important;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+}
+
+@media (max-width:420px){
+  .xtBrand{
+    max-width:132px!important;
+  }
+  .xtBrand img{
+    height:30px!important;
+  }
+  .signupBar{
+    grid-template-columns:1fr!important;
+    background:transparent!important;
+    gap:8px;
+    padding:0!important;
+  }
+  .signupField{
+    min-height:48px;
+    background:#f5f6f7;
+    border-radius:9px;
+  }
+  .signupBar .limeBtn{
+    width:100%!important;
+    min-height:48px!important;
+  }
+  .storeRow{
+    grid-template-columns:1fr;
+  }
+  [class*="Index_heroActions"]{
+    grid-template-columns:1fr;
+  }
+}
+
+@media (max-width:360px){
+  .xtBrand{
+    max-width:118px!important;
+  }
+  .mobileBottomNav>a{
+    font-size:9px;
+  }
+}
