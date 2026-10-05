@@ -143,12 +143,18 @@ export default function FuturesTradingClient(){
   async function submit(side:TradeSide){
     setTradeSide(side);setMessage('');if(!loggedIn){setMessage('로그인 후 선물거래를 이용할 수 있습니다.');return}if(!settingsEnabled){setMessage('현재 선물 신규 주문이 일시 중지되어 있습니다.');return}if(!engineMarket){setMessage('현재 이 종목은 주문할 수 없습니다. 다른 거래 가능 종목을 선택하세요.');return}if(!engineReady){setMessage('현재 이 종목은 주문할 수 없는 상태입니다.');return}const q=Number(quantity);if(!Number.isFinite(q)||q<=0||marginAmount<=0){setMessage('주문 금액을 확인하세요.');return}
     const positionSide=positionMode==='HEDGE'?(reduceOnly?(side==='BUY'?'SHORT':'LONG'):(side==='BUY'?'LONG':'SHORT')):'BOTH';
+    const incomingPositionSide=side==='BUY'?'LONG':'SHORT';
+    const currentPosition=positions.find(p=>p.symbol===engineMarket.symbol&&p.position_side===positionSide&&p.status==='OPEN');
+    if(!reduceOnly&&currentPosition&&currentPosition.side!==incomingPositionSide){
+      setMessage('반대 방향 포지션이 열려 있습니다. 기존 포지션을 먼저 청산하거나 Hedge 모드를 사용하세요.');
+      return;
+    }
     const payload:any={symbol:engineMarket.symbol,side,positionSide,orderType,marginMode,leverage,quantity:q,clientOrderId:`web-${crypto.randomUUID()}`,reduceOnly:orderType==='TRAILING_STOP'?true:reduceOnly,postOnly:orderType==='LIMIT'?postOnly:false,timeInForce:orderType==='LIMIT'?(postOnly?'POST_ONLY':timeInForce):'GTC',triggerBy};
     if(orderType==='LIMIT')payload.price=Number(price);
     if(orderType==='TRIGGER'){payload.triggerPrice=Number(triggerPrice);payload.triggerDirection=triggerDirection;payload.triggerOrderType=triggerOrderType;if(triggerOrderType==='LIMIT')payload.price=Number(price)}
     if(orderType==='TRAILING_STOP'){payload.callbackRate=Number(callbackRate)/100;if(activationPrice)payload.activationPrice=Number(activationPrice)}
     if(takeProfit)payload.takeProfit=Number(takeProfit);if(stopLoss)payload.stopLoss=Number(stopLoss);
-    setBusy(true);try{const {data,error}=await supabase.rpc('futures_action',{p_action:'order',p_payload:payload});if(error)throw error;const o=data as Order;setMessage(o.status==='FILLED'?'주문이 체결되었습니다.':o.status==='REJECTED'?(o.rejection_reason||'주문이 거부되었습니다.'):'주문이 접수되었습니다.');await loadSnapshot()}catch(e:any){setMessage(String(e?.message||'주문 처리 중 오류가 발생했습니다.'))}finally{setBusy(false)}
+    setBusy(true);try{const {data,error}=await supabase.rpc('futures_action',{p_action:'order',p_payload:payload});if(error)throw error;const o=data as Order;setMessage(o.status==='FILLED'?(currentPosition&&!reduceOnly&&currentPosition.side===incomingPositionSide?'기존 포지션에 추가 체결되어 수량·증거금이 합산되었습니다.':'주문이 체결되었습니다.'):o.status==='REJECTED'?(o.rejection_reason||'주문이 거부되었습니다.'):'주문이 접수되었습니다.');await loadSnapshot()}catch(e:any){setMessage(String(e?.message||'주문 처리 중 오류가 발생했습니다.'))}finally{setBusy(false)}
   }
 
   async function callAction(action:string,payload:any,ok:string){setBusy(true);setMessage('');try{const {error}=await supabase.rpc('futures_action',{p_action:action,p_payload:payload});if(error)throw error;setMessage(ok);await loadSnapshot()}catch(e:any){setMessage(String(e?.message||'처리 중 오류가 발생했습니다.'))}finally{setBusy(false)}}
