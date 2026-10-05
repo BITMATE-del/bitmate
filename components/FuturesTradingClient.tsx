@@ -2,8 +2,9 @@
 
 import {siteConfirm,sitePrompt} from './SiteDialog';
 
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {useRouter} from 'next/navigation';
 import BinanceMarketDepth from './BinanceMarketDepth';
 import FuturesMarketSelector,{type FuturesFeedMarket} from './FuturesMarketSelector';
 import s from './FuturesTrading.module.css';
@@ -35,12 +36,15 @@ const dateTime=(v:string|null|undefined)=>v?new Date(v).toLocaleString('ko-KR',{
 
 export default function FuturesTradingClient(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
+  const router=useRouter();
+  const loginPromptedRef=useRef(false);
   const wallet=useUnifiedWalletDisplay();
   const [marketsPayload,setMarketsPayload]=useState<MarketsPayload>({settings:null,health:null,markets:[]});
   const [feedMarkets,setFeedMarkets]=useState<FuturesFeedMarket[]>([]);
   const [symbol,setSymbol]=useState('BTCUSDT');
   const [snapshot,setSnapshot]=useState<Snapshot|null>(null);
   const [loggedIn,setLoggedIn]=useState(false);
+  const [authChecked,setAuthChecked]=useState(false);
   const [tradeSide,setTradeSide]=useState<TradeSide>('BUY');
   const [orderType,setOrderType]=useState<OrderType>('MARKET');
   const [marginMode,setMarginMode]=useState<MarginMode>('ISOLATED');
@@ -99,9 +103,19 @@ export default function FuturesTradingClient(){
 
   async function loadEngineMarkets(){const {data,error}=await supabase.rpc('futures_markets');if(error)return;const p=(data||{}) as MarketsPayload;setMarketsPayload({...p,markets:Array.isArray(p.markets)?p.markets:[]})}
   async function loadFeedMarkets(){try{const r=await fetch('/api/futures/markets',{cache:'no-store'});if(!r.ok)return;const j=await r.json();const rows=(j.markets||[]) as FuturesFeedMarket[];if(rows.length){setFeedMarkets(rows);if(!rows.some(x=>x.symbol===symbol))setSymbol(rows[0].symbol)}}catch{}}
-  async function loadSnapshot(){const {data:{user}}=await supabase.auth.getUser();setLoggedIn(!!user);if(!user){setSnapshot(null);return}const {data,error}=await supabase.rpc('futures_action',{p_action:'snapshot',p_payload:{}});if(!error&&data)setSnapshot(data as Snapshot)}
+  async function loadSnapshot(){const {data:{user}}=await supabase.auth.getUser();setLoggedIn(!!user);setAuthChecked(true);if(!user){setSnapshot(null);return}const {data,error}=await supabase.rpc('futures_action',{p_action:'snapshot',p_payload:{}});if(!error&&data)setSnapshot(data as Snapshot)}
 
   useEffect(()=>{let alive=true;const init=async()=>{await Promise.all([loadEngineMarkets(),loadFeedMarkets(),loadSnapshot()])};init();const e=setInterval(()=>{if(alive)loadEngineMarkets()},5000);const f=setInterval(()=>{if(alive)loadFeedMarkets()},15000);const a=setInterval(()=>{if(alive)loadSnapshot()},2500);const n=setInterval(()=>setNow(Date.now()),1000);const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>loadSnapshot());return()=>{alive=false;clearInterval(e);clearInterval(f);clearInterval(a);clearInterval(n);subscription.unsubscribe()}},[supabase]);
+  useEffect(()=>{
+    if(!authChecked||loggedIn||loginPromptedRef.current)return;
+    loginPromptedRef.current=true;
+    siteConfirm('선물거래를 이용하려면 로그인이 필요합니다.\n로그인 페이지로 이동하시겠습니까?',{
+      title:'로그인이 필요합니다',
+      confirmLabel:'로그인',
+      cancelLabel:'나중에'
+    }).then(ok=>{if(ok)router.push('/login')});
+  },[authChecked,loggedIn,router]);
+
   useEffect(()=>{let ws:WebSocket|null=null;let retry:ReturnType<typeof setTimeout>|null=null;let dead=false;const connect=()=>{if(dead)return;ws=new WebSocket('wss://fstream.binance.com/ws/!ticker@arr');ws.onmessage=ev=>{try{const arr=JSON.parse(ev.data) as any[];if(!Array.isArray(arr))return;const patch=new Map(arr.map(x=>[String(x.s),x]));setFeedMarkets(prev=>prev.map(m=>{const x=patch.get(m.symbol);return x?{...m,lastPrice:Number(x.c),changePct:Number(x.P),high24h:Number(x.h),low24h:Number(x.l),volume:Number(x.v),quoteVolume:Number(x.q)}:m}))}catch{}};ws.onclose=()=>{if(!dead)retry=setTimeout(connect,2500)};ws.onerror=()=>ws?.close()};connect();return()=>{dead=true;if(retry)clearTimeout(retry);ws?.close()}},[]);
   useEffect(()=>{setPrice('');setTriggerPrice('');setActivationPrice('')},[symbol]);
   useEffect(()=>{if(!lastPrice)return;if(orderType==='LIMIT'&&!price)setPrice(String(Number(lastPrice).toFixed(priceDigits)));if(orderType==='TRIGGER'&&!triggerPrice)setTriggerPrice(String(Number(markPrice||lastPrice).toFixed(priceDigits)));if(orderType==='TRAILING_STOP'){setReduceOnly(true);setPostOnly(false);setTimeInForce('GTC')}},[orderType,lastPrice,markPrice,priceDigits]);
