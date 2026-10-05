@@ -25,7 +25,10 @@ const p2pErrorMessage=(code:string)=>{
   ad_not_available:'현재 거래할 수 없는 판매 카드입니다.',
   min_order_exceeds_available_value:'최소 거래금액이 현재 판매 가능 수량의 총 가치보다 큽니다. 판매가격·판매가능 수량·최소 거래금액을 다시 확인해주세요.',
   invalid_order_limit:'최소/최대 거래금액 설정을 확인해주세요.',
-  invalid_amount:'판매가격 또는 판매가능 수량을 확인해주세요.'
+  invalid_amount:'판매가능 수량을 확인해주세요.',
+  invalid_asset_amount:'구매할 USDT 수량을 확인해주세요.',
+  invalid_live_price:'실시간 USDT 시세를 불러오지 못했습니다.',
+  unsupported_asset:'현재 P2P 판매는 USDT만 지원합니다.'
  };
  return map[code]||code;
 };
@@ -52,14 +55,14 @@ export default function P2PMarketClient(){
  const [maxOrder,setMaxOrder]=useState('5000000');
  const [bio,setBio]=useState('');
  const [payMethods,setPayMethods]=useState<string[]>(['계좌이체']);
- const [price,setPrice]=useState('1500');
+ const [liveUsdtKrw,setLiveUsdtKrw]=useState(0);
  const [available,setAvailable]=useState('1000');
  const [adMin,setAdMin]=useState('100000');
  const [adMax,setAdMax]=useState('5000000');
  const [headline,setHeadline]=useState('빠르고 안전하게 거래합니다');
  const [terms,setTerms]=useState('');
  const [adPayMethods,setAdPayMethods]=useState<string[]>(['계좌이체']);
- const [orderKrw,setOrderKrw]=useState('100000');
+ const [orderUsdt,setOrderUsdt]=useState('100');
  const [orderPayment,setOrderPayment]=useState('계좌이체');
 
  async function load(){
@@ -69,6 +72,19 @@ export default function P2PMarketClient(){
    setData((snap||{ads:[],my_player:null,my_orders:[],my_ads:[]}) as Snapshot);
  }
  useEffect(()=>{load();const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>load());return()=>subscription.unsubscribe()},[]);
+ useEffect(()=>{
+   let alive=true;
+   const pull=async()=>{
+     try{
+       const r=await fetch('/api/fx/usdt-krw',{cache:'no-store'});
+       const j=await r.json();
+       const rate=Number(j?.rate||0);
+       if(alive&&rate>0)setLiveUsdtKrw(rate);
+     }catch{}
+   };
+   pull();const id=setInterval(pull,10000);
+   return()=>{alive=false;clearInterval(id)};
+ },[]);
 
  useEffect(()=>{
    if(!data.my_player)return;
@@ -98,12 +114,13 @@ export default function P2PMarketClient(){
  }
  async function createAd(){
    setBusy(true);setMsg('');
-   const {error}=await supabase.rpc('p2p_create_ad',{p_price:Number(price),p_available_amount:Number(available),p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,p_fee_rate:Number(fee),p_headline:headline,p_terms:terms});
+   if(liveUsdtKrw<=0){setBusy(false);setMsg('실시간 USDT 시세를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');return}
+   const {error}=await supabase.rpc('p2p_create_ad',{p_price:liveUsdtKrw,p_available_amount:Number(available),p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,p_fee_rate:Number(fee),p_headline:headline,p_terms:terms});
    setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setAdOpen(false);setMsg('판매 카드가 등록되었습니다.');await load();
  }
  function openEditAd(ad:Ad){
    setEditingAd(ad);
-   setPrice(String(ad.price));
+
    setAvailable(String(ad.available_amount));
    setAdMin(String(ad.min_order));
    setAdMax(String(ad.max_order));
@@ -116,7 +133,7 @@ export default function P2PMarketClient(){
    if(!editingAd)return;
    setBusy(true);setMsg('');
    const {error}=await supabase.rpc('p2p_update_my_ad',{
-     p_id:editingAd.id,p_price:Number(price),p_available_amount:Number(available),
+     p_id:editingAd.id,p_price:liveUsdtKrw||editingAd.price,p_available_amount:Number(available),
      p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,
      p_fee_rate:Number(fee),p_headline:headline,p_terms:terms
    });
@@ -131,9 +148,11 @@ export default function P2PMarketClient(){
    await load();
  }
  async function requestTrade(){
-   if(!orderAd||!await requireLogin())return;setBusy(true);setMsg('');
-   const {error}=await supabase.rpc('p2p_create_order',{p_ad_id:orderAd.id,p_fiat_amount:Number(orderKrw),p_payment_method:orderPayment});
-   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setOrderAd(null);setTab('mine');setMsg('거래 요청을 전송했습니다.');await load();
+   if(!orderAd||!await requireLogin())return;
+   if(liveUsdtKrw<=0){setMsg('실시간 USDT 시세를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');return}
+   setBusy(true);setMsg('');
+   const {error}=await supabase.rpc('p2p_create_order_live',{p_ad_id:orderAd.id,p_asset_amount:Number(orderUsdt),p_payment_method:orderPayment,p_live_price:liveUsdtKrw});
+   setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setOrderAd(null);setTab('mine');setMsg('USDT 구매 요청을 전송했습니다.');await load();
  }
  async function orderAction(order:Order,action:string){
    setBusy(true);setMsg('');const {error}=await supabase.rpc('p2p_order_action',{p_order_id:order.id,p_action:action});setBusy(false);
@@ -153,7 +172,7 @@ export default function P2PMarketClient(){
  return <main className={s.page}>
    <section className={s.hero}><div className={s.shell}>
      <span className={s.eyebrow}>P2P MARKETS</span><h1>P2P Markets</h1>
-     <p>회원 간 거래 요청부터 승인, 결제 확인, 완료까지 단계별로 진행합니다.</p>
+     <p>P2P 판매자가 USDT를 판매하고, 구매자가 실시간 USDT/KRW 시세 기준으로 구매 요청을 진행합니다.</p>
      <div className={s.heroActions}>
        <button onClick={()=>setTab('market')} className={tab==='market'?s.primary:s.ghost}>판매자 찾기</button>
        <button onClick={async()=>{if(await requireLogin())setTab('mine')}} className={tab==='mine'?s.primary:s.ghost}>내 P2P</button>
@@ -163,16 +182,16 @@ export default function P2PMarketClient(){
 
    <div className={s.shell}>
    {tab==='market'?<>
-     <section className={s.sectionHead}><div><span>LIVE SELLERS</span><h2>판매자 플레이어</h2></div><p>수수료 · 판매코인 · 결제수단 · 거래한도를 비교하고 거래를 요청하세요.</p></section>
+     <section className={s.sectionHead}><div><span>LIVE SELLERS</span><h2>USDT 판매자</h2></div><p>판매자가 보유한 USDT를 실시간 USDT/KRW 시세 기준으로 구매할 수 있습니다.</p></section>
      <section className={s.cards}>
        {data.ads.length?data.ads.map(a=><article key={a.id} className={s.playerCard}>
          <div className={s.cardTop}><div className={s.avatar}>{(a.nickname||'P').slice(0,1).toUpperCase()}</div><div className={s.identity}><b>{a.nickname||'BITMATE Player'}</b></div><span className={s.online}>ACTIVE</span></div>
          <h3>{a.headline||'P2P 판매 플레이어'}</h3>
-         <div className={s.cardMetrics}><div><span>판매코인</span><b>{a.asset}</b></div><div><span>판매가격</span><b>{money(a.price)} {a.fiat}</b></div><div><span>수수료</span><b>{Number(a.fee_rate||0).toFixed(2)}%</b></div><div><span>판매가능</span><b>{money(a.available_amount)} {a.asset}</b></div></div>
+         <div className={s.cardMetrics}><div><span>판매코인</span><b>USDT</b></div><div><span>실시간 USDT 시세</span><b>{liveUsdtKrw>0?money(liveUsdtKrw):'조회 중'} KRW</b></div><div><span>수수료</span><b>{Number(a.fee_rate||0).toFixed(2)}%</b></div><div><span>판매가능</span><b>{money(a.available_amount)} USDT</b></div></div>
          <div className={s.limit}><span>거래한도</span><b>{money(a.min_order)} ~ {money(a.max_order)} KRW</b></div>
          <div className={s.payments}>{(a.payment_methods||[]).map(x=><span key={x}>{x}</span>)}</div>
          {a.bio&&<p className={s.bio}>{a.bio}</p>}
-         <button className={s.tradeBtn} onClick={async()=>{if(await requireLogin()){setOrderAd(a);setOrderPayment(a.payment_methods?.[0]||'계좌이체');setOrderKrw(String(a.min_order||100000))}}}>거래 요청</button>
+         <button className={s.tradeBtn} onClick={async()=>{if(await requireLogin()){setOrderAd(a);setOrderPayment(a.payment_methods?.[0]||'계좌이체');setOrderUsdt(String(liveUsdtKrw>0?Math.max(1,Number(a.min_order||0)/liveUsdtKrw):1))}}}>USDT 구매 요청</button>
        </article>):<div className={s.empty}>현재 등록된 P2P 판매 카드가 없습니다.</div>}
      </section>
    </>:<>
@@ -184,7 +203,7 @@ export default function P2PMarketClient(){
          {data.my_ads.map(a=><article key={a.id} className={s.myAdCard}>
            <div className={s.myAdTop}><div><span>{a.asset} 판매</span><h4>{a.headline||'P2P 판매 카드'}</h4></div><b data-status={a.status}>{a.status}</b></div>
            <div className={s.myAdMetrics}>
-             <span>가격 <b>{money(a.price)} KRW</b></span>
+             <span>실시간 시세 <b>{liveUsdtKrw>0?money(liveUsdtKrw):'조회 중'} KRW</b></span>
              <span>판매가능 <b>{money(a.available_amount)} {a.asset}</b></span>
              <span>수수료 <b>{Number(a.fee_rate||0).toFixed(2)}%</b></span>
              <span>한도 <b>{money(a.min_order)} ~ {money(a.max_order)} KRW</b></span>
@@ -223,7 +242,7 @@ export default function P2PMarketClient(){
      {playerStatus&&<div className={s.currentState}>현재 상태 <b>{playerStatus}</b></div>}
      <div className={s.formGrid}>
        <label>플레이어명<input value={nickname} onChange={e=>setNickname(e.target.value)} placeholder="표시할 이름"/></label>
-       <label>기본 판매코인<select value={asset} onChange={e=>setAsset(e.target.value)}><option>USDT</option><option>BTC</option><option>ETH</option></select></label>
+       <label>판매코인<input value="USDT" readOnly/></label>
        <label>기본 수수료 (%)<input inputMode="decimal" value={fee} onChange={e=>setFee(e.target.value)}/></label>
        <label>최소 거래금액 (KRW)<input inputMode="numeric" value={minOrder} onChange={e=>setMinOrder(e.target.value)}/></label>
        <label>최대 거래금액 (KRW)<input inputMode="numeric" value={maxOrder} onChange={e=>setMaxOrder(e.target.value)}/></label>
@@ -236,8 +255,8 @@ export default function P2PMarketClient(){
    {adOpen&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setAdOpen(false)}}><div className={s.modal}>
      <div className={s.modalHead}><div><span>SELL CARD</span><h2>판매 카드 등록</h2></div><button onClick={()=>setAdOpen(false)}>×</button></div>
      <div className={s.formGrid}>
-       <label>판매가격 (KRW)<input inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)}/></label>
-       <label>판매가능 수량 ({data.my_player?.primary_asset||'USDT'})<input inputMode="decimal" value={available} onChange={e=>setAvailable(e.target.value)}/></label>
+       <label>실시간 USDT 가격<input value={liveUsdtKrw>0?money(liveUsdtKrw)+' KRW':'시세 조회 중'} readOnly/></label>
+       <label>판매할 USDT 수량<input inputMode="decimal" value={available} onChange={e=>setAvailable(e.target.value)}/></label>
        <label>최소 거래금액<input inputMode="numeric" value={adMin} onChange={e=>setAdMin(e.target.value)}/></label>
        <label>최대 거래금액<input inputMode="numeric" value={adMax} onChange={e=>setAdMax(e.target.value)}/></label>
        <label>수수료 (%)<input inputMode="decimal" value={fee} onChange={e=>setFee(e.target.value)}/></label>
@@ -251,8 +270,8 @@ export default function P2PMarketClient(){
    {editingAd&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setEditingAd(null)}}><div className={s.modal}>
      <div className={s.modalHead}><div><span>EDIT SELL CARD</span><h2>판매 카드 수정</h2></div><button onClick={()=>setEditingAd(null)}>×</button></div>
      <div className={s.formGrid}>
-       <label>판매가격 (KRW)<input inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)}/></label>
-       <label>판매가능 수량 ({editingAd.asset})<input inputMode="decimal" value={available} onChange={e=>setAvailable(e.target.value)}/></label>
+       <label>실시간 USDT 가격<input value={liveUsdtKrw>0?money(liveUsdtKrw)+' KRW':'시세 조회 중'} readOnly/></label>
+       <label>판매할 USDT 수량<input inputMode="decimal" value={available} onChange={e=>setAvailable(e.target.value)}/></label>
        <label>최소 거래금액<input inputMode="numeric" value={adMin} onChange={e=>setAdMin(e.target.value)}/></label>
        <label>최대 거래금액<input inputMode="numeric" value={adMax} onChange={e=>setAdMax(e.target.value)}/></label>
        <label>수수료 (%)<input inputMode="decimal" value={fee} onChange={e=>setFee(e.target.value)}/></label>
@@ -265,12 +284,12 @@ export default function P2PMarketClient(){
 
    {orderAd&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setOrderAd(null)}}><div className={s.modal}>
      <div className={s.modalHead}><div><span>TRADE REQUEST</span><h2>{orderAd.nickname||'판매자'}에게 거래 요청</h2></div><button onClick={()=>setOrderAd(null)}>×</button></div>
-     <div className={s.quote}><span>판매코인 <b>{orderAd.asset}</b></span><span>가격 <b>{money(orderAd.price)} KRW</b></span><span>수수료 <b>{Number(orderAd.fee_rate||0).toFixed(2)}%</b></span><span>한도 <b>{money(orderAd.min_order)} ~ {money(Math.min(orderAd.max_order,orderAd.price*orderAd.available_amount))}</b></span></div>
-     <div className={s.capacityNotice}>현재 판매 가능 가치 <b>{money(orderAd.price*orderAd.available_amount)} KRW</b> · 요청 가능 최대 <b>{money(Math.min(orderAd.max_order,orderAd.price*orderAd.available_amount))} KRW</b></div>
-     <label className={s.singleField}>구매금액 (KRW)<input inputMode="numeric" value={orderKrw} onChange={e=>setOrderKrw(e.target.value)}/><small>예상 수량 {orderAd.price>0?Number(Number(orderKrw||0)/orderAd.price).toLocaleString('ko-KR',{maximumFractionDigits:8}):'—'} {orderAd.asset}</small></label>
+     <div className={s.quote}><span>구매코인 <b>USDT</b></span><span>실시간 시세 <b>{liveUsdtKrw>0?money(liveUsdtKrw):'조회 중'} KRW</b></span><span>수수료 <b>{Number(orderAd.fee_rate||0).toFixed(2)}%</b></span><span>판매가능 <b>{money(orderAd.available_amount)} USDT</b></span></div>
+     <div className={s.capacityNotice}>판매자가 보유한 USDT를 구매합니다. 현재 거래한도 <b>{money(orderAd.min_order)} ~ {money(orderAd.max_order)} KRW</b></div>
+     <label className={s.singleField}>구매할 USDT 수량<input inputMode="decimal" value={orderUsdt} onChange={e=>setOrderUsdt(e.target.value)}/><small>예상 결제금액 {liveUsdtKrw>0?money(Number(orderUsdt||0)*liveUsdtKrw):'—'} KRW</small></label>
      <label className={s.singleField}>결제수단<select value={orderPayment} onChange={e=>setOrderPayment(e.target.value)}>{orderAd.payment_methods.map(x=><option key={x}>{x}</option>)}</select></label>
      {orderAd.terms&&<div className={s.terms}><b>판매자 거래 조건</b><p>{orderAd.terms}</p></div>}
-     <div className={s.modalActions}><button onClick={()=>setOrderAd(null)}>취소</button><button className={s.primary} disabled={busy} onClick={requestTrade}>거래 요청 보내기</button></div>
+     <div className={s.modalActions}><button onClick={()=>setOrderAd(null)}>취소</button><button className={s.primary} disabled={busy||liveUsdtKrw<=0} onClick={requestTrade}>USDT 구매 요청 보내기</button></div>
    </div></div>}
 
    {chatOrder&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setChatOrder(null)}}><div className={s.modal+' '+s.chat}>
