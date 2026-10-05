@@ -9,10 +9,9 @@ import PositionChart from './PositionChart';
 
 type Product={id:string;symbol:string;display_name:string;category:string;current_price:number|null;bid:number|null;ask:number|null;min_order:number;max_order:number;last_price_at:string|null};
 type TimedTrade={id:string;symbol:string;direction:'UP'|'DOWN';duration_minutes:number;amount:number;start_price:number;end_price:number|null;status:'ACTIVE'|'SETTLED'|'CANCELLED';result:'WIN'|'LOSS'|'DRAW'|'VOID'|null;payout_amount:number|null;net_profit:number|null;starts_at:string;expires_at:string;settled_at:string|null;created_at:string};
-type Ledger={id:string;transaction_type:string;amount:number;available_before:number;available_after:number;trade_hold_before:number;trade_hold_after:number;description:string|null;created_at:string};
 type Summary={wallet_balance:number;available_balance:number;trade_hold_balance:number;realized_pnl:number;active_trades:number;asset:string};
 type BookTab='book'|'recent';
-type BottomTab='active'|'history'|'ledger';
+type BottomTab='active'|'history';
 type DisplayCurrency='KRW'|'USDT';
 
 const fmt=(v:number|null|undefined,d=2)=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -27,7 +26,6 @@ export default function CfdTimedTradingClient(){
   const [liveMarket,setLiveMarket]=useState<LiveMarket|null>(null);
   const [marketFeedState,setMarketFeedState]=useState<MarketFeedState>('CONNECTING');
   const [trades,setTrades]=useState<TimedTrade[]>([]);
-  const [ledger,setLedger]=useState<Ledger[]>([]);
   const [summary,setSummary]=useState<Summary|null>(null);
   const [direction,setDirection]=useState<'UP'|'DOWN'>('UP');
   const [duration,setDuration]=useState<3|5>(3);
@@ -50,15 +48,13 @@ export default function CfdTimedTradingClient(){
 
   async function loadAccount(){
     const {data:{user}}=await supabase.auth.getUser();
-    if(!user){setTrades([]);setLedger([]);setSummary(null);return;}
+    if(!user){setTrades([]);setSummary(null);return;}
     await supabase.rpc('ensure_cfd_demo_account');
-    const [{data:t},{data:l},{data:sum}]=await Promise.all([
+    const [{data:t},{data:sum}]=await Promise.all([
       supabase.from('cfd_timed_trades').select('*').order('created_at',{ascending:false}).limit(100),
-      supabase.from('cfd_timed_ledger').select('*').order('created_at',{ascending:false}).limit(100),
       supabase.rpc('get_cfd_timed_account_summary')
     ]);
     setTrades((t||[]) as TimedTrade[]);
-    setLedger((l||[]) as Ledger[]);
     setSummary((sum||null) as Summary|null);
   }
 
@@ -201,10 +197,9 @@ export default function CfdTimedTradingClient(){
     <section className={s.accountStrip}><div><span>Wallet</span><b>{displayMoney(summary?.wallet_balance)} {currencyUnit}</b></div><div><span>Available</span><b>{displayMoney(summary?.available_balance)} {currencyUnit}</b></div><div><span>Trade Hold</span><b>{displayMoney(summary?.trade_hold_balance)} {currencyUnit}</b></div><div><span>누적 실현손익</span><b className={(summary?.realized_pnl||0)>=0?s.win:s.loss}>{displayMoney(summary?.realized_pnl)} {currencyUnit}</b></div></section>
 
     <section className={`${s.panel} ${s.bottomPanel}`}>
-      <div className={s.bottomTabs}><button className={bottomTab==='active'?s.activeTab:''} onClick={()=>setBottomTab('active')}>진행 중 거래</button><button className={bottomTab==='history'?s.activeTab:''} onClick={()=>setBottomTab('history')}>거래 내역</button><button className={bottomTab==='ledger'?s.activeTab:''} onClick={()=>setBottomTab('ledger')}>정산 내역</button></div>
+      <div className={s.bottomTabs}><button className={bottomTab==='active'?s.activeTab:''} onClick={()=>setBottomTab('active')}>진행 중 거래</button><button className={bottomTab==='history'?s.activeTab:''} onClick={()=>setBottomTab('history')}>거래 내역</button></div>
       {bottomTab==='active'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>종목</th><th>방향</th><th>거래시간</th><th>주문금액</th><th>시작가</th><th>방향 확정까지</th><th>상태</th></tr></thead><tbody>{activeTrade?<tr><td>{activeTrade.symbol}</td><td>{activeTrade.direction}</td><td>{activeTrade.duration_minutes}분</td><td>{fmt(activeTrade.amount)}</td><td>{fmt(activeTrade.start_price,8)}</td><td><b>{mm}:{ss}</b><small style={{display:'block',marginTop:3,color:'#68777d'}}>{new Date(activeTrade.expires_at).toLocaleTimeString('ko-KR',{hour12:false})}</small></td><td>진행 중</td></tr>:<tr><td colSpan={7} className={s.empty}>진행 중인 거래가 없습니다.</td></tr>}</tbody></table></div>}
-      {bottomTab==='history'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>시작시간</th><th>종목</th><th>방향</th><th>기간</th><th>금액</th><th>시작가</th><th>종료가</th><th>결과</th><th>지급금액</th><th>순손익</th></tr></thead><tbody>{settled.length?settled.map(t=><tr key={t.id}><td>{new Date(t.starts_at).toLocaleString()}</td><td>{t.symbol}</td><td>{t.direction}</td><td>{t.duration_minutes}분</td><td>{displayMoney(t.amount)} {currencyUnit}</td><td>{fmt(t.start_price,8)}</td><td>{fmt(t.end_price,8)}</td><td className={resultClass(t.result)}>{t.result==='VOID'?'무효':t.result}</td><td>{displayMoney(t.payout_amount)} {currencyUnit}</td><td className={(t.net_profit||0)>=0?s.win:s.loss}>{displayMoney(t.net_profit)} {currencyUnit}</td></tr>):<tr><td colSpan={10} className={s.empty}>정산된 거래가 없습니다.</td></tr>}</tbody></table></div>}
-      {bottomTab==='ledger'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>시간</th><th>유형</th><th>금액</th><th>Available 전</th><th>Available 후</th><th>Hold 전</th><th>Hold 후</th><th>설명</th></tr></thead><tbody>{ledger.length?ledger.map(l=><tr key={l.id}><td>{new Date(l.created_at).toLocaleString()}</td><td>{l.transaction_type}</td><td>{displayMoney(l.amount)} {currencyUnit}</td><td>{displayMoney(l.available_before)} {currencyUnit}</td><td>{displayMoney(l.available_after)} {currencyUnit}</td><td>{displayMoney(l.trade_hold_before)} {currencyUnit}</td><td>{displayMoney(l.trade_hold_after)} {currencyUnit}</td><td>{l.description||'—'}</td></tr>):<tr><td colSpan={8} className={s.empty}>정산 내역이 없습니다.</td></tr>}</tbody></table></div>}
+      {bottomTab==='history'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>시작시간</th><th>종목</th><th>방향</th><th>기간</th><th>금액</th><th>시작가</th><th>결과</th><th>지급금액</th><th>순손익</th></tr></thead><tbody>{settled.length?settled.map(t=><tr key={t.id}><td>{new Date(t.starts_at).toLocaleString()}</td><td>{t.symbol}</td><td>{t.direction}</td><td>{t.duration_minutes}분</td><td>{displayMoney(t.amount)} {currencyUnit}</td><td>{fmt(t.start_price,8)}</td><td className={resultClass(t.result)}>{t.result==='VOID'?'무효':t.result}</td><td>{displayMoney(t.payout_amount)} {currencyUnit}</td><td className={(t.net_profit||0)>=0?s.win:s.loss}>{displayMoney(t.net_profit)} {currencyUnit}</td></tr>):<tr><td colSpan={9} className={s.empty}>정산된 거래가 없습니다.</td></tr>}</tbody></table></div>}
     </section>
 
     <div className={s.ticker}>
