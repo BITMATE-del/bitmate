@@ -10,7 +10,7 @@ type Ad={id:string;user_id:string;asset:string;fiat:string;price:number;availabl
 type Player={id:string;user_id:string;nickname:string;status:string;fee_rate:number;primary_asset:string;payment_methods:string[];min_order:number;max_order:number;bio:string;completed_orders:number};
 type Order={id:string;ad_id:string|null;buyer_id:string;seller_id:string;asset:string;fiat:string;price:number;asset_amount:number;fiat_amount:number;payment_method:string|null;status:string;created_at:string;paid_at:string|null;completed_at:string|null;buyer_nickname:string|null;seller_nickname:string|null};
 type Message={id:string;sender_id:string;message:string;created_at:string};
-type Snapshot={ads:Ad[];my_player:Player|null;my_orders:Order[]};
+type Snapshot={ads:Ad[];my_player:Player|null;my_orders:Order[];my_ads:Ad[]};
 
 const payments=['계좌이체','카카오페이','토스'];
 const statusLabel:Record<string,string>={REQUESTED:'거래 요청',ACCEPTED:'판매자 승인',PAID:'입금 완료',RELEASED:'거래 완료',REJECTED:'요청 거절',CANCELLED:'취소',DISPUTED:'분쟁',REFUNDED:'환불'};
@@ -21,12 +21,13 @@ export default function P2PMarketClient(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const router=useRouter();
  const [userId,setUserId]=useState<string|null>(null);
- const [data,setData]=useState<Snapshot>({ads:[],my_player:null,my_orders:[]});
+ const [data,setData]=useState<Snapshot>({ads:[],my_player:null,my_orders:[],my_ads:[]});
  const [tab,setTab]=useState<'market'|'mine'>('market');
  const [busy,setBusy]=useState(false);
  const [msg,setMsg]=useState('');
  const [applyOpen,setApplyOpen]=useState(false);
  const [adOpen,setAdOpen]=useState(false);
+ const [editingAd,setEditingAd]=useState<Ad|null>(null);
  const [orderAd,setOrderAd]=useState<Ad|null>(null);
  const [chatOrder,setChatOrder]=useState<Order|null>(null);
  const [messages,setMessages]=useState<Message[]>([]);
@@ -52,7 +53,7 @@ export default function P2PMarketClient(){
    const [{data:{user}},{data:snap,error}]=await Promise.all([supabase.auth.getUser(),supabase.rpc('p2p_market_snapshot')]);
    setUserId(user?.id||null);
    if(error){setMsg(error.message);return;}
-   setData((snap||{ads:[],my_player:null,my_orders:[]}) as Snapshot);
+   setData((snap||{ads:[],my_player:null,my_orders:[],my_ads:[]}) as Snapshot);
  }
  useEffect(()=>{load();const {data:{subscription}}=supabase.auth.onAuthStateChange(()=>load());return()=>subscription.unsubscribe()},[]);
 
@@ -86,6 +87,35 @@ export default function P2PMarketClient(){
    setBusy(true);setMsg('');
    const {error}=await supabase.rpc('p2p_create_ad',{p_price:Number(price),p_available_amount:Number(available),p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,p_fee_rate:Number(fee),p_headline:headline,p_terms:terms});
    setBusy(false);if(error){setMsg(error.message);return}setAdOpen(false);setMsg('판매 카드가 등록되었습니다.');await load();
+ }
+ function openEditAd(ad:Ad){
+   setEditingAd(ad);
+   setPrice(String(ad.price));
+   setAvailable(String(ad.available_amount));
+   setAdMin(String(ad.min_order));
+   setAdMax(String(ad.max_order));
+   setFee(String(ad.fee_rate));
+   setHeadline(ad.headline||'');
+   setTerms(ad.terms||'');
+   setAdPayMethods(ad.payment_methods?.length?ad.payment_methods:['계좌이체']);
+ }
+ async function updateAd(){
+   if(!editingAd)return;
+   setBusy(true);setMsg('');
+   const {error}=await supabase.rpc('p2p_update_my_ad',{
+     p_id:editingAd.id,p_price:Number(price),p_available_amount:Number(available),
+     p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,
+     p_fee_rate:Number(fee),p_headline:headline,p_terms:terms
+   });
+   setBusy(false);if(error){setMsg(error.message);return}
+   setEditingAd(null);setMsg('판매 카드가 수정되었습니다.');await load();
+ }
+ async function changeAdStatus(ad:Ad,status:'ACTIVE'|'PAUSED'|'CLOSED'){
+   setBusy(true);setMsg('');
+   const {error}=await supabase.rpc('p2p_set_my_ad_status',{p_id:ad.id,p_status:status});
+   setBusy(false);if(error){setMsg(error.message);return}
+   setMsg(status==='ACTIVE'?'판매 카드가 다시 노출됩니다.':status==='PAUSED'?'판매 카드 노출을 일시중지했습니다.':'판매 카드를 종료했습니다.');
+   await load();
  }
  async function requestTrade(){
    if(!orderAd||!await requireLogin())return;setBusy(true);setMsg('');
@@ -133,7 +163,30 @@ export default function P2PMarketClient(){
        </article>):<div className={s.empty}>현재 등록된 P2P 판매 카드가 없습니다.</div>}
      </section>
    </>:<>
-     <section className={s.sectionHead}><div><span>MY P2P</span><h2>내 거래 관리</h2></div><div className={s.playerState}>{data.my_player?<><span>플레이어 상태</span><b>{data.my_player.status}</b></>:<span>아직 P2P 플레이어 신청 전입니다.</span>}</div></section>
+     <section className={s.sectionHead}><div><span>MY P2P</span><h2>내 P2P 관리</h2></div><div className={s.playerState}>{data.my_player?<><span>플레이어 상태</span><b>{data.my_player.status}</b></>:<span>아직 P2P 플레이어 신청 전입니다.</span>}</div></section>
+
+     {data.my_ads.length>0&&<section className={s.myAdsSection}>
+       <div className={s.subHead}><div><span>MY SELL CARDS</span><h3>내 판매 카드</h3></div><small>등록한 판매글을 확인하고 수정·일시중지·재노출할 수 있습니다.</small></div>
+       <div className={s.myAdsGrid}>
+         {data.my_ads.map(a=><article key={a.id} className={s.myAdCard}>
+           <div className={s.myAdTop}><div><span>{a.asset} 판매</span><h4>{a.headline||'P2P 판매 카드'}</h4></div><b data-status={a.status}>{a.status}</b></div>
+           <div className={s.myAdMetrics}>
+             <span>가격 <b>{money(a.price)} KRW</b></span>
+             <span>판매가능 <b>{money(a.available_amount)} {a.asset}</b></span>
+             <span>수수료 <b>{Number(a.fee_rate||0).toFixed(2)}%</b></span>
+             <span>한도 <b>{money(a.min_order)} ~ {money(a.max_order)} KRW</b></span>
+           </div>
+           <div className={s.myAdActions}>
+             <button onClick={()=>openEditAd(a)}>수정</button>
+             {a.status==='ACTIVE'&&<button onClick={()=>changeAdStatus(a,'PAUSED')} disabled={busy}>일시중지</button>}
+             {a.status==='PAUSED'&&<button className={s.accept} onClick={()=>changeAdStatus(a,'ACTIVE')} disabled={busy}>다시 노출</button>}
+             {a.status!=='CLOSED'&&<button className={s.danger} onClick={()=>changeAdStatus(a,'CLOSED')} disabled={busy}>판매 종료</button>}
+           </div>
+         </article>)}
+       </div>
+     </section>}
+
+     <section className={s.subHead}><div><span>MY ORDERS</span><h3>내 거래 요청</h3></div></section>
      <section className={s.orderList}>
        {data.my_orders.length?data.my_orders.map(o=>{const step=statusStep(o.status);return <article className={s.orderCard} key={o.id}>
          <div className={s.orderTop}><div><span>{mineSeller(o)?'판매 주문':'구매 주문'}</span><h3>{o.asset} · {money(o.fiat_amount)} {o.fiat}</h3></div><b className={s.status}>{statusLabel[o.status]||o.status}</b></div>
@@ -180,6 +233,21 @@ export default function P2PMarketClient(){
      </div>
      <div className={s.checks}>{payments.map(x=><label key={x}><input type="checkbox" checked={adPayMethods.includes(x)} onChange={()=>toggle(x,adPayMethods,setAdPayMethods)}/>{x}</label>)}</div>
      <div className={s.modalActions}><button onClick={()=>setAdOpen(false)}>취소</button><button className={s.primary} disabled={busy} onClick={createAd}>판매 카드 등록</button></div>
+   </div></div>}
+
+   {editingAd&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setEditingAd(null)}}><div className={s.modal}>
+     <div className={s.modalHead}><div><span>EDIT SELL CARD</span><h2>판매 카드 수정</h2></div><button onClick={()=>setEditingAd(null)}>×</button></div>
+     <div className={s.formGrid}>
+       <label>판매가격 (KRW)<input inputMode="decimal" value={price} onChange={e=>setPrice(e.target.value)}/></label>
+       <label>판매가능 수량 ({editingAd.asset})<input inputMode="decimal" value={available} onChange={e=>setAvailable(e.target.value)}/></label>
+       <label>최소 거래금액<input inputMode="numeric" value={adMin} onChange={e=>setAdMin(e.target.value)}/></label>
+       <label>최대 거래금액<input inputMode="numeric" value={adMax} onChange={e=>setAdMax(e.target.value)}/></label>
+       <label>수수료 (%)<input inputMode="decimal" value={fee} onChange={e=>setFee(e.target.value)}/></label>
+       <label className={s.full}>카드 제목<input value={headline} onChange={e=>setHeadline(e.target.value)}/></label>
+       <label className={s.full}>거래 조건<textarea value={terms} onChange={e=>setTerms(e.target.value)}/></label>
+     </div>
+     <div className={s.checks}>{payments.map(x=><label key={x}><input type="checkbox" checked={adPayMethods.includes(x)} onChange={()=>toggle(x,adPayMethods,setAdPayMethods)}/>{x}</label>)}</div>
+     <div className={s.modalActions}><button onClick={()=>setEditingAd(null)}>취소</button><button className={s.primary} disabled={busy} onClick={updateAd}>{busy?'저장 중...':'수정 저장'}</button></div>
    </div></div>}
 
    {orderAd&&<div className={s.backdrop} onMouseDown={e=>{if(e.target===e.currentTarget)setOrderAd(null)}}><div className={s.modal}>
