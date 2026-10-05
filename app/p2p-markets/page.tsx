@@ -1,1 +1,5 @@
-import P2PMarketClient from '@/components/P2PMarketClient';\n\nexport default function P2PMarketsPage(){\n  return <P2PMarketClient/>;\n}\n
+import P2PMarketClient from '@/components/P2PMarketClient';
+
+export default function P2PMarketsPage(){
+  return <P2PMarketClient/>;
+}
