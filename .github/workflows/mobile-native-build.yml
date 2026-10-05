@@ -93,6 +93,24 @@ jobs:
       - name: Build Android release AAB (unsigned until signing is configured)
         working-directory: android
         run: ./gradlew bundleRelease
+      - name: Publish latest APK to main for website download
+        shell: bash
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/bitmate-latest.apk"
+          git config user.name "BITMATE Native CI"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B publish-apk origin/main
+          mkdir -p public/downloads
+          cp "$RUNNER_TEMP/bitmate-latest.apk" public/downloads/bitmate-latest.apk
+          sha256sum public/downloads/bitmate-latest.apk | awk '{print $1}' > public/downloads/bitmate-latest.apk.sha256
+          git add public/downloads/bitmate-latest.apk public/downloads/bitmate-latest.apk.sha256
+          if git diff --cached --quiet; then
+            echo "Published APK is already current."
+          else
+            git commit -m "[native-apk] Publish latest Android APK"
+            git push origin HEAD:main
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: bitmate-android-debug-apk
