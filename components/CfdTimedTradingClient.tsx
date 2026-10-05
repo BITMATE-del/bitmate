@@ -1,7 +1,9 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {useRouter} from 'next/navigation';
+import {siteConfirm} from './SiteDialog';
 import BinanceMarketDepth from './BinanceMarketDepth';
 import CfdMarketSelector,{type LiveMarket,type MarketFeedState} from './CfdMarketSelector';
 import s from './CfdTimedTrading.module.css';
@@ -20,6 +22,8 @@ const compact=(v:number|null|undefined)=>{const n=Number(v);return !Number.isFin
 
 export default function CfdTimedTradingClient(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
+  const router=useRouter();
+  const loginPromptedRef=useRef(false);
   const [products,setProducts]=useState<Product[]>([]);
   const [selected,setSelected]=useState<Product|null>(null);
   const [markets,setMarkets]=useState<LiveMarket[]>([]);
@@ -27,6 +31,8 @@ export default function CfdTimedTradingClient(){
   const [marketFeedState,setMarketFeedState]=useState<MarketFeedState>('CONNECTING');
   const [trades,setTrades]=useState<TimedTrade[]>([]);
   const [summary,setSummary]=useState<Summary|null>(null);
+  const [loggedIn,setLoggedIn]=useState(false);
+  const [authChecked,setAuthChecked]=useState(false);
   const [direction,setDirection]=useState<'UP'|'DOWN'>('UP');
   const [duration,setDuration]=useState<3|5>(3);
   const [amount,setAmount]=useState('100');
@@ -48,6 +54,7 @@ export default function CfdTimedTradingClient(){
 
   async function loadAccount(){
     const {data:{user}}=await supabase.auth.getUser();
+    setLoggedIn(!!user);setAuthChecked(true);
     if(!user){setTrades([]);setSummary(null);return;}
     await supabase.rpc('ensure_cfd_demo_account');
     const [{data:t},{data:sum}]=await Promise.all([
@@ -57,6 +64,16 @@ export default function CfdTimedTradingClient(){
     setTrades((t||[]) as TimedTrade[]);
     setSummary((sum||null) as Summary|null);
   }
+
+  useEffect(()=>{
+    if(!authChecked||loggedIn||loginPromptedRef.current)return;
+    loginPromptedRef.current=true;
+    siteConfirm('CFD 거래를 이용하려면 로그인이 필요합니다.\n로그인 페이지로 이동하시겠습니까?',{
+      title:'로그인이 필요합니다',
+      confirmLabel:'로그인',
+      cancelLabel:'나중에'
+    }).then(ok=>{if(ok)router.push('/login')});
+  },[authChecked,loggedIn,router]);
 
   useEffect(()=>{loadProducts();loadAccount();const accountId=setInterval(loadAccount,2000);const productId=setInterval(loadProducts,60000);return()=>{clearInterval(accountId);clearInterval(productId)}},[]);
   useEffect(()=>{
