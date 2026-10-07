@@ -88,8 +88,10 @@ export default function DepositClient(){
  const exempt=token&&network?isKycExempt(token,network):false;
  const kycApproved=kycStatus==='APPROVED';
  const kycBlocked=Boolean(token&&network&&!exempt&&!kycApproved);
- const selectedAddress=useMemo(()=>addresses.find(a=>a.asset===token&&a.network===network&&a.active)?.address||'',[addresses,token,network]);
- const tronAuto=Boolean(token&&network==='TRC20'&&(token==='USDT'||token==='TRX'));
+ const selectedAddressRecord=useMemo(()=>addresses.find(a=>a.asset===token&&a.network===network&&a.active),[addresses,token,network]);
+ const selectedAddress=selectedAddressRecord?.address||'';
+ const dealerManaged=selectedAddressRecord?.provider==='DEALER';
+ const tronAuto=Boolean(!dealerManaged&&token&&network==='TRC20'&&(token==='USDT'||token==='TRX'));
 
  useEffect(()=>{
   if(!tronAuto||!selectedAddress)return;
@@ -159,11 +161,11 @@ export default function DepositClient(){
          <Link href="/member?view=verification">KYC 인증하기</Link>
         </div>
        :<div className={s.addressCard}>
-         <small>{token} · {network}{tronAuto?' · Auto Credit':''}</small>
+         <small>{token} · {network}{dealerManaged?' · 코드 전용 주소':tronAuto?' · Auto Credit':''}</small>
          {selectedAddress?
           <><strong className={s.depositAddress}>{selectedAddress}</strong><button type="button" onClick={copyAddress}>Copy Address</button>
           {tronAuto&&<div className={s.autoStatus}><span className={syncing?s.syncDotActive:s.syncDot}/><b>{syncMessage||'TRON 네트워크 자동 입금 확인 중'}</b></div>}
-          <p>{tronAuto?'입금이 감지되면 네트워크 확인 수 충족 후 잔액에 자동 반영됩니다.':'선택한 네트워크의 입금 주소입니다. 네트워크가 일치하는지 확인한 후 전송하세요.'}</p></>
+          <p>{dealerManaged?'가입코드 전용 입금 주소입니다. 입금 후 해당 총판의 입출금 관리에서 확인됩니다.':tronAuto?'입금이 감지되면 네트워크 확인 수 충족 후 잔액에 자동 반영됩니다.':'선택한 네트워크의 입금 주소입니다. 네트워크가 일치하는지 확인한 후 전송하세요.'}</p></>
           :<><strong>Deposit address unavailable</strong><p>{tronAuto?'TRON 자동 입금 주소가 아직 계정에 배정되지 않았습니다. 주소가 표시되기 전에는 자산을 전송하지 마세요.':'현재 선택한 네트워크에서 입금 주소를 사용할 수 없습니다. 주소가 표시되기 전에는 자산을 전송하지 마세요.'}</p></>}
         </div>
       )}</div></div>
