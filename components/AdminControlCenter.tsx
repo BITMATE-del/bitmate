@@ -12,6 +12,7 @@ type CoreLink={label:string;href:string;icon:UiIconName;desc:string};
 
 const coreLinks:CoreLink[]=[
   {label:'회원관리',href:'/admin/operations',icon:'user',desc:'회원 검색, KYC, 동결, 비밀번호 초기화, 잔액 확인'},
+  {label:'총판 / 가입코드',href:'/admin/dealers',icon:'user',desc:'총판 권한 부여, 가입코드 생성, 코드별 회원 관리'},
   {label:'입출금 관리',href:'/admin/wallet-ops?tab=withdrawals',icon:'order',desc:'입금/출금 요청과 승인 대기 건을 한곳에서 처리'},
   {label:'지갑 관리',href:'/admin/wallet',icon:'wallet',desc:'회원별 통합 지갑, 잔액 수정, 네트워크와 원장 운영'},
   {label:'Crypto Loan 관리',href:'/admin/crypto-loan',icon:'loan',desc:'승인 대기, 연장 요청, 연체 검토, 담보 상태 관리'},
@@ -92,7 +93,7 @@ export default function AdminControlCenter(){
     <section className={s.taskSection}><div className={s.sectionTitle}><div><span>PRIORITY</span><h2>처리 필요</h2></div><small>30초마다 최신 상태 확인</small></div><div className={s.taskGrid}>{tasks.map(t=><Link key={t.label} href={t.href} className={`${s.taskCard} ${s[t.tone]}`}><span>{t.label}</span><strong>{t.count.toLocaleString()}건</strong><em>바로 처리 →</em></Link>)}</div></section>
 
     <section className={s.quickSection}><div className={s.sectionTitle}><div><span>QUICK ACTION</span><h2>빠른 작업</h2></div></div><div className={s.quickGrid}>
-      <Link href="/admin/operations">회원 검색</Link><Link href="/admin/wallet-ops?tab=withdrawals">출금 승인</Link><Link href="/admin/crypto-loan?status=PENDING">대출 승인</Link><Link href="/admin/wallet-ops?tab=balances">잔액 수정</Link><Link href="/admin/notices">공지 관리</Link><Link href="/admin/landing-media">랜딩 이미지 변경</Link><Link href="/admin/lucky-draw">Lucky Draw 관리</Link>
+      <Link href="/admin/operations">회원 검색</Link><Link href="/admin/dealers">총판 / 가입코드</Link><Link href="/admin/wallet-ops?tab=withdrawals">출금 승인</Link><Link href="/admin/crypto-loan?status=PENDING">대출 승인</Link><Link href="/admin/wallet-ops?tab=balances">잔액 수정</Link><Link href="/admin/notices">공지 관리</Link><Link href="/admin/landing-media">랜딩 이미지 변경</Link><Link href="/admin/lucky-draw">Lucky Draw 관리</Link>
     </div></section>
 
     <section className={s.stats}>{kpis.map(k=><div className={s.stat} key={k.label}><small>{k.label}</small><strong>{k.value}</strong>{k.hint&&<span>{k.hint}</span>}</div>)}</section>
