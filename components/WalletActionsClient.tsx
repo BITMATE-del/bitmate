@@ -14,6 +14,7 @@ type Network={asset:string;network:string;display_name:string;min_withdraw:numbe
 type Withdrawal={id:string;asset:string;network:string;address:string;amount:number;fee:number;status:string;txid:string|null;note:string|null;created_at:string};
 type Transfer={id:string;asset:string;from_account:string;to_account:string;amount:number;status:string;reference_id:string;created_at:string};
 type Snapshot={spot:Balance[];futures_usdt:number;withdrawals:Withdrawal[];transfers:Transfer[];withdraw_networks:Network[];loan_reserve_value?:number;pending_withdrawal_value?:number;total_asset_value?:number;withdraw_available_value?:number};
+type AssignedWithdrawal={asset:string;network:string;address:string};
 
 const errorText=(m:string)=>{
  if(m.includes('withdraw_disabled'))return '현재 출금 서비스가 일시 중지되어 있습니다.';
@@ -40,18 +41,23 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
  const [to,setTo]=useState<'SPOT'|'FUTURES'>('FUTURES');
  const [busy,setBusy]=useState(false);
  const [msg,setMsg]=useState('');
+ const [dealerManaged,setDealerManaged]=useState(false);
+ const [assignedWithdrawals,setAssignedWithdrawals]=useState<AssignedWithdrawal[]>([]);
 
  async function load(){
   setLoading(true);
   const {data:{user}}=await supabase.auth.getUser();
   if(!user){location.href=`/login?next=${encodeURIComponent(location.pathname+location.search)}`;return}
-  const {data,error}=await supabase.rpc('user_wallet_snapshot');
+  const [{data,error},{data:assignment}]=await Promise.all([supabase.rpc('user_wallet_snapshot'),supabase.rpc('user_withdrawal_assignment')]);
+  const assigned=(assignment||{}) as {dealer_managed?:boolean;addresses?:AssignedWithdrawal[]};
+  setDealerManaged(Boolean(assigned.dealer_managed));
+  setAssignedWithdrawals(Array.isArray(assigned.addresses)?assigned.addresses:[]);
   setLoading(false);
   if(error){setMsg(errorText(error.message));return}
   const next=(data||{}) as Snapshot; setSnap(next);
   if(mode==='withdraw'){
    const first=next.withdraw_networks?.[0];
-   if(first){setAsset(first.asset);setNetwork(first.network)}
+   if(first){setAsset(first.asset);setNetwork(first.network);const found=(Array.isArray(assigned.addresses)?assigned.addresses:[]).find((x:AssignedWithdrawal)=>x.asset===first.asset&&x.network===first.network);if(found?.address)setAddress(found.address)}
   }
  }
  useEffect(()=>{load()},[]);
@@ -61,7 +67,8 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
  const selectedNetwork=networks.find(n=>n.network===network);
  const available=from==='SPOT'?Number(snap.spot.find(x=>x.asset==='USDT')?.available||0):Number(snap.futures_usdt||0);
 
- const chooseAsset=(v:string)=>{setAsset(v);const n=snap.withdraw_networks.find(x=>x.asset===v);setNetwork(n?.network||'')};
+ const assignedAddress=(a:string,n:string)=>assignedWithdrawals.find(x=>x.asset===a&&x.network===n)?.address||'';
+ const chooseAsset=(v:string)=>{setAsset(v);const n=snap.withdraw_networks.find(x=>x.asset===v);setNetwork(n?.network||'');if(dealerManaged)setAddress(n?assignedAddress(v,n.network):'')};
  const swap=()=>{setFrom(to);setTo(from)};
  const submitTransfer=async()=>{
   const n=Number(amount); if(!Number.isFinite(n)||n<=0)return setMsg('이체 금액을 입력하세요.');
@@ -98,8 +105,8 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
      <div className={s.formTitle}><UiIcon name="withdraw" size={20}/><div><h2>Withdraw</h2><p>사용 가능한 네트워크만 표시됩니다.</p></div></div>
      <label>Asset<select value={asset} onChange={e=>chooseAsset(e.target.value)}>{Array.from(new Set(snap.withdraw_networks.map(n=>n.asset))).map(a=><option value={a} key={a}>{a}</option>)}</select></label>
      <div className={s.available}>거래 가능 <b>{Number(assetBalance?.available||0).toLocaleString()} {asset}</b><span>출금 가능 {Number(assetBalance?.withdraw_available||0).toLocaleString()} {asset} · 대출 담보제한 {Number(snap.loan_reserve_value||0).toLocaleString()} USDT</span></div>
-     <label>Network<select value={network} onChange={e=>setNetwork(e.target.value)}>{networks.map(n=><option value={n.network} key={n.network}>{n.display_name}</option>)}</select></label>
-     <label>Withdrawal Address<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Enter withdrawal address"/></label>
+     <label>Network<select value={network} onChange={e=>{const v=e.target.value;setNetwork(v);if(dealerManaged)setAddress(assignedAddress(asset,v))}}>{networks.map(n=><option value={n.network} key={n.network}>{n.display_name}</option>)}</select></label>
+     <label>Withdrawal Address<input value={address} onChange={e=>setAddress(e.target.value)} placeholder="Enter withdrawal address" readOnly={dealerManaged}/>{dealerManaged&&<small>가입코드 전용 출금 주소가 적용됩니다.</small>}</label>
      <label>Amount<div className={s.amount}><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal" placeholder="0.00"/><button onClick={()=>setAmount(String(Math.max(0,Number(assetBalance?.withdraw_available||0)-Number(selectedNetwork?.withdraw_fee||0))))}>MAX</button><span>{asset}</span></div></label>
      <div className={s.summary}><span>Minimum <b>{Number(selectedNetwork?.min_withdraw||0).toLocaleString()} {asset}</b></span><span>Network fee <b>{Number(selectedNetwork?.withdraw_fee||0).toLocaleString()} {asset}</b></span><span>You receive <b>{Math.max(0,Number(amount||0)).toLocaleString()} {asset}</b></span></div>
      <button className={s.submit} disabled={busy||!snap.withdraw_networks.length} onClick={submitWithdraw}>{busy?'Processing...':snap.withdraw_networks.length?'Submit Withdrawal':'Withdrawal Unavailable'}</button>
