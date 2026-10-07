@@ -58,39 +58,26 @@ function loadTemplate(){
   });
 }
 
-function softPatch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,kind:'black'|'panel'|'green'='black'){
-  const pad=18;
+function solidPatch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,kind:'black'|'panel'|'green'='black'){
+  const pad=22;
+  const edge=ctx.createLinearGradient(x-pad,y,x+w+pad,y+h);
+  let left='#040808',right='#07130a';
+  if(kind==='panel'){left='#0a0f10';right='#0b1211'}
+  if(kind==='green'){left='#071108';right='#0c2109'}
+  edge.addColorStop(0,'rgba(0,0,0,0)');
+  edge.addColorStop(.12,left);
+  edge.addColorStop(.88,right);
+  edge.addColorStop(1,'rgba(0,0,0,0)');
   ctx.save();
-  const g=ctx.createLinearGradient(x-pad,y,x+w+pad,y+h);
-  if(kind==='panel'){
-    g.addColorStop(0,'rgba(10,15,16,0)');
-    g.addColorStop(.08,'rgba(10,15,16,.96)');
-    g.addColorStop(.92,'rgba(10,15,16,.96)');
-    g.addColorStop(1,'rgba(10,15,16,0)');
-  }else if(kind==='green'){
-    g.addColorStop(0,'rgba(7,18,8,0)');
-    g.addColorStop(.08,'rgba(7,18,8,.95)');
-    g.addColorStop(.92,'rgba(12,31,9,.95)');
-    g.addColorStop(1,'rgba(12,31,9,0)');
-  }else{
-    g.addColorStop(0,'rgba(4,8,8,0)');
-    g.addColorStop(.08,'rgba(4,8,8,.97)');
-    g.addColorStop(.88,'rgba(5,10,9,.97)');
-    g.addColorStop(1,'rgba(5,10,9,0)');
-  }
-  ctx.filter='blur(1.8px)';
-  ctx.fillStyle=g;
-  rounded(ctx,x-pad,y-4,w+pad*2,h+8,12);
+  ctx.fillStyle=edge;
+  rounded(ctx,x-pad,y-5,w+pad*2,h+10,14);
+  ctx.fill();
+  const core=ctx.createLinearGradient(x,y,x+w,y+h);
+  core.addColorStop(0,left);core.addColorStop(1,right);
+  ctx.fillStyle=core;
+  rounded(ctx,x,y,w,h,8);
   ctx.fill();
   ctx.restore();
-}
-
-function panelPatch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number){
-  const g=ctx.createLinearGradient(x,y,x+w,y);
-  g.addColorStop(0,'rgba(11,17,18,.985)');
-  g.addColorStop(1,'rgba(10,16,15,.97)');
-  ctx.fillStyle=g;
-  ctx.fillRect(x,y,w,h);
 }
 
 export async function downloadTradeShareCard(input:TradeShareCardInput){
@@ -103,18 +90,18 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   const template=await loadTemplate();
   ctx.drawImage(template,0,0,W,H);
 
-  // The selected artwork is fixed. Only the placeholder glyphs are covered.
-  // Use feathered, local patches so no rectangular/mosaic blocks appear.
-  softPatch(ctx,62,183,420,76,'black');          // symbol placeholder
-  softPatch(ctx,63,446,505,104,'black');         // ROI placeholder
-  softPatch(ctx,64,650,390,62,'black');          // PNL placeholder
-  softPatch(ctx,790,773,205,48,'panel');          // entry
-  softPatch(ctx,790,857,205,48,'panel');          // exit
-  softPatch(ctx,790,941,205,48,'panel');          // margin
-  softPatch(ctx,758,1208,250,42,'green');         // date
+  // Fully remove baked placeholder text before drawing live trade data.
+  // The center of each patch is opaque; only the outer edge is feathered.
+  solidPatch(ctx,55,174,520,96,'black');          // symbol
+  solidPatch(ctx,55,432,585,132,'black');         // ROI
+  solidPatch(ctx,55,637,500,88,'black');          // PNL
+  solidPatch(ctx,770,768,242,60,'panel');         // entry
+  solidPatch(ctx,770,852,242,60,'panel');         // exit
+  solidPatch(ctx,770,936,242,60,'panel');         // margin
+  solidPatch(ctx,735,1198,300,52,'green');        // date
 
   if(input.market==='CFD'){
-    softPatch(ctx,770,49,240,45,'green');
+    solidPatch(ctx,755,48,270,48,'green');
     drawText(ctx,'CFD',988,75,24,800,'#c6d0d4','right','Arial, Helvetica, sans-serif');
   }
 
@@ -125,7 +112,7 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   const sideText=isLong?'#62efad':'#ff6d87';
 
   // Rebuild only the dynamic badge in the same footprint as the master artwork.
-  softPatch(ctx,70,283,276,52,'black');
+  solidPatch(ctx,60,272,300,70,'black');
   rounded(ctx,72,279,272,54,18);
   ctx.fillStyle=sideBg;ctx.fill();
   ctx.lineWidth=1.4;ctx.strokeStyle=sideStroke;ctx.stroke();
@@ -150,7 +137,7 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   drawText(ctx,(input.margin==null?'—':fmt(Number(input.margin),2)+' USDT'),982,967,30,800,'#ffffff','right','Arial, Helvetica, sans-serif');
 
   // Status pill keeps the original position and silhouette.
-  softPatch(ctx,770,1013,218,60,'panel');
+  solidPatch(ctx,758,1005,240,72,'panel');
   rounded(ctx,784,1016,195,52,24);
   ctx.fillStyle='rgba(36,74,8,.94)';ctx.fill();
   drawText(ctx,String(input.status||'CLOSED').toUpperCase(),881,1042,25,900,'#b8ff34','center','Arial, Helvetica, sans-serif');
