@@ -50,7 +50,7 @@ export default function DealerPortal(){
  }
  async function withdrawal(id:string,status:string){
   let txid:string|null=null;
-  if(status==='SENT'){txid=await sitePrompt('전송 TXID를 입력하세요.',{title:'출금 전송 완료'});if(!txid)return}
+  if(status==='SENT'){txid=await sitePrompt('전송 TXID를 입력하세요.','',{title:'출금 전송 완료'});if(!txid)return}
   if(!(await siteConfirm('출금 상태를 '+status+'(으)로 변경할까요?',{title:'출금 관리'})))return;
   const {error}=await supabase.rpc('dealer_update_withdrawal_status',{p_id:id,p_status:status,p_txid:txid,p_note:'총판 처리'});
   if(error)return setMsg(error.message);await load();
@@ -60,13 +60,13 @@ export default function DealerPortal(){
    if(!(await siteConfirm('해당 대출을 승인하고 지급할까요?',{title:'코인대출 승인'})))return;
    const {error}=await supabase.rpc('dealer_approve_crypto_loan',{p_loan:id});if(error)return setMsg(error.message);
   }else{
-   const reason=await sitePrompt('거절 사유를 입력하세요.',{title:'코인대출 거절'});if(!reason)return;
+   const reason=await sitePrompt('거절 사유를 입력하세요.','',{title:'코인대출 거절'});if(!reason)return;
    const {error}=await supabase.rpc('dealer_reject_crypto_loan',{p_loan:id,p_reason:reason});if(error)return setMsg(error.message);
   }
   await load();
  }
  async function cfdOverride(id:string,value:string){
-  const reason=await sitePrompt('판정보정 사유를 5자 이상 입력하세요.',{title:'CFD 판정보정'});if(!reason)return;
+  const reason=await sitePrompt('판정보정 사유를 5자 이상 입력하세요.','',{title:'CFD 판정보정'});if(!reason)return;
   const {error}=await supabase.rpc('dealer_set_cfd_timed_round_override',{p_trade_id:id,p_override:value,p_reason:reason});
   if(error)return setMsg(error.message);setMsg('판정보정이 저장되었습니다.');await load();
  }
