@@ -32,6 +32,7 @@ const trade:NavItem[]=[
 const system:NavItem[]=[
   {href:'/admin/services',icon:'security',label:'서비스 / 권한 / 로그'},
   {href:'/admin/p2p',icon:'market',label:'P2P 관리'},
+  {href:'/admin/dealers',icon:'user',label:'총판 / 가입코드'},
   {href:'/admin/btmt-membership',icon:'membership',label:'BTMT Membership'},
 ];
 
