@@ -58,13 +58,31 @@ function loadTemplate(){
   });
 }
 
-function darkPatch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,alpha=.98){
-  const g=ctx.createLinearGradient(x,y,x+w,y+h);
-  g.addColorStop(0,'rgba(5,9,9,'+alpha+')');
-  g.addColorStop(.72,'rgba(7,13,12,'+alpha+')');
-  g.addColorStop(1,'rgba(12,25,9,'+alpha+')');
+function softPatch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number,kind:'black'|'panel'|'green'='black'){
+  const pad=18;
+  ctx.save();
+  const g=ctx.createLinearGradient(x-pad,y,x+w+pad,y+h);
+  if(kind==='panel'){
+    g.addColorStop(0,'rgba(10,15,16,0)');
+    g.addColorStop(.08,'rgba(10,15,16,.96)');
+    g.addColorStop(.92,'rgba(10,15,16,.96)');
+    g.addColorStop(1,'rgba(10,15,16,0)');
+  }else if(kind==='green'){
+    g.addColorStop(0,'rgba(7,18,8,0)');
+    g.addColorStop(.08,'rgba(7,18,8,.95)');
+    g.addColorStop(.92,'rgba(12,31,9,.95)');
+    g.addColorStop(1,'rgba(12,31,9,0)');
+  }else{
+    g.addColorStop(0,'rgba(4,8,8,0)');
+    g.addColorStop(.08,'rgba(4,8,8,.97)');
+    g.addColorStop(.88,'rgba(5,10,9,.97)');
+    g.addColorStop(1,'rgba(5,10,9,0)');
+  }
+  ctx.filter='blur(1.8px)';
   ctx.fillStyle=g;
-  ctx.fillRect(x,y,w,h);
+  rounded(ctx,x-pad,y-4,w+pad*2,h+8,12);
+  ctx.fill();
+  ctx.restore();
 }
 
 function panelPatch(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:number){
@@ -85,18 +103,18 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   const template=await loadTemplate();
   ctx.drawImage(template,0,0,W,H);
 
-  // The selected artwork is fixed. Only the data zones below are replaced.
-  // No decorative/background elements are regenerated.
-  darkPatch(ctx,63,170,485,108,.995);          // symbol placeholder
-  darkPatch(ctx,65,424,555,138,.965);          // ROI placeholder
-  darkPatch(ctx,66,638,430,84,.965);           // PNL placeholder
-  panelPatch(ctx,760,758,225,72);               // entry
-  panelPatch(ctx,760,842,225,72);               // exit
-  panelPatch(ctx,760,926,225,72);               // margin
-  darkPatch(ctx,720,1202,285,58,.94);           // date
+  // The selected artwork is fixed. Only the placeholder glyphs are covered.
+  // Use feathered, local patches so no rectangular/mosaic blocks appear.
+  softPatch(ctx,62,183,420,76,'black');          // symbol placeholder
+  softPatch(ctx,63,446,505,104,'black');         // ROI placeholder
+  softPatch(ctx,64,650,390,62,'black');          // PNL placeholder
+  softPatch(ctx,790,773,205,48,'panel');          // entry
+  softPatch(ctx,790,857,205,48,'panel');          // exit
+  softPatch(ctx,790,941,205,48,'panel');          // margin
+  softPatch(ctx,758,1208,250,42,'green');         // date
 
   if(input.market==='CFD'){
-    darkPatch(ctx,770,44,245,58,.97);
+    softPatch(ctx,770,49,240,45,'green');
     drawText(ctx,'CFD',988,75,24,800,'#c6d0d4','right','Arial, Helvetica, sans-serif');
   }
 
@@ -107,7 +125,7 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   const sideText=isLong?'#62efad':'#ff6d87';
 
   // Rebuild only the dynamic badge in the same footprint as the master artwork.
-  darkPatch(ctx,65,278,300,62,.99);
+  softPatch(ctx,70,283,276,52,'black');
   rounded(ctx,72,279,272,54,18);
   ctx.fillStyle=sideBg;ctx.fill();
   ctx.lineWidth=1.4;ctx.strokeStyle=sideStroke;ctx.stroke();
@@ -132,7 +150,7 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   drawText(ctx,(input.margin==null?'—':fmt(Number(input.margin),2)+' USDT'),982,967,30,800,'#ffffff','right','Arial, Helvetica, sans-serif');
 
   // Status pill keeps the original position and silhouette.
-  panelPatch(ctx,770,1011,220,65);
+  softPatch(ctx,770,1013,218,60,'panel');
   rounded(ctx,784,1016,195,52,24);
   ctx.fillStyle='rgba(36,74,8,.94)';ctx.fill();
   drawText(ctx,String(input.status||'CLOSED').toUpperCase(),881,1042,25,900,'#b8ff34','center','Arial, Helvetica, sans-serif');
