@@ -71,6 +71,18 @@ export default function DealerPortal(){
   if(error)return setMsg(error.message);setMsg('판정보정이 저장되었습니다.');await load();
  }
 
+ async function setMemberBalance(m:Member){
+  const value=await sitePrompt('변경할 USDT Available 잔액을 입력하세요.',String(m.usdt_available||0),{title:'회원 잔액 관리',inputType:'number'});
+  if(value===null)return;
+  const amount=Number(value);
+  if(!Number.isFinite(amount)||amount<0){setMsg('올바른 잔액을 입력하세요.');return}
+  const note=await sitePrompt('변경 사유를 입력하세요.','',{title:'잔액 변경 사유'});
+  if(note===null)return;
+  const {error}=await supabase.rpc('dealer_set_user_usdt_balance',{p_user_id:m.user_id,p_available:amount,p_note:note});
+  if(error)return setMsg(error.message);
+  setMsg('회원 USDT 잔액이 변경되었습니다.');await load();
+ }
+
  if(loading)return <main className={s.page}><div className={s.loading}>Dealer portal loading...</div></main>;
  if(!data)return <main className={s.page}><div className={s.denied}><h1>총판 페이지</h1><p>{msg||'접근 권한이 없습니다.'}</p><Link href="/">홈으로</Link></div></main>;
 
@@ -82,7 +94,7 @@ export default function DealerPortal(){
     {([['members','회원관리'],['wallet','입출금관리'],['loans','코인대출'],['cfd','CFD 판정보정'],['settings','전용 주소 설정']] as [Tab,string][]).map(([k,l])=><button key={k} className={tab===k?s.active:''} onClick={()=>setTab(k)}>{l}</button>)}
    </nav>
 
-   {tab==='members'&&<section className={s.panel}><div className={s.panelHead}><h2>코드 가입 회원</h2><p>다른 코드 또는 일반 가입 회원은 표시되지 않습니다.</p></div><div className={s.table}><div className={s.th}><span>회원</span><span>가입일</span><span>USDT Available</span><span>Locked</span></div>{data.members.map(m=><div className={s.tr} key={m.user_id}><span><b>{m.email}</b><small>{m.user_id.slice(0,12)}…</small></span><span>{new Date(m.joined_at).toLocaleString()}</span><span>{n(m.usdt_available)} USDT</span><span>{n(m.usdt_locked)} USDT</span></div>)}</div></section>}
+   {tab==='members'&&<section className={s.panel}><div className={s.panelHead}><h2>코드 가입 회원</h2><p>다른 코드 또는 일반 가입 회원은 표시되지 않습니다.</p></div><div className={s.table}><div className={s.th5}><span>회원</span><span>가입일</span><span>USDT Available</span><span>Locked</span><span>관리</span></div>{data.members.map(m=><div className={s.tr5} key={m.user_id}><span><b>{m.email}</b><small>{m.user_id.slice(0,12)}…</small></span><span>{new Date(m.joined_at).toLocaleString()}</span><span>{n(m.usdt_available)} USDT</span><span>{n(m.usdt_locked)} USDT</span><span className={s.actions}><button onClick={()=>setMemberBalance(m)}>잔액 설정</button></span></div>)}</div></section>}
 
    {tab==='wallet'&&<><section className={s.panel}><div className={s.panelHead}><h2>출금 요청</h2></div><div className={s.table}><div className={s.th5}><span>회원</span><span>금액</span><span>주소</span><span>상태</span><span>처리</span></div>{data.withdrawals.map(w=><div className={s.tr5} key={w.id}><span><b>{w.email}</b><small>{w.asset}/{w.network}</small></span><span>{n(w.amount)} {w.asset}<small>Fee {n(w.fee)}</small></span><span className={s.address}>{w.address}</span><span>{w.status}</span><span className={s.actions}><button onClick={()=>withdrawal(w.id,'APPROVED')}>승인</button><button onClick={()=>withdrawal(w.id,'SENT')}>전송완료</button><button onClick={()=>withdrawal(w.id,'REJECTED')}>거절</button></span></div>)}</div></section><section className={s.panel}><div className={s.panelHead}><h2>입금 내역</h2></div><div className={s.table}><div className={s.th}><span>회원</span><span>자산</span><span>금액</span><span>상태</span></div>{data.deposits.map(d=><div className={s.tr} key={d.id}><span><b>{d.email}</b><small>{new Date(d.created_at).toLocaleString()}</small></span><span>{d.asset}/{d.network}</span><span>{n(d.amount)}</span><span>{d.status}</span></div>)}</div></section></>}
 
