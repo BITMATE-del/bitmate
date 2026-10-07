@@ -58,10 +58,11 @@ export default function HeaderUserTools(){
   const [uid,setUid]=useState('');
   const [wallet,setWallet]=useState<WalletSnapshot>({spot:[],futures_usdt:0});
   const [walletLoading,setWalletLoading]=useState(false);
+  const [isDealer,setIsDealer]=useState(false);
   const root=useRef<HTMLDivElement>(null);
   const panelCloseTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
-  useEffect(()=>{supabase.auth.getUser().then(({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'')}})},[supabase]);
+  useEffect(()=>{supabase.auth.getUser().then(async({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'');const {data}=await supabase.rpc('is_dealer_user');setIsDealer(Boolean(data))}})},[supabase]);
   useEffect(()=>{
     const saved=localStorage.getItem('bitmate_display_currency');
     if(saved==='KRW'||saved==='USDT')setDisplayCurrency(saved);
@@ -138,7 +139,7 @@ export default function HeaderUserTools(){
       <button className={`${s.icon} ${panel==='account'?s.active:''}`} onClick={()=>toggle('account')} aria-label="Account"><UiIcon name="user" size={18}/></button>
       {panel==='account'&&<div className={`${s.panel} ${s.memberPanel}`} onMouseEnter={clearPanelCloseTimer} onMouseLeave={()=>schedulePanelClose('account')}>
         <div className={s.memberHead}><div className={s.avatar}><UiIcon name="user" size={22}/></div><div className={s.memberIdentity}><b>{email?maskEmail(email):'Member'}</b><span>UID: {uid?uid.slice(0,16):'—'}</span><div><em>Unverified</em><strong>VIP 0</strong></div></div></div>
-        <div className={s.memberList}>{memberItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></Link>)}</div>
+        <div className={s.memberList}>{memberItems.map(([icon,label,href])=><Link key={label} href={href} onClick={()=>setPanel(null)}><span><UiIcon name={icon} size={17}/></span><b>{label}</b></Link>)}{isDealer&&<Link href="/dealer" onClick={()=>setPanel(null)}><span><UiIcon name="user" size={17}/></span><b>총판 관리센터</b></Link>}</div>
         <button className={s.logout} onClick={logout}>Log Out</button>
       </div>}
     </div>
