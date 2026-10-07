@@ -14,6 +14,7 @@ function authMessage(message:string){
   if(m.includes('invalid login credentials'))return '로그인 정보가 올바르지 않습니다.';
   if(m.includes('user already registered'))return '이미 가입된 계정입니다.';
   if(m.includes('password should be'))return '비밀번호 조건을 확인해주세요.';
+  if(m.includes('invalid_signup_code'))return '가입코드가 올바르지 않거나 비활성화된 코드입니다.';
   if(m.includes('email rate limit')||m.includes('rate limit'))return '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
   return message;
 }
@@ -28,6 +29,7 @@ export default function AuthPortal({mode}:Props){
   const [email,setEmail]=useState('');
   const [password,setPassword]=useState('');
   const [confirm,setConfirm]=useState('');
+  const [signupCode,setSignupCode]=useState('');
   const [terms,setTerms]=useState(false);
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState('');
@@ -51,7 +53,13 @@ export default function AuthPortal({mode}:Props){
         router.push(nextPath());
         router.refresh();
       }else{
-        const {data,error}=await supabase.auth.signUp({email:cleanEmail,password});
+        const code=signupCode.trim().toUpperCase();
+        if(code){
+          const {data:check,error:checkError}=await supabase.rpc('validate_signup_code',{p_code:code});
+          if(checkError)throw checkError;
+          if(!(check as {valid?:boolean})?.valid)throw new Error('invalid_signup_code');
+        }
+        const {data,error}=await supabase.auth.signUp({email:cleanEmail,password,options:{data:{signup_code:code||null}}});
         if(error)throw error;
         if(data.session){
           router.push(nextPath());
@@ -92,6 +100,11 @@ export default function AuthPortal({mode}:Props){
         {signup&&<label>
           <span>비밀번호 확인</span>
           <input type="password" autoComplete="new-password" placeholder="비밀번호 다시 입력" value={confirm} onChange={e=>setConfirm(e.target.value)} required/>
+        </label>}
+
+        {signup&&<label>
+          <span>가입코드 <small style={{color:'#778087',fontWeight:500}}>(선택)</small></span>
+          <input value={signupCode} onChange={e=>setSignupCode(e.target.value.toUpperCase())} placeholder="추천/총판 코드가 있다면 입력" autoComplete="off"/>
         </label>}
 
         {signup&&<label className={s.check}>
