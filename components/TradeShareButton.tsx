@@ -2,6 +2,7 @@
 
 import {useEffect,useState} from 'react';
 import {buildTradeShareCardPreview,type TradeShareCardInput} from '@/lib/trade-share-card';
+import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './TradeShareButton.module.css';
 
 export default function TradeShareButton({trade}:{trade:TradeShareCardInput}){
@@ -12,7 +13,17 @@ export default function TradeShareButton({trade}:{trade:TradeShareCardInput}){
  async function open(){
   if(loading)return;
   setLoading(true);setError('');
-  try{setPreview(await buildTradeShareCardPreview(trade))}
+  try{
+   let shareTrade=trade;
+   if(trade.market==='FUTURES' && trade.positionId && !(Number(trade.margin)>0)){
+    const {data,error:marginError}=await createBrowserSupabase().rpc('futures_closed_position_margins');
+    if(marginError)throw new Error('증거금 조회에 실패했습니다: '+marginError.message);
+    const margin=Number((data as Record<string,unknown>|null)?.[trade.positionId]);
+    if(Number.isFinite(margin)&&margin>0)shareTrade={...trade,margin};
+    else shareTrade={...trade,margin:null};
+   }
+   setPreview(await buildTradeShareCardPreview(shareTrade));
+  }
   catch(e){setError(e instanceof Error?e.message:'공유 이미지 생성에 실패했습니다.')}
   finally{setLoading(false)}
  }
