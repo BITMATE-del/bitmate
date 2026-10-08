@@ -93,6 +93,10 @@ jobs:
       - name: Build Android release AAB (unsigned until signing is configured)
         working-directory: android
         run: ./gradlew bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bitmate-android-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
       - name: Publish latest APK to main for website download
         shell: bash
         run: |
@@ -111,10 +115,6 @@ jobs:
             git commit -m "[native-apk] Publish latest Android APK"
             git push origin HEAD:main
           fi
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bitmate-android-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: bitmate-android-release-aab-unsigned
