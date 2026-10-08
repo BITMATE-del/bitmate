@@ -1,6 +1,12 @@
+import {buildCfdTradeShareCardPreview} from './cfd-trade-share-card';
 export type TradeShareCardInput={
   market:'FUTURES'|'CFD';
   positionId?:string;
+  resultLabel?:'WIN'|'LOSS'|'DRAW'|'VOID'|null;
+  stake?:number|null;
+  payout?:number|null;
+  durationLabel?:string|null;
+  currency?:'KRW'|'USDT'|null;
   symbol:string;
   side:string;
   leverage?:number|null;
@@ -63,6 +69,7 @@ function rounded(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:numbe
 }
 
 export async function buildTradeShareCardPreview(input:TradeShareCardInput):Promise<{url:string;filename:string}>{
+  if(input.market==='CFD')return buildCfdTradeShareCardPreview(input);
   const canvas=document.createElement('canvas');
   canvas.width=W;
   canvas.height=H;
