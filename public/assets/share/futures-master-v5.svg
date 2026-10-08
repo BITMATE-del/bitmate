@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
+<defs>
+ <linearGradient id="bg" x2=".95" y2="1"><stop stop-color="#05090a"/><stop offset=".56" stop-color="#080f0c"/><stop offset="1" stop-color="#123508"/></linearGradient>
+ <radialGradient id="halo"><stop stop-color="#a8ff11" stop-opacity=".78"/><stop offset=".36" stop-color="#71ba0c" stop-opacity=".36"/><stop offset="1" stop-color="#9bff00" stop-opacity="0"/></radialGradient>
+ <linearGradient id="coin" x2=".9" y2="1"><stop stop-color="#f7ff60"/><stop offset=".11" stop-color="#9abf10"/><stop offset=".25" stop-color="#18231b"/><stop offset=".58" stop-color="#111e0c"/><stop offset=".87" stop-color="#81bb0b"/><stop offset="1" stop-color="#f1ff42"/></linearGradient>
+ <linearGradient id="edge" x2=".4" y2="1"><stop stop-color="#cafa27"/><stop offset=".22" stop-color="#1a2c12"/><stop offset=".75" stop-color="#83b21b"/><stop offset="1" stop-color="#d7fa41"/></linearGradient>
+ <linearGradient id="rock" x2=".7" y2="1"><stop stop-color="#263b26"/><stop offset=".3" stop-color="#0b1011"/><stop offset=".65" stop-color="#131b16"/><stop offset="1" stop-color="#050808"/></linearGradient>
+ <linearGradient id="panel" x2="1" y2=".3"><stop stop-color="#13201b" stop-opacity=".95"/><stop offset=".45" stop-color="#0d1518" stop-opacity=".98"/><stop offset="1" stop-color="#15231b" stop-opacity=".92"/></linearGradient>
+ <filter id="glow" x="-65%" y="-65%" width="230%" height="230%"><feGaussianBlur stdDeviation="23"/></filter>
+ <filter id="sharpGlow" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+ <filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="14" flood-color="#000000" flood-opacity=".8"/></filter>
+</defs>
+<rect width="1080" height="1350" fill="url(#bg)"/>
+<ellipse cx="855" cy="460" rx="355" ry="480" fill="url(#halo)"/>
+<path d="M818 -80 617 508 779 390 956 -70Z" fill="#acee17" opacity=".12" stroke="#91ff14" stroke-opacity=".58" stroke-width="2"/>
+<path d="M1059 101 940 212 1011 513 1134 291Z" fill="#aef31a" opacity=".075" stroke="#c9f92e" stroke-opacity=".5" stroke-width="2"/>
+<path d="M600 370 824 -40" stroke="#bcff13" opacity=".75" stroke-width="3"/>
+<path d="M490 445 792 545 722 378" fill="#c6ff12" opacity=".06"/>
+<circle cx="830" cy="447" r="310" fill="#b4ff10" opacity=".25" filter="url(#glow)"/>
+<g transform="translate(810 419) rotate(21)" filter="url(#shadow)">
+ <ellipse cx="25" cy="9" rx="220" ry="267" fill="#111a12" stroke="#d9ff39" stroke-width="25"/>
+ <ellipse cx="4" cy="0" rx="208" ry="260" fill="url(#edge)" stroke="#a8e51b" stroke-width="3"/>
+ <ellipse cx="4" cy="0" rx="189" ry="239" fill="url(#coin)" stroke="#1c3213" stroke-width="10"/>
+ <ellipse cx="4" cy="0" rx="162" ry="209" fill="#0b120c" opacity=".73" stroke="#a7e52d" stroke-width="3"/>
+ <text x="4" y="124" text-anchor="middle" font-family="Arial,sans-serif" font-size="347" font-weight="bold" fill="#030705" stroke="#d1ff4b" stroke-width="6">₿</text>
+ <text x="0" y="116" text-anchor="middle" font-family="Arial,sans-serif" font-size="335" font-weight="bold" fill="#192411" stroke="#9fe51e" stroke-width="2">₿</text>
+</g>
+<circle cx="998" cy="224" r="23" fill="#ddff73" opacity=".85" filter="url(#sharpGlow)"/>
+<path d="M367 721 491 599 552 645 628 556 696 617 754 585 836 697 958 593 1080 632 1080 795 308 795Z" fill="url(#rock)" stroke="#637a37" stroke-opacity=".4" stroke-width="3"/>
+<path d="M502 667 542 615 565 643 633 585 684 640 741 603 774 651" fill="none" stroke="#a9db40" stroke-width="7" opacity=".23"/>
+<path d="M741 732 839 629 904 666 959 610 1028 577 1080 610 1080 802 635 802Z" fill="#080d0c" stroke="#526833" stroke-opacity=".53" stroke-width="3"/>
+<path d="M815 704 865 652 897 677 956 618 1001 635" fill="none" stroke="#baff4b" stroke-opacity=".14" stroke-width="8"/>
+<g fill="#c1f725" opacity=".7"><circle cx="517" cy="335" r="3"/><circle cx="557" cy="442" r="2"/><circle cx="605" cy="240" r="3"/><circle cx="979" cy="110" r="2"/><circle cx="484" cy="578" r="2"/><circle cx="684" cy="321" r="2"/><circle cx="1038" cy="401" r="3"/></g>
+<!-- Intentional predesigned clean text-free data areas: no masks needed. -->
+<rect x="64" y="276" width="285" height="59" rx="20" fill="#063226" fill-opacity=".88" stroke="#28db96" stroke-width="2"/>
+<text x="72" y="426" fill="#b8c4c9" font-family="Arial,sans-serif" font-size="31">ROI</text><path d="M156 417H222" stroke="#c2f41a" stroke-width="5"/>
+<text x="72" y="623" fill="#b8c4c9" font-family="Arial,sans-serif" font-size="31">PNL</text><path d="M156 615H222" stroke="#c2f41a" stroke-width="5"/>
+<rect x="57" y="762" width="968" height="367" rx="24" fill="url(#panel)" stroke="#475b56" stroke-width="2"/>
+<path d="M98 853H984M98 940H984M98 1027H984" stroke="#62716b" stroke-opacity=".65" stroke-width="2"/>
+<g fill="#d1dce0" font-family="Arial,sans-serif" font-size="29">
+ <text x="179" y="819">Entry Price</text><text x="179" y="906">Exit Price</text><text x="179" y="994">Margin</text><text x="179" y="1080">Status</text>
+</g>
+<g fill="none" stroke="#d4e0df" stroke-width="4">
+ <circle cx="123" cy="809" r="18"/><path d="M130 799 120 809 130 819M120 809H137"/>
+ <circle cx="123" cy="896" r="18"/><path d="M117 886 127 896 117 906M127 896H109"/>
+ <ellipse cx="123" cy="975" rx="17" ry="9"/><path d="M106 975V992Q123 1009 140 992V975M106 983Q123 997 140 983"/>
+ <path d="M108 1060h25l8 9v21h-33zM133 1060v10h8M115 1078h18M115 1085h18"/>
+</g>
+<path d="M66 1184H1018" stroke="#52615a" stroke-width="3"/><path d="M66 1184H373" stroke="#b6fb22" stroke-width="5"/>
+<text x="72" y="1258" fill="#ffffff" font-family="Arial,sans-serif" font-size="31" font-weight="bold">Trade smarter</text>
+<text x="72" y="1291" fill="#ffffff" font-family="Arial,sans-serif" font-size="31" font-weight="bold">with </text><text x="147" y="1291" fill="#c0ff31" font-family="Arial,sans-serif" font-size="31" font-weight="bold">BITMATE</text>
+<path d="M656 1217V1304" stroke="#53625c" stroke-width="2"/>
+<text x="1007" y="82" text-anchor="end" fill="#c3cfd0" font-family="Arial,sans-serif" font-size="23" letter-spacing="4">COIN FUTURES</text>
+<rect x="68" y="50" width="55" height="55" rx="12" fill="#bcff20"/>
+<text x="95" y="88" text-anchor="middle" fill="#07120a" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="37">₿</text>
+<text x="137" y="89" fill="#fff" font-family="Arial Black,Arial,sans-serif" font-weight="900" font-size="41">BITMATE</text>
+</svg>
