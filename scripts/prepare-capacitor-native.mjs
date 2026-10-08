@@ -16,8 +16,9 @@ function patchFile(path,fn){
 }
 
 patchFile('android/app/build.gradle',s=>s
-  .replace(/versionName\s*=\s*"[^"]+"/,'versionName = "1.0.0"')
-  .replace(/versionName\s+"[^"]+"/,'versionName "1.0.0"')
+  .replace(/versionCode\s+\d+/, 'versionCode 2')
+  .replace(/versionName\s*=\s*"[^"]+"/,'versionName = "1.0.1"')
+  .replace(/versionName\s+"[^"]+"/,'versionName "1.0.1"')
 );
 
 patchFile('android/app/src/main/AndroidManifest.xml',s=>{
@@ -55,7 +56,7 @@ patchFile('ios/App/App/Info.plist',s=>{
 });
 
 patchFile('ios/App/App.xcodeproj/project.pbxproj',s=>
-  s.replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 1.0.0;')
+  s.replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 2;').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 1.0.1;')
 );
 
 if(fs.existsSync('android')){
