@@ -10,6 +10,14 @@ export default function TradeShareButton({trade}:{trade:TradeShareCardInput}){
  const [preview,setPreview]=useState<{url:string;filename:string}|null>(null);
  const [error,setError]=useState('');
  useEffect(()=>()=>{if(preview)URL.revokeObjectURL(preview.url)},[preview]);
+ useEffect(()=>{
+  if(!preview)return;
+  const onEscape=(event:KeyboardEvent)=>{if(event.key==='Escape')setPreview(null)};
+  const onNativeBack=(event:Event)=>{event.preventDefault();setPreview(null)};
+  document.addEventListener('keydown',onEscape);
+  window.addEventListener('bitmate:native-back',onNativeBack);
+  return()=>{document.removeEventListener('keydown',onEscape);window.removeEventListener('bitmate:native-back',onNativeBack)};
+ },[preview]);
  async function open(){
   if(loading)return;
   setLoading(true);setError('');
