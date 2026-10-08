@@ -25,6 +25,7 @@ export default function CfdTimedTradingClient(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const router=useRouter();
   const loginPromptedRef=useRef(false);
+  const pendingActiveTradeIds=useRef<Set<string>>(new Set());
   const [products,setProducts]=useState<Product[]>([]);
   const [selected,setSelected]=useState<Product|null>(null);
   const [markets,setMarkets]=useState<LiveMarket[]>([]);
@@ -93,6 +94,19 @@ export default function CfdTimedTradingClient(){
     return()=>{window.removeEventListener('bitmate:display-currency',onCurrency as EventListener);clearInterval(rateId)};
   },[]);
   useEffect(()=>{const id=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(id)},[]);
+  // Only switch after the server confirms settlement; expiration alone is not a settled result.
+  useEffect(()=>{
+    for(const trade of trades){
+      if(trade.status==='ACTIVE')pendingActiveTradeIds.current.add(trade.id);
+    }
+    const completed=trades.some(trade=>trade.status==='SETTLED'&&pendingActiveTradeIds.current.has(trade.id));
+    if(completed){
+      for(const trade of trades){
+        if(trade.status==='SETTLED')pendingActiveTradeIds.current.delete(trade.id);
+      }
+      setBottomTab('history');
+    }
+  },[trades]);
 
   useEffect(()=>{
     if(!selected?.symbol){setLiveMarket(null);return}
@@ -208,7 +222,7 @@ export default function CfdTimedTradingClient(){
         <div className={s.summary}><div><span>시작가</span><b>주문 시 확정</b></div><div><span>예상 WIN 지급</span><b>{displayMoney(expectedPayout,0)} {currencyUnit}</b></div><div><span>DRAW 지급</span><b>{displayMoney(amountNum,0)} {currencyUnit}</b></div><div><span>LOSS 지급</span><b>0 {currencyUnit}</b></div></div>
         <button className={`${s.submit} ${direction==='DOWN'?s.submitDown:''}`} disabled={submitting||!!activeTrade} onClick={startTrade}>{activeTrade?'거래 진행 중':submitting?'처리 중...':`${direction} ${duration}분 거래 시작`}</button>
         <div className={s.notice}>시작가와 종료가를 기준으로 결과가 자동 확정됩니다. 화면을 닫아도 진행 중인 거래는 만료 시 자동 정산됩니다.</div>
-        {activeTrade&&<div className={s.activeTrade}><div className={s.activeTradeTop}><strong>{activeTrade.symbol} · {activeTrade.direction}</strong><span className={s.tradeStatus}>진행 중</span></div><div className={s.settlementTime}><span>포지션 방향 확정까지</span><b>{mm}:{ss}</b><em>{activeTrade.duration_minutes}분 거래 · 확정 예정 {new Date(activeTrade.expires_at).toLocaleTimeString('ko-KR',{hour12:false})}</em></div><div className={s.tradeMeta}><div><span>시작가</span><b>{fmt(activeTrade.start_price,8)}</b></div><div><span>주문금액</span><b>{displayMoney(activeTrade.amount)} {currencyUnit}</b></div><div><span>거래시간</span><b>{activeTrade.duration_minutes}분</b></div><div><span>체결시간</span><b>{new Date(activeTrade.starts_at).toLocaleTimeString('ko-KR',{hour12:false})}</b></div></div></div>}
+        {activeTrade&&<div className={s.activeTrade}><div className={s.activeTradeTop}><strong>{activeTrade.symbol} · {activeTrade.direction}</strong><span className={s.tradeStatus}>{remainingMs<=0?'정산 확인 중':'진행 중'}</span></div><div className={s.settlementTime}><span>포지션 방향 확정까지</span><b>{mm}:{ss}</b><em>{activeTrade.duration_minutes}분 거래 · 확정 예정 {new Date(activeTrade.expires_at).toLocaleTimeString('ko-KR',{hour12:false})}</em></div><div className={s.tradeMeta}><div><span>시작가</span><b>{fmt(activeTrade.start_price,8)}</b></div><div><span>주문금액</span><b>{displayMoney(activeTrade.amount)} {currencyUnit}</b></div><div><span>거래시간</span><b>{activeTrade.duration_minutes}분</b></div><div><span>체결시간</span><b>{new Date(activeTrade.starts_at).toLocaleTimeString('ko-KR',{hour12:false})}</b></div></div></div>}
       </section>
     </section>
 
@@ -216,7 +230,7 @@ export default function CfdTimedTradingClient(){
 
     <section className={`${s.panel} ${s.bottomPanel}`}>
       <div className={s.bottomTabs}><button className={bottomTab==='active'?s.activeTab:''} onClick={()=>setBottomTab('active')}>진행 중 거래</button><button className={bottomTab==='history'?s.activeTab:''} onClick={()=>setBottomTab('history')}>거래 내역</button></div>
-      {bottomTab==='active'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>종목</th><th>방향</th><th>거래시간</th><th>주문금액</th><th>시작가</th><th>방향 확정까지</th><th>상태</th></tr></thead><tbody>{activeTrade?<tr><td data-label="종목">{activeTrade.symbol}</td><td data-label="방향">{activeTrade.direction}</td><td data-label="거래시간">{activeTrade.duration_minutes}분</td><td data-label="주문금액">{fmt(activeTrade.amount)}</td><td data-label="시작가">{fmt(activeTrade.start_price,8)}</td><td data-label="방향 확정까지"><b>{mm}:{ss}</b><small style={{display:'block',marginTop:3,color:'#68777d'}}>{new Date(activeTrade.expires_at).toLocaleTimeString('ko-KR',{hour12:false})}</small></td><td data-label="상태">진행 중</td></tr>:<tr><td colSpan={7} className={s.empty}>진행 중인 거래가 없습니다.</td></tr>}</tbody></table></div>}
+      {bottomTab==='active'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>종목</th><th>방향</th><th>거래시간</th><th>주문금액</th><th>시작가</th><th>방향 확정까지</th><th>상태</th></tr></thead><tbody>{activeTrade?<tr><td data-label="종목">{activeTrade.symbol}</td><td data-label="방향">{activeTrade.direction}</td><td data-label="거래시간">{activeTrade.duration_minutes}분</td><td data-label="주문금액">{fmt(activeTrade.amount)}</td><td data-label="시작가">{fmt(activeTrade.start_price,8)}</td><td data-label="방향 확정까지"><b>{mm}:{ss}</b><small style={{display:'block',marginTop:3,color:'#68777d'}}>{new Date(activeTrade.expires_at).toLocaleTimeString('ko-KR',{hour12:false})}</small></td><td data-label="상태">{remainingMs<=0?'정산 확인 중':'진행 중'}</td></tr>:<tr><td colSpan={7} className={s.empty}>진행 중인 거래가 없습니다.</td></tr>}</tbody></table></div>}
       {bottomTab==='history'&&<div className={s.tableWrap}><table className={s.table}><thead><tr><th>시작시간</th><th>종목</th><th>방향</th><th>기간</th><th>금액</th><th>시작가</th><th>결과</th><th>지급금액</th><th>순손익</th><th>공유</th></tr></thead><tbody>{settled.length?settled.map(t=><tr key={t.id}><td data-label="시작시간">{new Date(t.starts_at).toLocaleString()}</td><td data-label="종목">{t.symbol}</td><td data-label="방향">{t.direction}</td><td data-label="기간">{t.duration_minutes}분</td><td data-label="금액">{displayMoney(t.amount)} {currencyUnit}</td><td data-label="시작가">{fmt(t.start_price,8)}</td><td data-label="결과" className={resultClass(t.result)}>{t.result==='VOID'?'무효':t.result}</td><td data-label="지급금액">{displayMoney(t.payout_amount)} {currencyUnit}</td><td data-label="순손익" className={(t.net_profit||0)>=0?s.win:s.loss}>{displayMoney(t.net_profit)} {currencyUnit}</td><td data-label="공유"><TradeShareButton trade={{market:"CFD",symbol:t.symbol,side:t.direction,roi:Number(t.amount)>0?Number(t.net_profit||0)/Number(t.amount)*100:0,entryPrice:Number(t.start_price||0),exitPrice:Number(t.end_price??t.start_price??0),pnl:Number(t.net_profit||0)*(displayCurrency==="KRW"&&krwRate>0?krwRate:1),stake:Number(t.amount||0)*(displayCurrency==="KRW"&&krwRate>0?krwRate:1),payout:Number(t.payout_amount||0)*(displayCurrency==="KRW"&&krwRate>0?krwRate:1),currency:displayCurrency==="KRW"&&krwRate>0?"KRW":"USDT",durationLabel:t.duration_minutes+"분",resultLabel:t.result,status:t.result||t.status,time:t.settled_at||t.starts_at}}/></td></tr>):<tr><td colSpan={10} className={s.empty}>정산된 거래가 없습니다.</td></tr>}</tbody></table></div>}
     </section>
 
