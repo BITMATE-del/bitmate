@@ -39,8 +39,13 @@ function drawText(
 function loadImage(src:string){
   return new Promise<HTMLImageElement>((resolve,reject)=>{
     const img=new Image();
-    img.onload=()=>resolve(img);
-    img.onerror=reject;
+    img.onload=()=>{
+      if(img.naturalWidth!==1080||img.naturalHeight!==1350){
+        reject(new Error('invalid_share_master_dimensions'));return;
+      }
+      resolve(img);
+    };
+    img.onerror=()=>reject(new Error('share_master_load_failed: '+src));
     img.src=src;
   });
 }
@@ -136,11 +141,17 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   drawText(ctx,fmt(input.exitPrice,4),982,895,31,800,'#ffffff','right');
   drawText(ctx,input.margin==null?'—':fmt(Number(input.margin),2)+' USDT',982,982,31,800,'#ffffff','right');
 
+  // Status badge is generated cleanly within a deliberately empty panel area.
+  ctx.save();
+  rounded(ctx,789,1040,188,53,22);
+  ctx.fillStyle='#274811';ctx.fill();
+  ctx.strokeStyle='#9dd927';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.restore();
   const status=String(input.status||'CLOSED').toUpperCase();
   drawText(
     ctx,
     status,
-    882,1070,
+    883,1067,
     25,900,
     status==='CLOSED'?'#b8ff34':'#ffffff',
     'center'
