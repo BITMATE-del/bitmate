@@ -61,17 +61,19 @@ function rounded(ctx:CanvasRenderingContext2D,x:number,y:number,w:number,h:numbe
   ctx.closePath();
 }
 
-export async function downloadTradeShareCard(input:TradeShareCardInput){
+export async function buildTradeShareCardPreview(input:TradeShareCardInput):Promise<{url:string;filename:string}>{
   const canvas=document.createElement('canvas');
   canvas.width=W;
   canvas.height=H;
   const ctx=canvas.getContext('2d');
-  if(!ctx)return;
+  if(!ctx)throw new Error('이미지 생성 기능을 사용할 수 없습니다.');
 
   // Clean master has no dynamic trade values baked into the image.
   // Do not add masking/cover rectangles over symbol, ROI, PNL, prices or date.
-  const master=await loadImage('/assets/share/futures-share-master-v4.jpg');
+  const master=await loadImage('/assets/share/futures-master-v5.svg');
   ctx.drawImage(master,0,0,W,H);
+  const px=ctx.getImageData(10,10,1,1).data;
+  if(px[3]!==255||px[0]>95||px[1]>95||px[2]>95)throw new Error('공유 이미지 배경을 정상적으로 읽지 못했습니다.');
 
   const isLong=/LONG|BUY/i.test(String(input.side));
   const roi=Number(input.roi)||0;
@@ -157,7 +159,8 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
     'center'
   );
 
-  const time=input.time?new Date(input.time):new Date();
+  const parsedTime=input.time?new Date(input.time):new Date();
+  const time=Number.isNaN(parsedTime.getTime())?new Date():parsedTime;
   const ts=time.toLocaleString('ko-KR',{
     year:'numeric',month:'2-digit',day:'2-digit',
     hour:'2-digit',minute:'2-digit',hour12:false
@@ -165,14 +168,6 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
   drawText(ctx,ts,995,1260,22,500,'#a6b0b4','right');
 
   const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/png',1));
-  if(!blob)return;
-
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');
-  a.href=url;
-  a.download='BITMATE-'+input.market+'-'+input.symbol+'-'+Date.now()+'.png';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),1200);
+  if(!blob)throw new Error('공유 이미지 파일 생성에 실패했습니다.');
+  return {url:URL.createObjectURL(blob),filename:'BITMATE-'+input.market+'-'+input.symbol+'-'+Date.now()+'.png'};
 }
