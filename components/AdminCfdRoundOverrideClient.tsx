@@ -1,14 +1,26 @@
 'use client';
 
-import {useEffect,useMemo,useState} from 'react';
+import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import {siteConfirm} from './SiteDialog';
 import s from './CfdTrading.module.css';
+import o from './AdminCfdRoundOverride.module.css';
 
 type Draft={value:string;reason:string};
 
 export default function AdminCfdRoundOverrideClient(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
+  const topScroll=useRef<HTMLDivElement>(null);
+  const tableScroll=useRef<HTMLDivElement>(null);
+  const syncing=useRef(false);
+  function syncScroll(source:'top'|'table'){
+    if(syncing.current)return;
+    syncing.current=true;
+    const from=source==='top'?topScroll.current:tableScroll.current;
+    const to=source==='top'?tableScroll.current:topScroll.current;
+    if(from&&to)to.scrollLeft=from.scrollLeft;
+    syncing.current=false;
+  }
   const [admin,setAdmin]=useState<boolean|null>(null);
   const [rows,setRows]=useState<any[]>([]);
   const [drafts,setDrafts]=useState<Record<string,Draft>>({});
@@ -67,12 +79,14 @@ export default function AdminCfdRoundOverrideClient(){
     <section className={`${s.shell} ${s.section}`}>
       <div className={s.panel}>
         <div className={s.panelHead}><b>회차 목록</b><span>최근 {rows.length}건</span></div>
-        <div className={s.tableWrap}>
+        <div className={o.scrollGuide}>좌우로 이동하여 오른쪽의 ‘즉시 적용’ 버튼을 확인하세요.</div>
+        <div className={o.topScrollbar} ref={topScroll} onScroll={()=>syncScroll('top')} aria-label="CFD 판정보정 표 가로 스크롤" role="region" tabIndex={0}><div style={{width:1750,height:1}} /></div>
+        <div className={`${s.tableWrap} ${o.tableScroll}`} ref={tableScroll} onScroll={()=>syncScroll('table')}>
           <table className={s.table} style={{minWidth:1750}}>
             <thead><tr>
               <th>회차 ID</th><th>회원</th><th>종목</th><th>상태</th><th>시작 시간</th><th>종료 시간</th>
               <th>시작 기준가격</th><th>종료 기준가격</th><th>자동 판정</th><th>관리자 보정값</th>
-              <th>최종 적용 결과</th><th>보정 사유</th><th>처리 관리자</th><th>처리 시간</th><th>적용</th>
+              <th>최종 적용 결과</th><th>보정 사유</th><th>처리 관리자</th><th>처리 시간</th><th className={o.actionCell}>적용</th>
             </tr></thead>
             <tbody>
               {rows.length?rows.map(t=>{
@@ -106,7 +120,7 @@ export default function AdminCfdRoundOverrideClient(){
                     :(t.override_reason||'—')}</td>
                   <td>{t.override_admin_email||'—'}</td>
                   <td>{t.override_at?new Date(t.override_at).toLocaleString('ko-KR'):'—'}</td>
-                  <td>{t.status==='ACTIVE'
+                  <td className={o.actionCell}>{t.status==='ACTIVE'
                     ?<button className={s.ghost} disabled={busyId===t.id} onClick={()=>apply(t)}>{busyId===t.id?'적용 중':'즉시 적용'}</button>
                     :<span>확정</span>}</td>
                 </tr>
