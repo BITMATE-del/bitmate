@@ -10,7 +10,7 @@ import {StatusBar,Style} from '@capacitor/status-bar';
 import {Browser} from '@capacitor/browser';
 import {siteConfirm} from './SiteDialog';
 
-const INTERNAL_HOSTS=new Set(['bitmates.vercel.app']);
+const INTERNAL_HOSTS=new Set(['bitmate.co.kr','www.bitmate.co.kr','bitmates.vercel.app']);
 
 function nativePathFromUrl(raw:string){
   try{
