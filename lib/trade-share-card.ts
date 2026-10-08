@@ -110,7 +110,7 @@ export async function buildTradeShareCardPreview(input:TradeShareCardInput):Prom
   drawText(
     ctx,
     sideLabel,
-    207,316,
+    206,306,
     27,900,
     isLong?'#63efaa':'#ff6d87',
     'center'
