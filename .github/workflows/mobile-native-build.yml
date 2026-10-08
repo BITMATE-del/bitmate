@@ -24,6 +24,8 @@ jobs:
           cache: npm
           cache-dependency-path: package.json
       - run: npm install --no-audit --no-fund
+      - name: Install image processor for official PNG native assets
+        run: npm install --no-save --no-audit --no-fund sharp
       - name: Generate native projects
         shell: bash
         run: |
@@ -31,7 +33,7 @@ jobs:
           test -d ios || npx cap add ios
           npx cap sync
           node scripts/prepare-capacitor-native.mjs
-          npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
+          npx @capacitor/assets generate --iconBackgroundColor '#090B0D' --iconBackgroundColorDark '#090B0D' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
       - name: Commit generated Android and iOS projects
         if: ${{ !contains(github.event.head_commit.message || '', '[native-generated]') }}
         shell: bash
