@@ -1,11 +1,23 @@
 import fs from 'node:fs';
 
+// Preserve the exact approved BITMATE PNGs. Never recreate the mark as vector/text.
 const officialSymbol='public/assets/brand/bitmate-symbol.png';
-if(fs.existsSync(officialSymbol)){
-  fs.mkdirSync('assets',{recursive:true});
-  fs.copyFileSync(officialSymbol,'assets/icon.png');
-  fs.copyFileSync(officialSymbol,'assets/splash.png');
+const officialHorizontal='public/assets/brand/bitmate-logo-horizontal.png';
+if(!fs.existsSync(officialSymbol)||!fs.existsSync(officialHorizontal)){
+  throw new Error('Official BITMATE PNG assets are required for native builds.');
 }
+const {default:sharp}=await import('sharp');
+fs.mkdirSync('assets',{recursive:true});
+const bg={r:9,g:11,b:13,alpha:1};
+// Android/iOS launcher: official symbol, padded inside a square rather than stretched.
+const symbol=await sharp(officialSymbol).trim().resize(720,720,{fit:'contain',background:{r:0,g:0,b:0,alpha:0}}).png().toBuffer();
+await sharp({create:{width:1024,height:1024,channels:4,background:bg}})
+  .composite([{input:symbol,gravity:'centre'}]).png().toFile('assets/icon.png');
+// Splash: official HORIZONTAL logo on a full dark canvas. Never use the symbol-only icon here.
+const horizontal=await sharp(officialHorizontal).trim()
+  .resize({width:900,height:360,fit:'inside',withoutEnlargement:true}).png().toBuffer();
+await sharp({create:{width:2732,height:2732,channels:4,background:bg}})
+  .composite([{input:horizontal,gravity:'centre'}]).png().toFile('assets/splash.png');
 
 function patchFile(path,fn){
   if(!fs.existsSync(path))return false;
@@ -16,7 +28,7 @@ function patchFile(path,fn){
 }
 
 patchFile('android/app/build.gradle',s=>s
-  .replace(/versionCode\s+\d+/, 'versionCode 2')
+  .replace(/versionCode\s+\d+/, 'versionCode 3')
   .replace(/versionName\s*=\s*"[^"]+"/,'versionName = "1.0.1"')
   .replace(/versionName\s+"[^"]+"/,'versionName "1.0.1"')
 );
@@ -56,7 +68,7 @@ patchFile('ios/App/App/Info.plist',s=>{
 });
 
 patchFile('ios/App/App.xcodeproj/project.pbxproj',s=>
-  s.replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 2;').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 1.0.1;')
+  s.replace(/CURRENT_PROJECT_VERSION = [^;]+;/g,'CURRENT_PROJECT_VERSION = 3;').replace(/MARKETING_VERSION = [^;]+;/g,'MARKETING_VERSION = 1.0.2;')
 );
 
 if(fs.existsSync('android')){
