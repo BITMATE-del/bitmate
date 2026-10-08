@@ -100,8 +100,8 @@ export async function buildCfdTradeShareCardPreview(input:TradeShareCardInput):P
  ctx.restore();
  text(ctx,'지급금액',100,808,30,'#b6c8c1');
  fitted(ctx,money(payout,unit)+' '+unit,978,808,47,550,'#fff','right');
- const rows=[['거래금액',money(stake,unit)+' '+unit],['시작가',price(input.entryPrice)],['종료가',price(input.exitPrice)],['거래방향',direction]];
- rows.forEach((row,i)=>{const y=939+i*71;text(ctx,row[0],108,y,27,'#b6c8c1');fitted(ctx,row[1],978,y,32,550,i===3?p.accent:'#fff','right')});
+ const rows=[['거래금액',money(stake,unit)+' '+unit],['거래방향',direction]];
+ rows.forEach((row,i)=>{const y=975+i*116;text(ctx,row[0],108,y,27,'#b6c8c1');fitted(ctx,row[1],978,y,32,550,i===1?p.accent:'#fff','right')});
  text(ctx,'BITMATE  |  CFD RESULT',68,1290,28,'#edf5f0',800);
  const date=input.time?new Date(input.time):new Date();
  if(!Number.isNaN(date.getTime()))text(ctx,date.toLocaleString('ko-KR',{hour12:false}),1009,1290,21,'#9aafa5',500,'right');
