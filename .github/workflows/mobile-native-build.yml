@@ -108,7 +108,8 @@ jobs:
           mkdir -p public/downloads
           cp "$RUNNER_TEMP/bitmate-latest.apk" public/downloads/bitmate-latest.apk
           sha256sum public/downloads/bitmate-latest.apk | awk '{print $1}' > public/downloads/bitmate-latest.apk.sha256
-          git add public/downloads/bitmate-latest.apk public/downloads/bitmate-latest.apk.sha256
+          git add -f public/downloads/bitmate-latest.apk
+          git add public/downloads/bitmate-latest.apk.sha256
           if git diff --cached --quiet; then
             echo "Published APK is already current."
           else
