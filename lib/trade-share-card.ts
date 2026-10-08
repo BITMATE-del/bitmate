@@ -1,5 +1,6 @@
 export type TradeShareCardInput={
   market:'FUTURES'|'CFD';
+  positionId?:string;
   symbol:string;
   side:string;
   leverage?:number|null;
