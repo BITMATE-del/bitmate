@@ -34,19 +34,6 @@ jobs:
           npx cap sync
           node scripts/prepare-capacitor-native.mjs
           npx @capacitor/assets generate --iconBackgroundColor '#090B0D' --iconBackgroundColorDark '#090B0D' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
-      - name: Commit generated Android and iOS projects
-        if: ${{ !contains(github.event.head_commit.message || '', '[native-generated]') }}
-        shell: bash
-        run: |
-          git config user.name "BITMATE Native CI"
-          git config user.email "actions@users.noreply.github.com"
-          git add android ios
-          if git diff --cached --quiet; then
-            echo "Native projects already synchronized."
-          else
-            git commit -m "[native-generated] Sync Capacitor Android and iOS projects"
-            git push origin HEAD:mobile-capacitor
-          fi
 
   web-build:
     needs: bootstrap-native
@@ -89,6 +76,10 @@ jobs:
           "$SDKMANAGER" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
       - run: npm install --no-audit --no-fund
       - run: npx cap sync android
+      - name: Generate official BITMATE native assets and version
+        run: |
+          node scripts/prepare-capacitor-native.mjs
+          npx @capacitor/assets generate --iconBackgroundColor '#090B0D' --iconBackgroundColorDark '#090B0D' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
       - name: Build Android debug APK
         working-directory: android
         run: ./gradlew assembleDebug
@@ -153,6 +144,10 @@ jobs:
           cache-dependency-path: package.json
       - run: npm install --no-audit --no-fund
       - run: npx cap sync ios
+      - name: Generate official BITMATE native assets
+        run: |
+          node scripts/prepare-capacitor-native.mjs
+          npx @capacitor/assets generate --iconBackgroundColor '#090B0D' --iconBackgroundColorDark '#090B0D' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
       - name: Build iOS simulator without signing
         shell: bash
         run: |
