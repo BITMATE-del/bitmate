@@ -65,7 +65,7 @@ export async function downloadTradeShareCard(input:TradeShareCardInput){
 
   // Clean master has no dynamic trade values baked into the image.
   // Do not add masking/cover rectangles over symbol, ROI, PNL, prices or date.
-  const master=await loadImage('/assets/share/futures-share-master.webp');
+  const master=await loadImage('/assets/share/futures-share-master-v4.jpg');
   ctx.drawImage(master,0,0,W,H);
 
   const isLong=/LONG|BUY/i.test(String(input.side));
