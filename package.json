@@ -10,7 +10,7 @@
     "cap:sync": "npx cap sync",
     "cap:android": "npx cap open android",
     "cap:ios": "npx cap open ios",
-    "cap:assets": "node scripts/prepare-capacitor-native.mjs && npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'",
+    "cap:assets": "node scripts/prepare-capacitor-native.mjs && npx @capacitor/assets generate --iconBackgroundColor '#090B0D' --iconBackgroundColorDark '#090B0D' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'",
     "android:debug": "cd android && ./gradlew assembleDebug",
     "android:bundle": "cd android && ./gradlew bundleRelease"
   },
@@ -38,6 +38,7 @@
     "@types/react": "^19.0.0",
     "typescript": "^5.6.0",
     "@capacitor/cli": "8.5.2",
-    "@capacitor/assets": "3.0.5"
+    "@capacitor/assets": "3.0.5",
+    "sharp": "^0.34.4"
   }
 }
