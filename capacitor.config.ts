@@ -2,7 +2,7 @@ import type {CapacitorConfig} from '@capacitor/cli';
 import {KeyboardResize,KeyboardStyle} from '@capacitor/keyboard';
 
 const appId=process.env.BITMATE_APP_ID||'com.bitmate.app';
-const serverUrl=process.env.BITMATE_APP_SERVER_URL||'https://bitmates.vercel.app';
+const serverUrl=process.env.BITMATE_APP_SERVER_URL||'https://bitmate.co.kr';
 
 const config:CapacitorConfig={
   appId,
@@ -12,7 +12,7 @@ const config:CapacitorConfig={
   server:{
     url:serverUrl,
     cleartext:false,
-    allowNavigation:['bitmates.vercel.app']
+    allowNavigation:['bitmate.co.kr','www.bitmate.co.kr','bitmates.vercel.app']
   },
   plugins:{
     SplashScreen:{
