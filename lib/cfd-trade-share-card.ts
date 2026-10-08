@@ -48,18 +48,15 @@ function masterSvg(p:typeof palettes[Result]){
   <path d="M805 242 830 477 887 404 912 214Z" fill="${p.dark}" opacity=".55"/>
   <path d="M805 242 786 477 723 404 697 214Z" fill="${p.glow}" opacity=".34"/>
   <path d="M786 477 830 477 828 532 858 558 748 558 783 532Z" fill="url(#metal)" stroke="${p.bright}" stroke-width="4"/>
-  <path d="M750 556 855 556 890 585 713 585Z" fill="url(#glass)" stroke="${p.accent}" stroke-width="4"/>
-  <path d="M707 584 897 584 922 629 688 629Z" fill="url(#metal)" stroke="${p.edge}" stroke-width="5"/>
+  <path d="M750 540 855 540 885 561 719 561Z" fill="url(#glass)" stroke="${p.accent}" stroke-width="4"/>
+  <path d="M722 561 882 561 903 588 702 588Z" fill="url(#metal)" stroke="${p.edge}" stroke-width="5"/>
   <path d="M728 177 805 242 879 177M805 242 805 453" stroke="${p.bright}" stroke-width="3" opacity=".68" fill="none"/>
  </g>
- <ellipse cx="800" cy="643" rx="265" ry="46" fill="${p.glow}" opacity=".38" filter="url(#blur)"/>
- <path d="M480 657 601 594 679 618 745 587 853 665 966 610 1080 657V751H480Z" fill="#060b0c" stroke="${p.edge}" stroke-opacity=".28"/>
- <path d="M0 741H1080" stroke="${p.edge}" stroke-opacity=".21" stroke-width="3"/>
  <rect x="58" y="750" width="964" height="116" rx="22" fill="url(#panel)" stroke="${p.edge}" stroke-opacity=".55" stroke-width="2"/>
- <rect x="58" y="900" width="964" height="285" rx="22" fill="url(#panel)" stroke="${p.edge}" stroke-opacity=".42" stroke-width="2"/>
- <path d="M92 973H987M92 1044H987M92 1115H987" stroke="#405151" stroke-width="2" opacity=".65"/>
- <path d="M65 1228H1018" stroke="#344b45" stroke-width="2"/>
- <path d="M65 1228H412" stroke="${p.accent}" stroke-width="5"/>
+ <rect x="58" y="905" width="964" height="202" rx="22" fill="url(#panel)" stroke="${p.edge}" stroke-opacity=".42" stroke-width="2"/>
+ <path d="M92 1007H987" stroke="#405151" stroke-width="2" opacity=".65"/>
+ <path d="M65 1206H1018" stroke="#344b45" stroke-width="2"/>
+ <path d="M65 1206H412" stroke="${p.accent}" stroke-width="5"/>
  <g fill="${p.accent}" opacity=".67"><circle cx="504" cy="155" r="3"/><circle cx="589" cy="275" r="2"/><circle cx="985" cy="520" r="4"/><circle cx="582" cy="590" r="2"/></g>
  </svg>`;
 }
@@ -95,16 +92,16 @@ export async function buildCfdTradeShareCardPreview(input:TradeShareCardInput):P
  text(ctx,result,68,389,76,p.accent,900);
  text(ctx,resultText,68,453,35,'#e3ede7',800);
  text(ctx,moneyTitle,68,551,29,'#afc1b8');
- ctx.save();ctx.shadowColor=p.glow;ctx.shadowBlur=18;
+ ctx.save();ctx.shadowColor=p.glow;ctx.shadowBlur=7;
  fitted(ctx,(display>0?'+':'')+money(display,unit)+' '+unit,68,640,85,944,p.accent);
  ctx.restore();
  text(ctx,'지급금액',100,808,30,'#b6c8c1');
  fitted(ctx,money(payout,unit)+' '+unit,978,808,47,550,'#fff','right');
  const rows=[['거래금액',money(stake,unit)+' '+unit],['거래방향',direction]];
- rows.forEach((row,i)=>{const y=975+i*116;text(ctx,row[0],108,y,27,'#b6c8c1');fitted(ctx,row[1],978,y,32,550,i===1?p.accent:'#fff','right')});
- text(ctx,'BITMATE  |  CFD RESULT',68,1290,28,'#edf5f0',800);
+ rows.forEach((row,i)=>{const y=957+i*101;text(ctx,row[0],108,y,27,'#b6c8c1');fitted(ctx,row[1],978,y,32,550,i===1?p.accent:'#fff','right')});
+ text(ctx,'BITMATE  |  CFD RESULT',68,1267,28,'#edf5f0',800);
  const date=input.time?new Date(input.time):new Date();
- if(!Number.isNaN(date.getTime()))text(ctx,date.toLocaleString('ko-KR',{hour12:false}),1009,1290,21,'#9aafa5',500,'right');
+ if(!Number.isNaN(date.getTime()))text(ctx,date.toLocaleString('ko-KR',{hour12:false}),1009,1267,21,'#9aafa5',500,'right');
  const blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/png',1));
  if(!blob)throw new Error('CFD 공유 이미지 생성에 실패했습니다.');
  return {url:URL.createObjectURL(blob),filename:'BITMATE-CFD-'+input.symbol+'-'+Date.now()+'.png'};
