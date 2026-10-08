@@ -1,3 +1,4 @@
+import AppDownloadButton from '@/components/AppDownloadButton';
 import MarketBoard from '@/components/MarketBoard';
 import HeroArtwork from '@/components/HeroArtwork';
 import UiIcon,{type UiIconName} from '@/components/UiIcon';
@@ -27,7 +28,7 @@ export default function Home(){
       <div className="xtHeroCopy"><div className="xtEyebrow"><span/> DIGITAL ASSET EXPERIENCE</div><h1>Explore markets.<br/>Trade with clarity.</h1><p>BITMATE는 시장 확인부터 주문, 전략, 자산 관리까지 끊김 없이 이어지는 디지털자산 거래 경험을 지향합니다.</p>
       <a href="#campaigns" style={{display:'inline-flex',alignItems:'center',gap:9,marginTop:28,fontSize:15,fontWeight:800,color:'#f5f6f7'}}><span aria-hidden="true" style={{width:28,height:28,borderRadius:8,display:'grid',placeItems:'center',background:'rgba(185,255,49,.08)',color:'#b9ff31'}}><UiIcon name="gift" size={16}/></span><span>신규 사용자는 <b style={{color:'#b9ff31'}}>이벤트를 확인하세요</b></span></a>
       <div style={{display:'flex',maxWidth:570,marginTop:16,border:'1px solid #34393d',borderRadius:18,padding:5,background:'#101315'}}><div style={{flex:1,display:'flex',alignItems:'center',padding:'0 16px',color:'#777f84',fontSize:14}}>전화번호/이메일</div><a href="/signup" style={{minWidth:132,height:48,borderRadius:14,background:'#f5f6f7',color:'#111',display:'inline-flex',alignItems:'center',justifyContent:'center',fontWeight:800}}>회원 가입</a></div>
-      <div style={{display:'flex',alignItems:'center',gap:12,marginTop:18}}><a href="/downloads/bitmate-latest.apk" download aria-label="BITMATE 앱 다운로드" title="BITMATE Android APK 다운로드" style={{width:44,height:44,border:'1px solid #34393d',borderRadius:'50%',background:'#111416',color:'#fff',display:'grid',placeItems:'center'}}><UiIcon name="download" size={19}/></a></div>
+      <AppDownloadButton/>
       <div className="trustChips"><span><UiIcon name="verification" size={14}/> 실시간 시세</span><span><UiIcon name="security" size={14}/> 실시간 자산 관리</span><span><UiIcon name="insurance" size={14}/> 계정 보안</span></div></div>
       <HeroArtwork/>
     </div></section>
