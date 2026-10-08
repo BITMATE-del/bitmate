@@ -90,19 +90,6 @@ export async function buildTradeShareCardPreview(input:TradeShareCardInput):Prom
   const positive=roi>=0;
   const accent=positive?'#63efaa':'#ff6d87';
 
-  // CFD shares the same fixed artwork footprint; only the fixed market label changes.
-  if(input.market==='CFD'){
-    ctx.save();
-    const g=ctx.createLinearGradient(790,42,1030,100);
-    g.addColorStop(0,'rgba(5,14,7,.98)');
-    g.addColorStop(1,'rgba(10,26,8,.98)');
-    ctx.fillStyle=g;
-    rounded(ctx,785,40,250,62,12);
-    ctx.fill();
-    ctx.restore();
-    drawText(ctx,'CFD',1005,72,28,800,'#c8d0d4','right');
-  }
-
   // Empty symbol slot from the clean master.
   drawText(
     ctx,
