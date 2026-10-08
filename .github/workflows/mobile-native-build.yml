@@ -92,17 +92,38 @@ jobs:
       - name: Build Android debug APK
         working-directory: android
         run: ./gradlew assembleDebug
-      - name: Build Android release AAB (unsigned until signing is configured)
-        working-directory: android
-        run: ./gradlew bundleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: bitmate-android-debug-apk
+          name: bitmate-android-debug-apk-internal-only
           path: android/app/build/outputs/apk/debug/app-debug.apk
-      - name: Publish latest APK to main for website download
+      - name: Configure official release signing
+        shell: bash
+        env:
+          BITMATE_RELEASE_KEYSTORE_BASE64: ${{ secrets.BITMATE_RELEASE_KEYSTORE_BASE64 }}
+          BITMATE_RELEASE_STORE_PASSWORD: ${{ secrets.BITMATE_RELEASE_STORE_PASSWORD }}
+          BITMATE_RELEASE_KEY_ALIAS: ${{ secrets.BITMATE_RELEASE_KEY_ALIAS }}
+          BITMATE_RELEASE_KEY_PASSWORD: ${{ secrets.BITMATE_RELEASE_KEY_PASSWORD }}
+        run: |
+          if [ -z "$BITMATE_RELEASE_KEYSTORE_BASE64" ] || [ -z "$BITMATE_RELEASE_STORE_PASSWORD" ] || [ -z "$BITMATE_RELEASE_KEY_ALIAS" ] || [ -z "$BITMATE_RELEASE_KEY_PASSWORD" ]; then
+            echo 'Release signing credentials not configured; no APK will be published.'
+            exit 0
+          fi
+          echo "$BITMATE_RELEASE_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/bitmate-release.jks"
+          echo "BITMATE_SIGNING_READY=true" >> "$GITHUB_ENV"
+      - name: Build signed release APK
+        if: ${{ env.BITMATE_SIGNING_READY == 'true' }}
+        working-directory: android
+        env:
+          BITMATE_KEYSTORE_FILE: ${{ runner.temp }}/bitmate-release.jks
+          BITMATE_STORE_PASSWORD: ${{ secrets.BITMATE_RELEASE_STORE_PASSWORD }}
+          BITMATE_KEY_ALIAS: ${{ secrets.BITMATE_RELEASE_KEY_ALIAS }}
+          BITMATE_KEY_PASSWORD: ${{ secrets.BITMATE_RELEASE_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease
+      - name: Publish signed APK only to website
+        if: ${{ env.BITMATE_SIGNING_READY == 'true' }}
         shell: bash
         run: |
-          cp android/app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/bitmate-latest.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/bitmate-latest.apk"
           git config user.name "BITMATE Native CI"
           git config user.email "actions@users.noreply.github.com"
           git fetch origin main
@@ -112,16 +133,10 @@ jobs:
           sha256sum public/downloads/bitmate-latest.apk | awk '{print $1}' > public/downloads/bitmate-latest.apk.sha256
           git add -f public/downloads/bitmate-latest.apk
           git add public/downloads/bitmate-latest.apk.sha256
-          if git diff --cached --quiet; then
-            echo "Published APK is already current."
-          else
-            git commit -m "[native-apk] Publish latest Android APK"
+          if ! git diff --cached --quiet; then
+            git commit -m "[native-apk] Publish signed Android APK"
             git push origin HEAD:main
           fi
-      - uses: actions/upload-artifact@v4
-        with:
-          name: bitmate-android-release-aab-unsigned
-          path: android/app/build/outputs/bundle/release/app-release.aab
 
   ios-build:
     needs: bootstrap-native
