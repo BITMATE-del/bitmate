@@ -11,7 +11,6 @@ permissions:
 
 jobs:
   bootstrap-native:
-    if: ${{ !contains(github.event.head_commit.message || '', '[native-generated]') }}
     runs-on: macos-latest
     timeout-minutes: 35
     steps:
@@ -34,6 +33,7 @@ jobs:
           node scripts/prepare-capacitor-native.mjs
           npx @capacitor/assets generate --iconBackgroundColor '#A7FF1A' --iconBackgroundColorDark '#A7FF1A' --splashBackgroundColor '#090B0D' --splashBackgroundColorDark '#090B0D'
       - name: Commit generated Android and iOS projects
+        if: ${{ !contains(github.event.head_commit.message || '', '[native-generated]') }}
         shell: bash
         run: |
           git config user.name "BITMATE Native CI"
