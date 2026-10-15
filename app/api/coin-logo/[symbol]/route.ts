@@ -25,6 +25,8 @@ export async function GET(_request:Request,{params}:{params:Promise<{symbol:stri
     if(data.symbol?.toUpperCase()!==ticker)return new NextResponse(null,{status:404});
     const image=data.image?.small||data.image?.thumb;
     if(!image||!image.startsWith('https://'))return new NextResponse(null,{status:404});
-    return NextResponse.redirect(image,302,{headers:{'Cache-Control':'public, max-age=3600, stale-while-revalidate=86400'}});
+    const redirect=NextResponse.redirect(image,302);
+    redirect.headers.set('Cache-Control','public, max-age=3600, stale-while-revalidate=86400');
+    return redirect;
   }catch{return new NextResponse(null,{status:404})}
 }
