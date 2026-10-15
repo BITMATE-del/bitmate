@@ -2,7 +2,7 @@ import {NextResponse} from 'next/server';
 
 // Only curated CoinGecko identities: ticker-only API search can resolve the WRONG token.
 const ids:Record<string,string>={
-  CAT:'simons-cat',OG:'og-fan-token',
+  CAT:'simons-cat',OG:'og-fan-token', '1000CHEEMS':'1000chems',
   PEPE:'pepe',SHIB:'shiba-inu',WIF:'dogwifcoin',BONK:'bonk',FLOKI:'floki',
   ENA:'ethena',WLD:'worldcoin-wld',ARB:'arbitrum',OP:'optimism',
   TIA:'celestia',INJ:'injective-protocol',SEI:'sei-network',
@@ -13,7 +13,7 @@ const ids:Record<string,string>={
 
 export async function GET(_request:Request,{params}:{params:Promise<{symbol:string}>}){
   const {symbol}=await params;
-  const ticker=symbol.toUpperCase().replace(/^1000(?=[A-Z])/,'');
+  const ticker=symbol.toUpperCase().replace(/^1000(?=[A-Z])/,symbol.toUpperCase()==='1000CHEEMS'?'1000':'');
   const id=ids[ticker];
   if(!id)return new NextResponse(null,{status:404});
   try{
