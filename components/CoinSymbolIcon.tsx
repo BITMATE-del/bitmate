@@ -29,7 +29,7 @@ export default function CoinSymbolIcon({symbol,className}:Props){
       ...(chainIds[base]?[`${trust}${chainIds[base]}/info/logo.png`]:[]),
       // Additional independent icon catalog; failure falls back to the ticker badge.
       `https://assets.coincap.io/assets/icons/${ticker}@2x.png`,
-      `/api/coin-logo/${encodeURIComponent(base)}`
+      `/api/coin-logo/${encodeURIComponent(raw==='1000CHEEMS'?raw:base)}`
     ];
     return [...new Set(paths)];
   },[base]);
