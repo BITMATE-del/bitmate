@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useRef,useState} from 'react';
 import UiIcon from './UiIcon';
+import CoinSymbolIcon from './CoinSymbolIcon';
 import s from './CfdMarketSelector.module.css';
 
 export type MarketFeedState='DISCONNECTED'|'CONNECTING'|'CONNECTED'|'RECONNECTING'|'ERROR';
@@ -169,7 +170,7 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets,
 
   return <div className={s.wrap} ref={rootRef}>
     <button type="button" className={s.trigger} onClick={()=>setOpen(v=>!v)} aria-expanded={open}>
-      <span className={s.assetBadge}>{(selected?.symbol||'BTCUSDT').replace(/USDT$/,'').slice(0,2)}</span>
+      <CoinSymbolIcon key={selected?.symbol||'BTCUSDT'} symbol={selected?.symbol||'BTCUSDT'} className={s.assetBadge}/>
       <span className={s.triggerText}><b>{selected?.display_name||'BTC/USDT'}</b><small>CFD 종목</small></span>
       <span className={`${s.chevron} ${open?s.open:''}`}><UiIcon name="chevronDown" size={14}/></span>
     </button>
@@ -190,7 +191,7 @@ export default function CfdMarketSelector({products,selected,onSelect,onMarkets,
           const p=productMap.get(m.symbol)!;
           const active=selected?.symbol===m.symbol;
           return <button type="button" className={`${s.row} ${active?s.selected:''}`} key={m.symbol} onClick={()=>{onSelect(p);setOpen(false);setQuery('')}}>
-            <span className={s.pair}><span className={s.coin}>{m.base.slice(0,2)}</span><span className={s.pairText}><b>{m.base}<i>/USDT</i></b><small>{m.quoteVolume>0?`${compact(m.quoteVolume)} USDT`:'시세 연결 확인 중'}</small></span></span>
+            <span className={s.pair}><CoinSymbolIcon key={m.base} symbol={m.base} className={s.coin}/><span className={s.pairText}><b>{m.base}<i>/USDT</i></b><small>{m.quoteVolume>0?`${compact(m.quoteVolume)} USDT`:'시세 연결 확인 중'}</small></span></span>
             <span className={s.price}>{priceFmt(m.lastPrice)}</span>
             <span className={`${s.change} ${m.changePct>=0?s.up:s.down}`}>{m.lastPrice>0?`${m.changePct>=0?'+':''}${m.changePct.toFixed(2)}%`:'—'}</span>
           </button>
