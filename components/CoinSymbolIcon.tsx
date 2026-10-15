@@ -27,8 +27,8 @@ export default function CoinSymbolIcon({symbol,className}:Props){
     const paths=[
       `${legacy}${ticker}.png`,
       ...(chainIds[base]?[`${trust}${chainIds[base]}/info/logo.png`]:[]),
-      // Additional symbol-based collection covers newer listed altcoins.
-      `https://cryptoicons.org/api/icon/${ticker}/200`
+      // Additional independent icon catalog; failure falls back to the ticker badge.
+      `https://assets.coincap.io/assets/icons/${ticker}@2x.png`
     ];
     return [...new Set(paths)];
   },[base]);
