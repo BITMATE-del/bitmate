@@ -35,3 +35,75 @@ main:has(a[href="/my-copy"]) > section:has(> div[class*="panel"]) {
     align-self: flex-start !important;
   }
 }
+
+
+/* BITMATE 2026: non-destructive shared UX polish; keep business screens intact. */
+:root{
+  --bm-accent:#b9ff31;
+  --bm-focus:rgba(185,255,49,.75);
+  --bm-stroke:#30383b;
+}
+:where(button,a,input,select,textarea):focus-visible{
+  outline:2px solid var(--bm-focus);
+  outline-offset:2px;
+}
+:where(button,a){-webkit-tap-highlight-color:rgba(185,255,49,.12)}
+:where(button,[role="button"]):not(:disabled){touch-action:manipulation}
+:where(button):disabled{cursor:not-allowed}
+:where(input,select,textarea){
+  min-width:0;
+  accent-color:var(--bm-accent);
+}
+:where(input,textarea)::placeholder{opacity:.88}
+:where(button,a,input,select,textarea){transition-property:background-color,border-color,color,box-shadow;transition-duration:.16s}
+:where(.xtHeader,.xtFooter){border-color:var(--bm-stroke)}
+.xtHeader nav>a:hover,.navDropButton:hover{color:#fff}
+.tradeDropdown,.navDropdown .tradeDropdown{
+  border-color:#333c3f;
+  box-shadow:0 22px 64px rgba(0,0,0,.55);
+}
+:where(.limeBtn,.headerBtn):focus-visible{outline-color:#e4ffab;outline-offset:3px}
+:where(.limeBtn):active{transform:translateY(1px)}
+/* Keep native tables scrollable instead of clipping right-side actions. */
+:where([class*="tableWrap"],[class*="TableWrap"]){
+  max-width:100%;
+  overscroll-behavior-x:contain;
+}
+:where([class*="tableWrap"],[class*="TableWrap"]) table{
+  font-variant-numeric:tabular-nums;
+}
+:where([class*="tableWrap"],[class*="TableWrap"]) :is(th,td){
+  vertical-align:middle;
+}
+/* Small screens: reachable controls, safe-area spacing, no forced horizontal page overflow. */
+@media(max-width:760px){
+  :where(input,select,textarea){font-size:max(16px,1em)}
+  .mobileBottomNav{
+    padding-bottom:env(safe-area-inset-bottom);
+    border-top:1px solid #30383b;
+    background:rgba(12,16,17,.97);
+    backdrop-filter:blur(18px);
+  }
+  .mobileBottomNav>a{
+    min-height:48px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+    border-radius:10px;
+  }
+  .mobileBottomNav>a.active{
+    color:var(--bm-accent);
+    background:rgba(185,255,49,.07);
+  }
+  .mobileBottomNav>a:focus-visible{outline-offset:-3px}
+  :where([class*="tableWrap"],[class*="TableWrap"]){
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  :where(button,a,input,select,textarea){transition:none!important}
+  :root{scroll-behavior:auto}
+}
