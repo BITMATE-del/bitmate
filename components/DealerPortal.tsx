@@ -114,8 +114,8 @@ export default function DealerPortal(){
  return <main className={s.page}>
   <header className={s.header}><div className={s.brand}><BrandLogo variant="horizontal" height={34}/><span>DEALER</span></div><div><b>{data.dealer.display_name||'총판 관리자'}</b><small>가입코드 {data.dealer.code}</small></div><Link href="/">사이트 보기</Link></header>
   <div className={s.shell}>
-   <TestAccountCreator/>
-   <section className={s.hero}><div><span>DEALER MANAGEMENT</span><h1>총판 관리센터</h1><p>본인의 가입코드 <b>{data.dealer.code}</b>로 가입된 회원만 관리할 수 있습니다.</p></div><div className={s.stats}><div><small>관리 회원</small><b>{data.members.length}</b></div><div><small>출금 대기</small><b>{data.withdrawals.filter(x=>['PENDING','REVIEW','APPROVED'].includes(x.status)).length}</b></div><div><small>대출 대기</small><b>{data.loans.filter(x=>x.status==='PENDING').length}</b></div></div></section>
+    <section className={s.hero}><div><span>DEALER MANAGEMENT</span><h1>총판 관리센터</h1><p>본인의 가입코드 <b>{data.dealer.code}</b>로 가입된 회원만 관리할 수 있습니다.</p></div><div className={s.stats}><div><small>관리 회원</small><b>{data.members.length}</b></div><div><small>출금 대기</small><b>{data.withdrawals.filter(x=>['PENDING','REVIEW','APPROVED'].includes(x.status)).length}</b></div><div><small>대출 대기</small><b>{data.loans.filter(x=>x.status==='PENDING').length}</b></div></div></section>
+   <TestAccountCreator onCreated={()=>void load()}/>
    <nav className={s.tabs}>
     {([['members','회원관리'],['wallet','입출금관리'],['loans','코인대출'],['cfd','CFD 판정보정'],['p2p','P2P 승인'],['settings','전용 주소 설정']] as [Tab,string][]).map(([k,l])=><button key={k} className={tab===k?s.active:''} onClick={()=>setTab(k)}>{l}</button>)}
    </nav>
