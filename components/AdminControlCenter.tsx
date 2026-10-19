@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon,{type UiIconName} from './UiIcon';
+import TestAccountCreator from './TestAccountCreator';
 import s from './AdminControlCenter.module.css';
 
 type Task={label:string;count:number;href:string;tone:'warn'|'bad'|'info'};
@@ -90,6 +91,7 @@ export default function AdminControlCenter(){
   return <main className={s.page}><div className={s.shell}>
     <section className={s.top}><div><div className={s.eyebrow}>BITMATE OPERATIONS</div><h1>오늘 처리해야 할 업무</h1><p>운영자가 가장 많이 사용하는 승인, 회원, 지갑, Loan 업무를 먼저 보여줍니다. 기존 관리자 기능과 URL은 그대로 유지됩니다.</p></div><div className={s.identity}><span>접속 관리자</span><b>{email||'—'}</b><small>{role.toUpperCase()}</small></div></section>
 
+    <TestAccountCreator/>
     <section className={s.taskSection}><div className={s.sectionTitle}><div><span>PRIORITY</span><h2>처리 필요</h2></div><small>30초마다 최신 상태 확인</small></div><div className={s.taskGrid}>{tasks.map(t=><Link key={t.label} href={t.href} className={`${s.taskCard} ${s[t.tone]}`}><span>{t.label}</span><strong>{t.count.toLocaleString()}건</strong><em>바로 처리 →</em></Link>)}</div></section>
 
     <section className={s.quickSection}><div className={s.sectionTitle}><div><span>QUICK ACTION</span><h2>빠른 작업</h2></div></div><div className={s.quickGrid}>
