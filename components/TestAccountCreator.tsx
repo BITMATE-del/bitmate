@@ -2,7 +2,7 @@
 import {useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 
-export default function TestAccountCreator(){
+export default function TestAccountCreator({onCreated}:{onCreated?:()=>void}){
  const supabase=createBrowserSupabase();
  const [email,setEmail]=useState('');
  const [password,setPassword]=useState('');
@@ -18,7 +18,7 @@ export default function TestAccountCreator(){
      const result=await response.json();
      if(!response.ok){setMessage(result.error||'발급에 실패했습니다.');return}
      setMessage('테스트 계정이 생성됐습니다. 이메일 인증 없이 로그인할 수 있습니다.');
-     setSuccess(true);setEmail('');setPassword('');
+     setSuccess(true);setEmail('');setPassword('');onCreated?.();
    }catch{setMessage('요청 중 오류가 발생했습니다.')}
    finally{setBusy(false)}
  }
