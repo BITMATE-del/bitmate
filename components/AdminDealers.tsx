@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 import s from './AdminDealers.module.css';
+import TestAccountCreator from './TestAccountCreator';
 
 type Dealer={id:string;code:string;owner_user_id:string;display_name:string;active:boolean;email:string;member_count:number;created_at:string};
 
@@ -38,6 +39,7 @@ export default function AdminDealers(){
  return <main className={s.page}>
   <section className={s.hero}><div><span>DEALER CONTROL</span><h1>총판 / 가입코드 관리</h1><p>회원에게 총판 코드를 부여하면 해당 계정에서 별도의 총판 관리페이지를 사용할 수 있습니다.</p></div></section>
 
+  <TestAccountCreator/>
   <section className={s.create}>
    <div><label>총판 회원 이메일<input value={email} onChange={e=>setEmail(e.target.value)} placeholder="dealer@example.com"/></label><label>가입코드<input value={code} onChange={e=>setCode(e.target.value.toUpperCase())} placeholder="예: SEOUL01"/></label><label>표시명<input value={name} onChange={e=>setName(e.target.value)} placeholder="예: 서울 1팀"/></label></div>
    <button disabled={busy} onClick={save}>{busy?'처리 중...':'코드 부여 / 갱신'}</button>
