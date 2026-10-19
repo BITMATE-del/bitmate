@@ -8,3 +8,5 @@
 .coreCard:hover{transform:translateY(-2px)}
 .secondaryLinks a{min-height:40px;display:inline-flex;align-items:center}
 @media(max-width:760px){.top{flex-direction:column}.identity{min-width:0;width:100%}.quickGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.actionBar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 18px;margin:14px 0 20px;border:1px solid #303d3f;border-radius:13px;background:#111a1c}.actionBar>div{display:grid;gap:4px}.actionBar strong{font-size:15px}.actionBar small{font-size:11px;color:#8f9fa4}.actionBar button{border:0;border-radius:9px;background:#b9ff31;padding:11px 16px;font-size:12px;font-weight:850;color:#111;cursor:pointer}.advancedToggle{width:100%;margin:16px 0 10px;text-align:left;background:#11181a;border:1px solid #303a3e;border-radius:11px;color:#b5c4c7;padding:15px 17px;font-size:13px;font-weight:750;cursor:pointer}.advancedToggle:hover{color:#fff;border-color:#9acf42}@media(max-width:660px){.actionBar{align-items:stretch;flex-direction:column}.actionBar button{width:100%}}
