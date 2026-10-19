@@ -6,6 +6,7 @@ import {createBrowserSupabase} from '@/lib/supabase-browser';
 import UiIcon from './UiIcon';
 import {siteAlert,siteConfirm,sitePrompt} from './SiteDialog';
 import s from './AdminOperations.module.css';
+import TestAccountCreator from './TestAccountCreator';
 
 type Balance={asset:string;available:number;locked:number};
 type UserRow={id:string;email:string|null;email_confirmed_at:string|null;created_at:string;last_sign_in_at:string|null;role:string|null;display_name:string|null;vip_level:string|null;kyc_status:string;frozen:boolean;banned_until:string|null;balances:Balance[]};
@@ -122,6 +123,7 @@ export default function AdminOperations(){
  const systemKeys=['VIRTUAL_TRADING_ENABLED','SPOT_VIRTUAL_ENABLED','FUTURES_VIRTUAL_ENABLED','CFD_VIRTUAL_ENABLED','AI_VIRTUAL_ENABLED','COPY_VIRTUAL_ENABLED','WITHDRAW_ENABLED'];
 
  return <main className={s.page}><div className={s.shell}>
+  <TestAccountCreator/>
   <header className={s.hero}><div><span>BITMATE ADMIN</span><h1>회원 · 자산 · 운영 관리</h1><p>회원 프로필, KYC, 계정 삭제 요청, DEMO 원장 조정과 시스템 운영 스위치를 한 곳에서 관리합니다. 모든 민감 변경은 관리자 로그에 남습니다.</p></div><div className={s.heroActions}><Link href="/admin">관리자 홈</Link><Link href="/account">사용자 자산화면</Link></div></header>
   <section className={s.stats}>
    <div><span>전체 회원</span><b>{data.stats?.users||0}</b></div>
