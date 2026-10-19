@@ -25,6 +25,8 @@ const coreLinks:CoreLink[]=[
 export default function AdminControlCenter(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const [allowed,setAllowed]=useState<boolean|null>(null);
+  const [showCreator,setShowCreator]=useState(false);
+  const [showAdvanced,setShowAdvanced]=useState(false);
   const [role,setRole]=useState('');
   const [email,setEmail]=useState('');
   const [loading,setLoading]=useState(true);
@@ -91,7 +93,9 @@ export default function AdminControlCenter(){
   return <main className={s.page}><div className={s.shell}>
     <section className={s.top}><div><div className={s.eyebrow}>BITMATE OPERATIONS</div><h1>오늘 처리해야 할 업무</h1><p>운영자가 가장 많이 사용하는 승인, 회원, 지갑, Loan 업무를 먼저 보여줍니다. 기존 관리자 기능과 URL은 그대로 유지됩니다.</p></div><div className={s.identity}><span>접속 관리자</span><b>{email||'—'}</b><small>{role.toUpperCase()}</small></div></section>
 
-    <TestAccountCreator/>
+    <div className={s.actionBar}><div><strong>빠른 관리</strong><small>회원 검색, 자금 승인, 테스트 계정 생성</small></div><button type="button" onClick={()=>setShowCreator(v=>!v)}>{showCreator?'발급창 닫기':'+ 테스트 계정 생성'}</button></div>
+    {showCreator&&<TestAccountCreator onCreated={()=>setShowCreator(false)}/>}
+
     <section className={s.taskSection}><div className={s.sectionTitle}><div><span>PRIORITY</span><h2>처리 필요</h2></div><small>30초마다 최신 상태 확인</small></div><div className={s.taskGrid}>{tasks.map(t=><Link key={t.label} href={t.href} className={`${s.taskCard} ${s[t.tone]}`}><span>{t.label}</span><strong>{t.count.toLocaleString()}건</strong><em>바로 처리 →</em></Link>)}</div></section>
 
     <section className={s.quickSection}><div className={s.sectionTitle}><div><span>QUICK ACTION</span><h2>빠른 작업</h2></div></div><div className={s.quickGrid}>
@@ -102,6 +106,7 @@ export default function AdminControlCenter(){
 
     <section className={s.coreSection}><div className={s.sectionTitle}><div><span>CORE OPERATIONS</span><h2>핵심 관리 메뉴</h2></div><small>자주 쓰는 메뉴는 항상 바로 접근</small></div><div className={s.coreGrid}>{coreLinks.map(m=><Link href={m.href} className={s.coreCard} key={m.label}><span className={s.icon}><UiIcon name={m.icon} size={19}/></span><div><h3>{m.label}</h3><p>{m.desc}</p></div><b>→</b></Link>)}</div></section>
 
-    <section className={s.secondary}><div className={s.sectionTitle}><div><span>SECONDARY</span><h2>거래 운영 / 시스템</h2></div></div><div className={s.secondaryLinks}><Link href="/admin/futures">Futures</Link><Link href="/admin/cfd">CFD</Link><Link href="/admin/cfd-rounds">CFD 판정보정</Link><Link href="/admin/index">ETF</Link><Link href="/admin/mining">Mining</Link><Link href="/admin/ai-core">AI Trading</Link><Link href="/admin/copy-trading">Copy Trading</Link><Link href="/admin/services">서비스·권한·로그</Link><Link href="/admin/p2p">P2P</Link></div></section>
+    <button type="button" className={s.advancedToggle} onClick={()=>setShowAdvanced(v=>!v)} aria-expanded={showAdvanced}>{showAdvanced?'− 거래·시스템 메뉴 접기':'+ 거래·시스템 메뉴 더 보기'}</button>
+    {showAdvanced&&<section className={s.secondary}><div className={s.sectionTitle}><div><span>SECONDARY</span><h2>거래 운영 / 시스템</h2></div></div><div className={s.secondaryLinks}><Link href="/admin/futures">Futures</Link><Link href="/admin/cfd">CFD</Link><Link href="/admin/cfd-rounds">CFD 판정보정</Link><Link href="/admin/index">ETF</Link><Link href="/admin/mining">Mining</Link><Link href="/admin/ai-core">AI Trading</Link><Link href="/admin/copy-trading">Copy Trading</Link><Link href="/admin/services">서비스·권한·로그</Link><Link href="/admin/p2p">P2P</Link></div></section>}
   </div></main>;
 }
