@@ -55,7 +55,7 @@ export default function AdminControlCenter(){
     return()=>{alive=false;clearInterval(id)};
   },[supabase]);
 
-  if(allowed===null||loading)return <main className={`${s.page} ${s.checking}`}><div className={s.gate}><div className={s.adminBadge}><span className={s.dot}/>OPERATIONS CHECK</div><h1>오늘 운영 현황을 불러오는 중</h1><p>회원, 입출금, 지갑, Loan 처리 대기 건을 확인하고 있습니다.</p></div></main>;
+  if(allowed===null)return <main className={`${s.page} ${s.checking}`}><div className={s.gate}><div className={s.adminBadge}><span className={s.dot}/>OPERATIONS CHECK</div><h1>오늘 운영 현황을 불러오는 중</h1><p>회원, 입출금, 지갑, Loan 처리 대기 건을 확인하고 있습니다.</p></div></main>;
   if(!allowed)return <main className={`${s.page} ${s.denied}`}><div className={s.gate}><div className={s.adminBadge}>BITMATE ADMIN</div><h1>관리자 권한이 필요합니다.</h1><p>현재 계정에는 관리자 접근 권한이 없습니다.</p><Link className={s.btn} href="/">홈으로 이동</Link></div></main>;
 
   const loans=Array.isArray(loan?.loans)?loan.loans:[];
