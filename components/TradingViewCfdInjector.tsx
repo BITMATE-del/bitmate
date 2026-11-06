@@ -341,7 +341,7 @@ export default function TradingViewCfdInjector(){
       showRetry=()=>{
         const stage=findStage();
         const r=stage?.getBoundingClientRect();
-        retryButton.style.display=stage&&stage.dataset.chartMode!=='position'&&r&&r.bottom>0&&r.top<window.innerHeight?'block':'none';
+        if(retryButton)retryButton.style.display=stage&&stage.dataset.chartMode!=='position'&&r&&r.bottom>0&&r.top<window.innerHeight?'block':'none';
       };
       showRetry();
       visibilityTimer=setInterval(showRetry,1500);
