@@ -19,21 +19,30 @@ const normalizeTradingViewSymbol=(raw:string,perpetual:boolean)=>{
 const loadTradingView=()=>{
   if(window.TradingView?.widget)return Promise.resolve();
   if(window.__bitmateTvLoader)return window.__bitmateTvLoader;
-  window.__bitmateTvLoader=new Promise<void>((resolve,reject)=>{
-    const existing=document.querySelector('script[data-bitmate-tvjs="true"]') as HTMLScriptElement|null;
-    if(existing){
-      if(window.TradingView?.widget){resolve();return;}
-      existing.addEventListener('load',()=>resolve(),{once:true});
-      existing.addEventListener('error',()=>reject(new Error('tradingview_load_failed')),{once:true});
-      return;
+  const pending=new Promise<void>((resolve,reject)=>{
+    let script=document.querySelector('script[data-bitmate-tvjs="true"]') as HTMLScriptElement|null;
+    if(script&&!window.TradingView?.widget){
+      // An old stalled loader must not block every future chart attempt.
+      script.remove();
+      script=null;
     }
-    const script=document.createElement('script');
-    script.src='https://s3.tradingview.com/tv.js';
-    script.async=true;
-    script.dataset.bitmateTvjs='true';
-    script.onload=()=>resolve();
-    script.onerror=()=>reject(new Error('tradingview_load_failed'));
-    document.head.appendChild(script);
+    const next=document.createElement('script');
+    next.src='https://s3.tradingview.com/tv.js';
+    next.async=true;
+    next.dataset.bitmateTvjs='true';
+    const timeout=window.setTimeout(()=>{next.remove();reject(new Error('tradingview_timeout'))},12000);
+    next.onload=()=>{
+      clearTimeout(timeout);
+      if(window.TradingView?.widget)resolve();
+      else {next.remove();reject(new Error('tradingview_widget_missing'))}
+    };
+    next.onerror=()=>{clearTimeout(timeout);next.remove();reject(new Error('tradingview_load_failed'))};
+    document.head.appendChild(next);
+  });
+  window.__bitmateTvLoader=pending.catch(error=>{
+    // Retry is possible after network errors; never cache a rejected promise.
+    window.__bitmateTvLoader=undefined;
+    throw error;
   });
   return window.__bitmateTvLoader;
 };
@@ -52,6 +61,11 @@ export default function TradingViewCfdInjector(){
     let chart:any=null;
     let shapeIds:any[]=[];
     let lastLineSignature='';
+    let generation=0;
+    let lastRetryAt=Date.now();
+    let retryButton:HTMLButtonElement|null=null;
+    let visibilityTimer:ReturnType<typeof setInterval>|null=null;
+    let showRetry:(()=>void)|null=null;
     let visibleRangeSubscription:any=null;
 
     const findStage=()=>document.querySelector('[class*="chartStage"]') as HTMLElement|null;
@@ -204,58 +218,77 @@ export default function TradingViewCfdInjector(){
       }catch{}
     };
 
-    const initWidget=async(stage:HTMLElement,tvSymbol:string)=>{
-      await loadTradingView();
-      if(disposed||!window.TradingView?.widget)return;
-
-      stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
-      const overlay=document.createElement('div');
-      overlay.dataset.bitmateTradingview='true';
-      const id=`bitmate-tv-${Math.random().toString(36).slice(2)}`;
-      overlay.id=id;
-      Object.assign(overlay.style,{position:'absolute',inset:'0',zIndex:'20',width:'100%',height:'100%',background:'#0b1012',overflow:'hidden'});
-      stage.appendChild(overlay);
-
-      widget=new window.TradingView.widget({
-        autosize:true,
-        symbol:tvSymbol,
-        interval:'15',
-        timezone:'Asia/Seoul',
-        theme:'dark',
-        style:'1',
-        locale:'kr',
-        toolbar_bg:'#0b1012',
-        enable_publishing:false,
-        hide_top_toolbar:false,
-        hide_legend:false,
-        hide_side_toolbar:false,
-        allow_symbol_change:false,
-        save_image:false,
-        withdateranges:true,
-        details:false,
-        hotlist:false,
-        calendar:false,
-        container_id:id,
-        support_host:'https://www.tradingview.com',
-      });
-
-      const ready=async()=>{
-        if(disposed)return;
-        try{
-          chart=widget.activeChart?widget.activeChart():widget.chart?widget.chart():null;
-          if(!chart)return;
-          subscribeRangeChanges();
-          await refreshEntryLines(true);
-        }catch{}
-      };
-
+    const initWidget=async(stage:HTMLElement,tvSymbol:string,version:number)=>{
       try{
-        if(widget.chartReady)await widget.chartReady().then(ready);
-        else if(widget.onChartReady)widget.onChartReady(ready);
-        else setTimeout(ready,1800);
+        await loadTradingView();
+        if(disposed||version!==generation||!stage.isConnected||stage.dataset.chartMode==='position'||!window.TradingView?.widget)return;
+
+        stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
+        const overlay=document.createElement('div');
+        overlay.dataset.bitmateTradingview='true';
+        const id=`bitmate-tv-${Math.random().toString(36).slice(2)}`;
+        overlay.id=id;
+        Object.assign(overlay.style,{position:'absolute',inset:'0',zIndex:'20',width:'100%',height:'100%',background:'#0b1012',overflow:'hidden'});
+        stage.appendChild(overlay);
+
+        widget=new window.TradingView.widget({
+          autosize:true,
+          symbol:tvSymbol,
+          interval:'15',
+          timezone:'Asia/Seoul',
+          theme:'dark',
+          style:'1',
+          locale:'kr',
+          toolbar_bg:'#0b1012',
+          enable_publishing:false,
+          hide_top_toolbar:false,
+          hide_legend:false,
+          hide_side_toolbar:false,
+          allow_symbol_change:false,
+          save_image:false,
+          withdateranges:true,
+          details:false,
+          hotlist:false,
+          calendar:false,
+          container_id:id,
+          support_host:'https://www.tradingview.com',
+        });
+
+        const ready=async()=>{
+          if(disposed||version!==generation||!stage.isConnected)return;
+          try{
+            chart=widget.activeChart?widget.activeChart():widget.chart?widget.chart():null;
+            if(!chart)return;
+            subscribeRangeChanges();
+            await refreshEntryLines(true);
+          }catch{}
+        };
+
+        try{
+          if(widget.chartReady)await widget.chartReady().then(ready);
+          else if(widget.onChartReady)widget.onChartReady(ready);
+          else window.setTimeout(ready,1800);
+        }catch{
+          window.setTimeout(ready,1800);
+        }
       }catch{
-        setTimeout(ready,1800);
+        if(disposed||version!==generation||!stage.isConnected)return;
+        stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
+        activeSymbol='';
+        // The periodic mount check retries after transient script failures.
       }
+    };
+
+    const retry=()=>{
+      const stage=findStage();
+      if(!stage||disposed||stage.dataset.chartMode==='position')return;
+      lastRetryAt=Date.now();
+      generation++;
+      try{widget?.remove?.()}catch{}
+      stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
+      activeSymbol='';
+      chart=null;widget=null;shapeIds=[];lastLineSignature='';
+      mount();
     };
 
     const mount=()=>{
@@ -263,6 +296,7 @@ export default function TradingViewCfdInjector(){
       const stage=findStage();
       if(!stage)return;
       if(stage.dataset.chartMode==='position'){
+        generation++;
         stage.querySelector('[data-bitmate-tradingview="true"]')?.remove();
         activeSymbol='';
         chart=null;widget=null;shapeIds=[];
@@ -274,6 +308,7 @@ export default function TradingViewCfdInjector(){
       const existing=stage.querySelector('[data-bitmate-tradingview="true"]') as HTMLElement|null;
       if(existing&&activeSymbol===tvSymbol)return;
 
+      const version=++generation;
       activeSymbol=tvSymbol;
       lastLineSignature='';
       clearShapes();
@@ -281,12 +316,37 @@ export default function TradingViewCfdInjector(){
       widget=null;
       visibleRangeSubscription=null;
       stage.style.position='relative';
-      void initWidget(stage,tvSymbol);
+      void initWidget(stage,tvSymbol,version);
     };
 
     const start=()=>{
       mount();
-      mountTimer=setInterval(mount,5000);
+      mountTimer=setInterval(()=>{
+        mount();
+        const stage=findStage();
+        if(!stage||stage.dataset.chartMode==='position')return;
+        const overlay=stage.querySelector('[data-bitmate-tradingview="true"]');
+        // Chart container never acquired its iframe: retry at a bounded interval.
+        if(overlay&&!overlay.querySelector('iframe')&&Date.now()-lastRetryAt>30000)retry();
+      },5000);
+      // Unobtrusive manual recovery for a cross-origin widget that has loaded
+      // its toolbar but stopped drawing candles (cannot inspect inside iframe).
+      retryButton=document.createElement('button');
+      retryButton.type='button';
+      retryButton.textContent='차트 다시 불러오기';
+      retryButton.setAttribute('aria-label','TradingView 차트 다시 불러오기');
+      Object.assign(retryButton.style,{position:'fixed',right:'16px',bottom:'104px',zIndex:'60',padding:'8px 12px',border:'1px solid #364448',borderRadius:'8px',background:'#172024',color:'#dde5e6',fontSize:'12px',cursor:'pointer',display:'none'});
+      retryButton.addEventListener('click',retry);
+      document.body.appendChild(retryButton);
+      showRetry=()=>{
+        const stage=findStage();
+        const r=stage?.getBoundingClientRect();
+        retryButton.style.display=stage&&stage.dataset.chartMode!=='position'&&r&&r.bottom>0&&r.top<window.innerHeight?'block':'none';
+      };
+      showRetry();
+      visibilityTimer=setInterval(showRetry,1500);
+      window.addEventListener('scroll',showRetry,{passive:true});
+      window.addEventListener('resize',showRetry);
       lineTimer=setInterval(()=>void refreshEntryLines(false),2000);
       observer=new MutationObserver(mount);
       observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['data-symbol','data-chart-mode']});
@@ -299,6 +359,10 @@ export default function TradingViewCfdInjector(){
       cancelAnimationFrame(raf);
       if(mountTimer)clearInterval(mountTimer);
       if(lineTimer)clearInterval(lineTimer);
+      if(visibilityTimer)clearInterval(visibilityTimer);
+      if(showRetry){window.removeEventListener('scroll',showRetry);window.removeEventListener('resize',showRetry)}
+      retryButton?.remove();
+      generation++;
       observer?.disconnect();
       try{visibleRangeSubscription?.unsubscribe?.()}catch{}
       clearShapes();
