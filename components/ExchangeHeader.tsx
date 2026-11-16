@@ -46,6 +46,7 @@ export default function ExchangeHeader(){
   const [traders,setTraders]=useState<TraderRow[]>([]);
   const [traderPerf,setTraderPerf]=useState<Record<string,TraderPerf>>({});
   const [isLoggedIn,setIsLoggedIn]=useState(false);
+  const [recoveryEmail,setRecoveryEmail]=useState('');
   const searchRef=useRef<HTMLDivElement>(null);
   const dropdownCloseTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
@@ -85,6 +86,15 @@ export default function ExchangeHeader(){
     const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{if(alive)setIsLoggedIn(!!session?.user)});
     return()=>{alive=false;subscription.unsubscribe()};
   },[supabase]);
+
+  useEffect(()=>{
+    let active=true;
+    fetch('/api/recovery-auth/session',{cache:'no-store'})
+      .then(r=>r.ok?r.json():null)
+      .then(data=>{if(active&&data?.user?.email)setRecoveryEmail(data.user.email)})
+      .catch(()=>{});
+    return()=>{active=false};
+  },[]);
 
   useEffect(()=>()=>clearDropdownCloseTimer(),[]);
 
@@ -194,7 +204,7 @@ export default function ExchangeHeader(){
           {filteredLinks.length===0&&filteredMarkets.length===0&&filteredTraders.length===0&&<div style={{padding:'32px 8px',textAlign:'center',color:'#7e868b',fontSize:'13px'}}>검색 결과가 없습니다.</div>}
         </div>}
       </div>
-      {isLoggedIn?<div className="headerAccountTools"><HeaderUserTools/></div>:<>
+      {recoveryEmail?<Link href="/account-access" className="loginLink" style={{color:'#b9ff31',fontSize:12,fontWeight:800,maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={recoveryEmail}>내 계정</Link>:isLoggedIn?<div className="headerAccountTools"><HeaderUserTools/></div>:<>
         <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
         <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
         <button className="iconBtn" aria-label="Download app" style={{width:'30px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><UiIcon name="download" size={20}/></button>
