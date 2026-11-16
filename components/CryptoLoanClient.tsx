@@ -5,6 +5,7 @@ import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Noto_Sans_KR} from 'next/font/google';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc,neonView} from '@/lib/neon-bridge';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 import s from './CryptoLoan.module.css';
 
@@ -66,8 +67,28 @@ export default function CryptoLoanClient(){
   const [agree,setAgree]=useState(false);
   const [step,setStep]=useState(2);
 
+  async function loanRpc(name:string,args:Record<string,unknown>={}):Promise<{data:any;error:any}>{
+    const identity=await neonIdentity();
+    return identity?neonRpc(name,args):supabase.rpc(name,args);
+  }
+
   async function load(){
     setLoading(true);
+    const identity=await neonIdentity();
+    if(identity){
+      const [products,loans,collaterals,extensions]=await Promise.all([
+        neonView<Product[]>('crypto_loan_products'),neonView<Loan[]>('crypto_loans'),
+        neonView<Collateral[]>('crypto_loan_collaterals'),neonView<Extension[]>('crypto_loan_extensions')
+      ]);
+      const issue=products.error||loans.error||collaterals.error||extensions.error;
+      if(issue)setMsg(issue.message);
+      setProducts(products.data||[]);
+      setLoans(loans.data||[]);
+      setCollaterals(collaterals.data||[]);
+      setExtensions(extensions.data||[]);
+      setLogged(true);setLoading(false);
+      return;
+    }
     const [{data:p},{data:{user}}]=await Promise.all([
       supabase.from('crypto_loan_products').select('id,name,description,borrow_asset,collateral_asset,term_mode,term_days,max_ltv,base_interest_rate,overdue_interest_rate,interest_rate_type,extension_allowed,allowed_collateral_assets,min_borrow,max_borrow').eq('status','ACTIVE').eq('visible',true).order('sort_order'),
       supabase.auth.getUser()
@@ -105,7 +126,7 @@ export default function CryptoLoanClient(){
   async function openApply(p:Product){
     setSelected(p);setQuote(null);setMsg('');setAgree(false);setStep(2);setCollateralQty('');setPrincipal('');
     if(!logged){setOptions([]);return}
-    const {data,error}=await supabase.rpc('get_crypto_loan_collateral_options',{p_product:p.id});
+    const {data,error}=await loanRpc('get_crypto_loan_collateral_options',{p_product:p.id});
     if(error){console.error('get_crypto_loan_collateral_options',error);setMsg('담보 가능 자산을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.');return}
     const rows=((data as any)?.assets||[]) as CollateralOption[];
     setOptions(rows);
@@ -126,7 +147,7 @@ export default function CryptoLoanClient(){
     if(!Number.isFinite(q)||q<=0){setMsg('담보 수량을 확인해주세요.');return}
     if(!Number.isFinite(p)||p<=0){setMsg('대출 신청금액을 확인해주세요.');return}
     setBusy(true);setMsg('');
-    const {data,error}=await supabase.rpc('get_crypto_loan_quote_v2',{
+    const {data,error}=await loanRpc('get_crypto_loan_quote_v2',{
       p_product:selected.id,p_collateral_asset:asset,p_collateral_quantity:q,p_principal:p
     });
     setBusy(false);
@@ -137,7 +158,7 @@ export default function CryptoLoanClient(){
   async function apply(){
     if(!selected||!quote||!agree)return;
     setBusy(true);setMsg('');
-    const {error}=await supabase.rpc('apply_crypto_loan_v2',{
+    const {error}=await loanRpc('apply_crypto_loan_v2',{
       p_product:selected.id,
       p_collateral_asset:quote.collateral_asset,
       p_collateral_quantity:Number(collateralQty),
@@ -155,7 +176,7 @@ export default function CryptoLoanClient(){
     const ok=await siteConfirm(`현재 상환 예정금액 ${money(due)}를 상환하고 담보 LOCK을 해제할까요?`,{title:'대출 상환'});
     if(!ok)return;
     setBusy(true);setMsg('');
-    const {error}=await supabase.rpc('repay_crypto_loan_now',{p_loan:l.id,p_idempotency_key:`repay:${crypto.randomUUID()}`});
+    const {error}=await loanRpc('repay_crypto_loan_now',{p_loan:l.id,p_idempotency_key:`repay:${crypto.randomUUID()}`});
     setBusy(false);
     if(error){console.error('repay_crypto_loan_now',error);setMsg(error.message.includes('INSUFFICIENT_BALANCE')?'사용 가능한 잔액이 부족합니다.':'상환 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');return}
     setMsg('상환이 완료되었고 담보 LOCK이 해제되었습니다.');await load();
@@ -165,7 +186,7 @@ export default function CryptoLoanClient(){
     const ok=await siteConfirm('기간 연장을 신청할까요? 관리자가 새로운 기간과 이자율을 제시한 뒤 회원 동의가 있어야 연장이 확정됩니다.',{title:'기간 연장 신청'});
     if(!ok)return;
     setBusy(true);setMsg('');
-    const {error}=await supabase.rpc('request_crypto_loan_extension_v2',{p_loan:l.id});
+    const {error}=await loanRpc('request_crypto_loan_extension_v2',{p_loan:l.id});
     setBusy(false);
     if(error){console.error('request_crypto_loan_extension_v2',error);setMsg('기간 연장 신청을 처리하지 못했습니다. 현재 대출 상태를 확인해주세요.');return}
     setMsg('기간 연장 신청이 접수되었습니다.');await load();
@@ -177,7 +198,7 @@ export default function CryptoLoanClient(){
     const ok=await siteConfirm(`새 상환일: ${ext.new_due_at?new Date(ext.new_due_at).toLocaleString('ko-KR'):'—'}\n변경 이자율: ${rate}\n추가 이자: ${add}\n\n이 조건에 동의하고 기간을 연장할까요?`,{title:'연장 조건 동의'});
     if(!ok)return;
     setBusy(true);setMsg('');
-    const {error}=await supabase.rpc('accept_crypto_loan_extension',{p_extension:ext.id});
+    const {error}=await loanRpc('accept_crypto_loan_extension',{p_extension:ext.id});
     setBusy(false);
     if(error){console.error('accept_crypto_loan_extension',error);setMsg('연장 조건 적용 중 오류가 발생했습니다.');return}
     setMsg('기간 연장이 완료되었습니다.');await load();
