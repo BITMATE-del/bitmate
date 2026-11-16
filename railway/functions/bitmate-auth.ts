@@ -244,7 +244,7 @@ async function settleDueCfdTrades(){
 setInterval(()=>void settleDueCfdTrades(),4000);
 console.log('BITMATE_AUTH_SERVICE_STARTING');
 const dynamicMemberRpc=new Set(['p2p_market_snapshot','p2p_apply_player','p2p_create_ad','p2p_update_my_ad','p2p_set_my_ad_status','p2p_create_order','p2p_order_action','p2p_send_message','p2p_order_messages','user_create_withdrawal_request','user_withdrawal_assignment','user_internal_transfer','user_deposit_access_snapshot','get_crypto_loan_collateral_options','get_crypto_loan_quote_v2','apply_crypto_loan_v2','repay_crypto_loan_now','request_crypto_loan_extension_v2','accept_crypto_loan_extension','start_index_investment','open_cfd_market_order','update_cfd_sltp','close_cfd_position','validate_signup_code']);
-const dynamicAdminRpc=new Set(['admin_set_p2p_player_status','admin_set_p2p_order_status','admin_set_p2p_ad_status','admin_approve_crypto_loan_v2','admin_reject_crypto_loan_v2','admin_offer_crypto_loan_extension','admin_reject_crypto_loan_extension','admin_mark_crypto_loan_overdue','admin_seize_crypto_loan_collateral','admin_update_crypto_loan_product_terms','admin_set_system_setting','admin_update_profile','admin_update_kyc','admin_update_deletion','admin_assign_tron_deposit_address','admin_set_api_status','admin_set_subaccount_status','admin_set_referral_code_active','admin_set_referral_reward_status','admin_update_asset_network','admin_update_withdrawal_status','admin_upsert_dealer_code','admin_set_dealer_active','admin_reset_user_password','admin_create_notice','admin_delete_notice','admin_update_notice_content']);
+const dynamicAdminRpc=new Set(['admin_set_p2p_player_status','admin_set_p2p_order_status','admin_set_p2p_ad_status','admin_approve_crypto_loan_v2','admin_reject_crypto_loan_v2','admin_offer_crypto_loan_extension','admin_reject_crypto_loan_extension','admin_mark_crypto_loan_overdue','admin_seize_crypto_loan_collateral','admin_update_crypto_loan_product_terms','admin_set_system_setting','admin_adjust_demo_balance','admin_update_profile','admin_update_kyc','admin_update_deletion','admin_assign_tron_deposit_address','admin_set_api_status','admin_set_subaccount_status','admin_set_referral_code_active','admin_set_referral_reward_status','admin_update_asset_network','admin_update_withdrawal_status','admin_upsert_dealer_code','admin_set_dealer_active','admin_reset_user_password','admin_create_notice','admin_delete_notice','admin_update_notice_content']);
 const dynamicDealerRpc=new Set(['dealer_set_payment_settings','dealer_update_withdrawal_status','dealer_set_cfd_timed_round_override','dealer_approve_crypto_loan','dealer_reject_crypto_loan','dealer_set_p2p_player_status']);
 async function runDynamicPublicRpc(tx:any,name:string,args:Record<string,unknown>){
  const entries=Object.entries(args);
@@ -258,7 +258,7 @@ async function runDynamicPublicRpc(tx:any,name:string,args:Record<string,unknown
  return rows?.[0]?.result??null;
 }
 // BITMATE_ORIGINAL_RPC_GATEWAY: compatibility for the original app's PostgreSQL functions.
-const publicRpc=new Set(['user_wallet_snapshot','spot_virtual_snapshot','get_cfd_account_summary','get_cfd_timed_account_summary','ensure_cfd_demo_account','start_cfd_timed_trade','spot_virtual_market_order','futures_closed_position_margins']);
+const publicRpc=new Set(['user_wallet_snapshot','spot_virtual_snapshot','get_cfd_account_summary','get_cfd_timed_account_summary','ensure_cfd_demo_account','start_cfd_timed_trade','spot_virtual_market_order','futures_closed_position_margins','futures_action']);
 const adminRpc=new Set(['admin_ops_snapshot','admin_wallet_ops_snapshot','admin_member_services_snapshot','admin_p2p_snapshot','admin_crypto_loan_snapshot_v2','admin_get_cfd_dashboard','admin_dealer_snapshot','admin_set_user_usdt_balance','admin_set_user_frozen','admin_set_cfd_timed_round_override']);
 const dealerRpc=new Set(['dealer_portal_snapshot','dealer_set_user_usdt_balance','dealer_set_user_frozen']);
 async function runOriginalRpc(tx:any,name:string,a:any){
@@ -270,6 +270,7 @@ async function runOriginalRpc(tx:any,name:string,a:any){
  case 'get_cfd_timed_account_summary':return one(await tx`select public.get_cfd_timed_account_summary() as result`);
  case 'ensure_cfd_demo_account':return one(await tx`select public.ensure_cfd_demo_account() as result`);
  case 'futures_closed_position_margins':return one(await tx`select public.futures_closed_position_margins() as result`);
+ case 'futures_action':return one(await tx`select public.futures_action(${String(a.p_action||'')},${JSON.stringify(a.p_payload||{})}::jsonb) as result`);
  case 'spot_virtual_market_order':return one(await tx`select public.spot_virtual_market_order(${String(a.p_symbol||'')},${String(a.p_side||'')},${Number(a.p_amount)},${String(a.p_client_order_id||'')}) as result`);
  case 'start_cfd_timed_trade':return one(await tx`select public.start_cfd_timed_trade(${String(a.p_symbol||'')},${String(a.p_direction||'')},${Number(a.p_duration_minutes)},${Number(a.p_amount)},${String(a.p_idempotency_key||'')}) as result`);
  case 'admin_ops_snapshot':return one(await tx`select public.admin_ops_snapshot(${String(a.p_query||'')}) as result`);
@@ -291,6 +292,22 @@ async function runOriginalRpc(tx:any,name:string,a:any){
 Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  const path=new URL(req.url).pathname;
  if(path==='/health')return response({ok:true,service:'bitmate-auth'});
+ if(path==='/rpc/futures_markets'&&req.method==='POST'){
+  try{const rows=await sql`select public.futures_markets() as result`;return response({data:rows?.[0]?.result??null,error:null})}
+  catch(error){return response({data:null,error:{message:String(error).slice(0,200)}},503)}
+ }
+ if(path==='/view/cfd_risk_acceptances'&&req.method==='POST'){
+  const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
+  if(!token)return response({error:'login_required'},401);
+  const digest=await hex(token);
+  const users=await sql`select u.id from bm_auth_sessions s join bm_auth_users u on u.id=s.user_id where s.token_hash=${digest} and s.expires_at>now() and not u.is_blocked`;
+  if(!users[0])return response({error:'login_required'},401);
+  let body:any;try{body=await req.json()}catch{return response({error:'invalid_request'},400)}
+  const version=String(body?.version||'');
+  if(!/^[A-Za-z0-9._-]{1,64}$/.test(version))return response({error:'invalid_version'},400);
+  const rows=await sql`insert into public.cfd_risk_acceptances(user_id,version) values(${users[0].id},${version}) on conflict(user_id,version) do update set accepted_at=now() returning user_id,version,accepted_at`;
+  return response({data:rows[0],error:null});
+ }
  // BITMATE_READONLY_TABLE_GATEWAY: scoped read-only table access.
  if(path.startsWith('/view/')&&req.method==='GET'){
   const table=path.slice('/view/'.length);
