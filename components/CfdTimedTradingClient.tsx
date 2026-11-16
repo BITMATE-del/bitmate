@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc,neonView} from '@/lib/neon-bridge';
 import {useRouter} from 'next/navigation';
 import {siteConfirm} from './SiteDialog';
 import BinanceMarketDepth from './BinanceMarketDepth';
@@ -34,6 +35,7 @@ export default function CfdTimedTradingClient(){
   const [trades,setTrades]=useState<TimedTrade[]>([]);
   const [summary,setSummary]=useState<Summary|null>(null);
   const [loggedIn,setLoggedIn]=useState(false);
+  const [neonMode,setNeonMode]=useState(false);
   const [authChecked,setAuthChecked]=useState(false);
   const [direction,setDirection]=useState<'UP'|'DOWN'>('UP');
   const [duration,setDuration]=useState<3|5>(3);
@@ -48,6 +50,15 @@ export default function CfdTimedTradingClient(){
   const [now,setNow]=useState(Date.now());
 
   async function loadProducts(){
+    const identity=await neonIdentity();
+    if(identity){
+      const {data:p,error}=await neonView<Product[]>('cfd_products');
+      if(error){setMsg(error.message);return}
+      const list=(p||[]).filter(item=>(item as Product&{status?:string;trading_enabled?:boolean}).status==='ACTIVE'&&(item as Product&{trading_enabled?:boolean}).trading_enabled!==false);
+      setProducts(list);
+      setSelected(prev=>prev?(list.find(x=>x.id===prev.id)||list[0]||null):(list[0]||null));
+      return;
+    }
     const {data:p}=await supabase.from('cfd_products').select('id,symbol,display_name,category,current_price,bid,ask,min_order,max_order,last_price_at').eq('status','ACTIVE').eq('trading_enabled',true).order('sort_order');
     const list=(p||[]) as Product[];
     setProducts(list);
@@ -55,6 +66,21 @@ export default function CfdTimedTradingClient(){
   }
 
   async function loadAccount(){
+    const identity=await neonIdentity();
+    if(identity){
+      setNeonMode(true);setLoggedIn(true);setAuthChecked(true);
+      const ensured=await neonRpc('ensure_cfd_demo_account');
+      if(ensured.error){setMsg(ensured.error.message);return}
+      const [tradesResult,summaryResult]=await Promise.all([
+        neonView<TimedTrade[]>('cfd_timed_trades'),
+        neonRpc<Summary>('get_cfd_timed_account_summary')
+      ]);
+      if(tradesResult.error||summaryResult.error){setMsg(tradesResult.error?.message||summaryResult.error?.message||'CFD 조회 실패');return}
+      setTrades(tradesResult.data||[]);
+      setSummary(summaryResult.data||null);
+      return;
+    }
+    setNeonMode(false);
     const {data:{user}}=await supabase.auth.getUser();
     setLoggedIn(!!user);setAuthChecked(true);
     if(!user){setTrades([]);setSummary(null);return;}
@@ -157,12 +183,14 @@ export default function CfdTimedTradingClient(){
     if(!selected){setMsg('상품을 선택하세요.');return;}
     if(activeTrade){setMsg('진행 중인 거래가 있습니다.');return;}
     if(amountNum<=0){setMsg('주문금액을 입력하세요.');return;}
-    const {data:{user}}=await supabase.auth.getUser();
+    const identity=await neonIdentity();
+    const {data:{user}}=identity?{data:{user:identity}}:await supabase.auth.getUser();
     if(!user){setMsg('로그인이 필요합니다.');return;}
     setSubmitting(true);
     try{
       const key=crypto.randomUUID();
-      const {error}=await supabase.rpc('start_cfd_timed_trade',{p_symbol:selected.symbol,p_direction:direction,p_duration_minutes:duration,p_amount:amountNum,p_idempotency_key:key});
+      const args={p_symbol:selected.symbol,p_direction:direction,p_duration_minutes:duration,p_amount:amountNum,p_idempotency_key:key};
+      const {error}=identity?await neonRpc('start_cfd_timed_trade',args):await supabase.rpc('start_cfd_timed_trade',args);
       if(error)throw error;
       setMsg(`${direction} ${duration}분 거래가 시작되었습니다.`);
       await loadAccount();
