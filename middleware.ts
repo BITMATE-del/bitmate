@@ -21,6 +21,15 @@ export async function middleware(req:NextRequest){
   headers.set('x-robots-tag','noindex, nofollow, noarchive');
   headers.set('cache-control','no-store');
 
+  const migratedRoutes:Record<string,string>={'/admin/dealers':'dealers','/admin/operations':'members','/admin/wallet':'wallets'};
+  if(migratedRoutes[pathname]){
+    const target=req.nextUrl.clone();
+    target.pathname='/admin';
+    target.search='';
+    target.searchParams.set('tab',migratedRoutes[pathname]);
+    return NextResponse.redirect(target);
+  }
+
   // The new admin entry points use Railway-backed HttpOnly session cookies.
   // Authorization happens in /api/recovery-admin/* on the server.
   // Do not redirect either entry point through legacy Supabase admin login.
