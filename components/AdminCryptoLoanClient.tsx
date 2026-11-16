@@ -3,6 +3,7 @@
 import {siteConfirm,sitePrompt} from './SiteDialog';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 
 type Product={id:string;name:string;borrow_asset:string;collateral_asset:string;term_mode:string;term_days:number|null;hourly_rate:number|null;annual_rate:number|null;initial_ltv:number;margin_call_ltv:number;liquidation_ltv:number;min_borrow:number;max_borrow:number|null;provider_code:string|null;provider_product_code:string|null;status:string;visible:boolean;sort_order:number};
 type Loan={id:string;loan_no:string;user_id:string;collateral_quantity:number;collateral_asset:string;principal:number;borrow_asset:string;current_ltv:number|null;status:string;provider_loan_id?:string|null;provider_status?:string|null;accrued_interest?:number;repaid_principal?:number;repaid_interest?:number};
@@ -11,10 +12,37 @@ const empty={id:'',name:'',borrow_asset:'USDT',collateral_asset:'BTC',term_mode:
 
 export default function AdminCryptoLoanClient(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);const [admin,setAdmin]=useState<boolean|null>(null);const [snap,setSnap]=useState<Snapshot>({});const [v2,setV2]=useState<any>({products:[],loans:[]});const [form,setForm]=useState<any>(empty);const [msg,setMsg]=useState('');const [busy,setBusy]=useState(false);const [actionLoan,setActionLoan]=useState<string>('');const [loanFilter,setLoanFilter]=useState('ALL');const [detailLoan,setDetailLoan]=useState<any|null>(null);
- async function load(){setMsg('');const {data:{user}}=await supabase.auth.getUser();const ok=user?.app_metadata?.role==='admin'||user?.app_metadata?.role==='superadmin'||user?.app_metadata?.superadmin===true;setAdmin(ok);if(!ok)return;const [{data,error},{data:v2data,error:v2err}]=await Promise.all([supabase.rpc('admin_crypto_loan_snapshot'),supabase.rpc('admin_crypto_loan_snapshot_v2')]);if(error)setMsg(error.message);else if(v2err)setMsg(v2err.message);setSnap((data||{}) as Snapshot);setV2(v2data||{products:[],loans:[]})}
+ async function loanRpc(name:string,args:Record<string,unknown>={}){
+   const identity=await neonIdentity();
+   if(identity?.role==='admin'){
+     if(['admin_upsert_crypto_loan_product','admin_manual_crypto_loan_action'].includes(name))
+       return {data:null,error:{message:'구형 대출 명령은 Neon에서 지원되지 않습니다. 아래 승인형 담보대출 관리 기능을 이용해 주세요.'}};
+     return neonRpc(name,args);
+   }
+   return supabase.rpc(name,args);
+ }
+ async function load(){
+   const identity=await neonIdentity();
+   if(identity?.role==='admin'){
+     setAdmin(true);
+     const {data,error}=await neonRpc<{loans:any[];products:any[]}>('admin_crypto_loan_snapshot_v2');
+     if(error){setMsg(error.message);return}
+     const products=data?.products||[];
+     const loans=data?.loans||[];
+     setV2({products,loans});
+     setSnap({products:[],recent_loans:[],counts:{PENDING:loans.filter(l=>l.status==='PENDING').length,ACTIVE:loans.filter(l=>l.status==='ACTIVE').length}});
+     return;
+   }
+   const {data:{user}}=await supabase.auth.getUser();
+   const ok=user?.app_metadata?.role==='admin'||user?.app_metadata?.role==='superadmin'||user?.app_metadata?.superadmin===true;
+   setAdmin(ok);if(!ok)return;
+   const [{data,error},{data:v2data,error:v2err}]=await Promise.all([supabase.rpc('admin_crypto_loan_snapshot'),supabase.rpc('admin_crypto_loan_snapshot_v2')]);
+   if(error)setMsg(error.message);else if(v2err)setMsg(v2err.message);
+   setSnap((data||{}) as Snapshot);setV2(v2data||{products:[],loans:[]});
+ }
  useEffect(()=>{const params=new URLSearchParams(window.location.search);const requested=params.get('status')||localStorage.getItem('bitmate_admin_loan_filter');if(requested)setLoanFilter(requested);load();const id=setInterval(load,5000);return()=>clearInterval(id)},[]);useEffect(()=>{localStorage.setItem('bitmate_admin_loan_filter',loanFilter)},[loanFilter]);
  function edit(p:Product){setForm({...p,term_days:p.term_days??'',hourly_rate:p.hourly_rate??'',annual_rate:p.annual_rate??'',max_borrow:p.max_borrow??'',provider_code:p.provider_code??'',provider_product_code:p.provider_product_code??'',sort_order:String(p.sort_order)})}
- async function save(){setBusy(true);setMsg('');const {error}=await supabase.rpc('admin_upsert_crypto_loan_product',{p_id:form.id||null,p_name:form.name,p_borrow_asset:form.borrow_asset,p_collateral_asset:form.collateral_asset,p_term_mode:form.term_mode,p_term_days:form.term_mode==='FIXED'?Number(form.term_days):null,p_hourly_rate:Number(form.hourly_rate),p_annual_rate:form.annual_rate===''?null:Number(form.annual_rate),p_initial_ltv:Number(form.initial_ltv),p_margin_call_ltv:Number(form.margin_call_ltv),p_liquidation_ltv:Number(form.liquidation_ltv),p_min_borrow:Number(form.min_borrow||0),p_max_borrow:form.max_borrow===''?null:Number(form.max_borrow),p_provider_code:form.provider_code||null,p_provider_product_code:form.provider_product_code||null,p_status:form.status,p_visible:!!form.visible,p_sort_order:Number(form.sort_order||100)});setBusy(false);if(error){setMsg(error.message);return;}setMsg('대출 상품이 저장되었습니다.');setForm(empty);await load()}
+ async function save(){setBusy(true);setMsg('');const {error}=await loanRpc('admin_upsert_crypto_loan_product',{p_id:form.id||null,p_name:form.name,p_borrow_asset:form.borrow_asset,p_collateral_asset:form.collateral_asset,p_term_mode:form.term_mode,p_term_days:form.term_mode==='FIXED'?Number(form.term_days):null,p_hourly_rate:Number(form.hourly_rate),p_annual_rate:form.annual_rate===''?null:Number(form.annual_rate),p_initial_ltv:Number(form.initial_ltv),p_margin_call_ltv:Number(form.margin_call_ltv),p_liquidation_ltv:Number(form.liquidation_ltv),p_min_borrow:Number(form.min_borrow||0),p_max_borrow:form.max_borrow===''?null:Number(form.max_borrow),p_provider_code:form.provider_code||null,p_provider_product_code:form.provider_product_code||null,p_status:form.status,p_visible:!!form.visible,p_sort_order:Number(form.sort_order||100)});setBusy(false);if(error){setMsg(error.message);return;}setMsg('대출 상품이 저장되었습니다.');setForm(empty);await load()}
  async function runAction(loan:Loan,action:string){
   let reference:string|null=null,note:string|null=null,amount:number|null=null,surplus:number|null=null;
   if(action==='DISBURSE'||action==='RELEASE_COLLATERAL'){reference=(await sitePrompt(action==='DISBURSE'?'지급/담보처리 참조번호를 입력하세요.':'담보 반환 참조번호를 입력하세요.','',{title:'참조번호 입력'}))||null;if(!reference)return;}
@@ -23,18 +51,18 @@ export default function AdminCryptoLoanClient(){
   const labels:Record<string,string>={APPROVE:'승인',DISBURSE:'지급 완료',REJECT:'거절',CANCEL:'취소',CONFIRM_REPAYMENT:'상환 확정',RELEASE_COLLATERAL:'담보 반환',COMPLETE_LIQUIDATION:'청산 완료'};
   if(!(await siteConfirm(`${loan.loan_no} 건을 '${labels[action]||action}' 처리하시겠습니까?`,{title:'대출 처리 확인'})))return;
   setActionLoan(loan.id);setMsg('');
-  const {error}=await supabase.rpc('admin_manual_crypto_loan_action',{p_loan:loan.id,p_action:action,p_reference:reference,p_note:note,p_amount:amount,p_surplus:surplus});
+  const {error}=await loanRpc('admin_manual_crypto_loan_action',{p_loan:loan.id,p_action:action,p_reference:reference,p_note:note,p_amount:amount,p_surplus:surplus});
   setActionLoan('');if(error){setMsg(error.message);return;}setMsg(`${loan.loan_no} · ${labels[action]||action} 처리 완료`);await load();
  }
  async function v2Approve(l:any){
   const payout=Number(l.principal||0).toLocaleString();const reserve=Number(l.reserve_value_usdt||l.initial_value||0).toLocaleString();
   if(!(await siteConfirm(`대출을 승인하면 회원 자산에 ${payout} USDT가 지급됩니다.\n\n동시에 ${reserve} USDT 상당의 자산가치가 대출 담보로 설정되어 출금이 제한됩니다.\n\n현재 총 자산: ${Number(l.account_total_value||0).toLocaleString()} USDT\n기존 포함 총 담보제한: ${Number(l.account_total_reserve||0).toLocaleString()} USDT\n승인 가능: ${l.approval_available===false?'아니오':'예'}\n\n계속하시겠습니까?`,{title:'대출 승인'})))return;
-  setActionLoan(l.id);const {error}=await supabase.rpc('admin_approve_crypto_loan_v2',{p_loan:l.id});setActionLoan('');
+  setActionLoan(l.id);const {error}=await loanRpc('admin_approve_crypto_loan_v2',{p_loan:l.id});setActionLoan('');
   if(error){setMsg(error.message);return}setMsg(`${l.loan_no} 승인 및 지급 완료`);await load();
  }
  async function v2Reject(l:any){
   const reason=await sitePrompt('대출 거절 사유를 입력하세요.','',{title:'대출 거절'});if(!reason)return;
-  setActionLoan(l.id);const {error}=await supabase.rpc('admin_reject_crypto_loan_v2',{p_loan:l.id,p_reason:reason});setActionLoan('');
+  setActionLoan(l.id);const {error}=await loanRpc('admin_reject_crypto_loan_v2',{p_loan:l.id,p_reason:reason});setActionLoan('');
   if(error){setMsg(error.message);return}setMsg(`${l.loan_no} 거절 및 담보 LOCK 해제 완료`);await load();
  }
  async function v2OfferExtension(l:any){
@@ -42,23 +70,23 @@ export default function AdminCryptoLoanClient(){
   const days=await sitePrompt('추가 연장기간(일)을 입력하세요.','7',{title:'연장 조건 설정',inputType:'number'});if(days===null)return;
   const rate=await sitePrompt('변경 이자율(%)을 입력하세요.','1.5',{title:'연장 조건 설정',inputType:'number'});if(rate===null)return;
   const note=await sitePrompt('관리자 메모를 입력하세요.','',{title:'연장 조건 설정'});
-  setActionLoan(l.id);const {error}=await supabase.rpc('admin_offer_crypto_loan_extension',{p_extension:l.extension_id,p_additional_days:Number(days),p_new_interest_rate:Number(rate)/100,p_admin_note:note||null});setActionLoan('');
+  setActionLoan(l.id);const {error}=await loanRpc('admin_offer_crypto_loan_extension',{p_extension:l.extension_id,p_additional_days:Number(days),p_new_interest_rate:Number(rate)/100,p_admin_note:note||null});setActionLoan('');
   if(error){setMsg(error.message);return}setMsg(`${l.loan_no} 연장 조건 제시 완료`);await load();
  }
  async function v2RejectExtension(l:any){
   if(!l.extension_id)return;const note=await sitePrompt('연장 거절 사유를 입력하세요.','',{title:'연장 거절'});if(!note)return;
-  setActionLoan(l.id);const {error}=await supabase.rpc('admin_reject_crypto_loan_extension',{p_extension:l.extension_id,p_note:note});setActionLoan('');
+  setActionLoan(l.id);const {error}=await loanRpc('admin_reject_crypto_loan_extension',{p_extension:l.extension_id,p_note:note});setActionLoan('');
   if(error){setMsg(error.message);return}setMsg(`${l.loan_no} 연장 요청 거절 완료`);await load();
  }
  async function v2Overdue(l:any){
   if(!(await siteConfirm(`${l.loan_no} 대출을 연체 확정 처리하고 상품의 연체 이자율을 적용할까요?`,{title:'연체 승인'})))return;
-  setActionLoan(l.id);const {error}=await supabase.rpc('admin_mark_crypto_loan_overdue',{p_loan:l.id});setActionLoan('');
+  setActionLoan(l.id);const {error}=await loanRpc('admin_mark_crypto_loan_overdue',{p_loan:l.id});setActionLoan('');
   if(error){setMsg(error.message);return}setMsg(`${l.loan_no} 연체 승인 완료`);await load();
  }
  async function v2Seize(l:any){
   const reason=await sitePrompt('담보 회수 사유를 입력하세요.','만기 미상환 협의 후 담보 회수',{title:'담보 회수'});if(!reason)return;
   if(!(await siteConfirm(`${l.loan_no}에 연결된 담보 ${l.collateral_locked_quantity} ${l.asset_symbol}만 회수합니다. 계속할까요?`,{title:'담보 회수 확인'})))return;
-  setActionLoan(l.id);const {error}=await supabase.rpc('admin_seize_crypto_loan_collateral',{p_loan:l.id,p_reason:reason});setActionLoan('');
+  setActionLoan(l.id);const {error}=await loanRpc('admin_seize_crypto_loan_collateral',{p_loan:l.id,p_reason:reason});setActionLoan('');
   if(error){setMsg(error.message);return}setMsg(`${l.loan_no} 담보 회수 완료`);await load();
  }
  async function editTerms(p:any){
@@ -66,7 +94,7 @@ export default function AdminCryptoLoanClient(){
   const overdue=await sitePrompt('연체 이자율(%)',''+(Number(p.overdue_interest_rate||.028)*100),{title:'대출상품 운영조건',inputType:'number'});if(overdue===null)return;
   const days=await sitePrompt('기본 대출기간(일)',''+Number(p.term_days||7),{title:'대출상품 운영조건',inputType:'number'});if(days===null)return;
   const ltv=await sitePrompt('최대 LTV(%)',''+(Number(p.max_ltv||.8)*100),{title:'대출상품 운영조건',inputType:'number'});if(ltv===null)return;
-  setBusy(true);const {error}=await supabase.rpc('admin_update_crypto_loan_product_terms',{p_product:p.id,p_base_interest_rate:Number(base)/100,p_overdue_interest_rate:Number(overdue)/100,p_term_days:Number(days),p_max_ltv:Number(ltv)/100,p_extension_allowed:true});setBusy(false);
+  setBusy(true);const {error}=await loanRpc('admin_update_crypto_loan_product_terms',{p_product:p.id,p_base_interest_rate:Number(base)/100,p_overdue_interest_rate:Number(overdue)/100,p_term_days:Number(days),p_max_ltv:Number(ltv)/100,p_extension_allowed:true});setBusy(false);
   if(error){setMsg(error.message);return}setMsg('대출상품 운영조건이 저장되었습니다.');await load();
  }
  function v2Actions(l:any){
