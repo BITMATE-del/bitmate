@@ -21,7 +21,11 @@ export async function middleware(req:NextRequest){
   headers.set('x-robots-tag','noindex, nofollow, noarchive');
   headers.set('cache-control','no-store');
 
-  if(pathname==='/admin/login'){
+  // The new admin entry points use Railway-backed HttpOnly session cookies.
+  // Authorization happens in /api/recovery-admin/* on the server.
+  // Do not redirect either entry point through legacy Supabase admin login.
+  if(pathname==='/admin'||pathname==='/admin/login'){
+
     const res=NextResponse.next({request:{headers}});
     res.headers.set('X-Frame-Options','DENY');
     res.headers.set('Referrer-Policy','no-referrer');
