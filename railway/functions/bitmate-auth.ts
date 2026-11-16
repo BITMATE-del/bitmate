@@ -271,6 +271,14 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
    }
    return response({error:'not_found'},404);
  }
+ if(path==='/wallet/demo'&&req.method==='GET'){
+   const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
+   if(!token)return response({error:'로그인이 필요합니다.'},401);
+   const digest=await hex(token);
+   const rows=await sql`select u.id,u.email,coalesce(w.available,0) as available,coalesce(w.locked,0) as locked,u.is_test_account from bm_auth_sessions s join bm_auth_users u on u.id=s.user_id left join bm_demo_wallets w on w.user_id=u.id where s.token_hash=${digest} and s.expires_at>now() and not u.is_blocked`;
+   if(!rows.length)return response({error:'인증이 만료되었습니다.'},401);
+   return response({ok:true,wallet:rows[0]});
+ }
  if(path==='/session'||path==='/logout'){
   const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
   if(!token)return response({error:'로그인이 필요합니다.'},401);
