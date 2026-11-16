@@ -48,11 +48,12 @@ export default function AdminShell({children}:{children:React.ReactNode}){
   const [search,setSearch]=useState('');
   const [badges,setBadges]=useState<Badges>({members:0,wallet:0,loan:0});
   const isLogin=pathname==='/admin/login';
+  const isNewConsole=pathname==='/admin'||isLogin;
 
   useEffect(()=>{setMobileOpen(false)},[pathname]);
 
   useEffect(()=>{
-    if(isLogin)return;
+    if(isNewConsole)return;
     let alive=true;
     const load=async()=>{
       const [{data:ops},{data:wallet},{data:loan}]=await Promise.all([
@@ -71,9 +72,9 @@ export default function AdminShell({children}:{children:React.ReactNode}){
     void load();
     const id=setInterval(()=>void load(),30000);
     return()=>{alive=false;clearInterval(id)};
-  },[supabase,isLogin]);
+  },[supabase,isNewConsole]);
 
-  if(isLogin)return <>{children}</>;
+  if(isNewConsole)return <>{children}</>;
 
   const logout=async()=>{
     await fetch('/api/admin/session',{method:'DELETE'});
