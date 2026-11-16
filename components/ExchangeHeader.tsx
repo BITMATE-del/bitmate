@@ -89,11 +89,13 @@ export default function ExchangeHeader(){
 
   useEffect(()=>{
     let active=true;
-    fetch('/api/recovery-auth/session',{cache:'no-store'})
+    const check=()=>fetch('/api/recovery-auth/session',{cache:'no-store'})
       .then(r=>r.ok?r.json():null)
-      .then(data=>{if(active&&data?.user?.email)setRecoveryEmail(data.user.email)})
-      .catch(()=>{});
-    return()=>{active=false};
+      .then(data=>{if(active)setRecoveryEmail(data?.user?.email||'')})
+      .catch(()=>{if(active)setRecoveryEmail('')});
+    void check();
+    window.addEventListener('bm-auth-changed',check);
+    return()=>{active=false;window.removeEventListener('bm-auth-changed',check)};
   },[]);
 
   useEffect(()=>()=>clearDropdownCloseTimer(),[]);
