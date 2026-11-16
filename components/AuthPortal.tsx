@@ -52,7 +52,7 @@ export default function AuthPortal({mode}:Props){
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'인증 처리에 실패했습니다.');
       window.dispatchEvent(new Event('bm-auth-changed'));
-      router.push('/account-access');
+      router.push(nextPath());
       router.refresh();
     }catch(err){
       const text=err instanceof Error?err.message:'인증 처리 중 오류가 발생했습니다.';
@@ -69,7 +69,7 @@ export default function AuthPortal({mode}:Props){
       <Link href="/" className={s.brand}><BrandLogo variant="horizontal" height={38}/></Link>
       <div className={s.heading}>
         <h1>{signup?'회원 가입':'로그인'}</h1>
-        <p>{signup?'새로운 BITMATE 로그인 계정을 만드세요.':'BITMATE 계정에 로그인하세요.'}</p>
+        <p>{signup?'BITMATE 계정을 만들고 거래를 시작하세요.':'BITMATE 계정에 로그인하세요.'}</p>
       </div>
 
       <form onSubmit={submit} className={s.form}>
@@ -106,7 +106,7 @@ export default function AuthPortal({mode}:Props){
         </button>
       </form>
 
-      <p style={{fontSize:12,color:'#a9b2b7',lineHeight:1.6}}>신규 인증 시스템입니다. 이전 계정은 이전되지 않았으며, 거래·실지갑 기능은 별도 복구 중입니다.</p>
+      <p style={{fontSize:12,color:'#a9b2b7',lineHeight:1.6}}>회원 계정과 거래 내역은 BITMATE 계정으로 관리됩니다.</p>
       <div className={s.switch}>
         {signup?<>이미 계정이 있나요? <Link href="/login">로그인</Link></>:<>BITMATE가 처음이신가요? <Link href="/signup">회원 가입</Link></>}
       </div>
