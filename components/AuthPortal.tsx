@@ -45,10 +45,9 @@ export default function AuthPortal({mode}:Props){
 
     setBusy(true);
     try{
-      if(mode==='signup'&&signupCode.trim())throw new Error('총판 가입코드 등록은 시스템 이전 후 사용할 수 있습니다. 신규 일반 계정으로 가입하세요.');
       const response=await fetch('/api/recovery-auth/'+(mode==='login'?'login':'signup'),{
         method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email:cleanEmail,password}),credentials:'same-origin'
+        body:JSON.stringify({email:cleanEmail,password,signupCode:mode==='signup'?signupCode.trim().toUpperCase():''}),credentials:'same-origin'
       });
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'인증 처리에 실패했습니다.');
@@ -89,8 +88,8 @@ export default function AuthPortal({mode}:Props){
           <input type="password" autoComplete="new-password" placeholder="비밀번호 다시 입력" value={confirm} onChange={e=>setConfirm(e.target.value)} required/>
         </label>}
 
-        {false&&signup&&<label>
-          <span>가입코드 <small style={{color:'#778087',fontWeight:500}}>(선택)</small></span>
+        {signup&&<label>
+          <span>총판 가입코드 <small style={{color:'#778087',fontWeight:500}}>(선택)</small></span>
           <input value={signupCode} onChange={e=>setSignupCode(e.target.value.toUpperCase())} placeholder="추천/총판 코드가 있다면 입력" autoComplete="off"/>
         </label>}
 
@@ -107,7 +106,7 @@ export default function AuthPortal({mode}:Props){
         </button>
       </form>
 
-      <p style={{fontSize:12,color:'#a9b2b7',lineHeight:1.6}}>신규 인증 시스템입니다. 이전 계정은 사용할 수 없으며, 거래·지갑 기능은 별도 복구 중입니다.</p>
+      <p style={{fontSize:12,color:'#a9b2b7',lineHeight:1.6}}>신규 인증 시스템입니다. 이전 계정은 이전되지 않았으며, 거래·실지갑 기능은 별도 복구 중입니다.</p>
       <div className={s.switch}>
         {signup?<>이미 계정이 있나요? <Link href="/login">로그인</Link></>:<>BITMATE가 처음이신가요? <Link href="/signup">회원 가입</Link></>}
       </div>
