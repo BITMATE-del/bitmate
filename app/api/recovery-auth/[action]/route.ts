@@ -7,11 +7,11 @@ const allowed=new Set(['login','signup','session','logout']);
 const fail=(error:string,status:number)=>NextResponse.json({ok:false,error},{status,headers:{'Cache-Control':'no-store'}});
 export async function GET(req:NextRequest,{params}:{params:Promise<{action:string}>}){
  const {action}=await params;
- if(action!=='session')return fail('요청을 처리할 수 없습니다.',405);
+ if(action!=='session'&&action!=='wallet')return fail('요청을 처리할 수 없습니다.',405);
  const token=req.cookies.get(cookieName)?.value;
  if(!token)return fail('로그인이 필요합니다.',401);
  try{
-   const reply=await fetch(base+'/session',{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(7000)});
+   const reply=await fetch(base+(action==='wallet'?'/wallet/demo':'/session'),{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(7000)});
    const json=await reply.json();
    return NextResponse.json(json,{status:reply.status,headers:{'Cache-Control':'no-store'}});
  }catch{return fail('인증 서버 연결에 실패했습니다.',502)}
