@@ -4,7 +4,7 @@ import Link from 'next/link';
 import s from './RecoveryAdminClient.module.css';
 import RecoveryAdminExtensions from './RecoveryAdminExtensions';
 
-type Member={id:string;email:string;role:'user'|'admin';is_blocked:boolean;is_test_account:boolean;created_at:string};
+type Member={id:string;email:string;role:'user'|'admin'|'dealer';is_blocked:boolean;is_test_account:boolean;created_at:string};
 type Stats={total:number;blocked:number;test_accounts:number};
 type Identity={id:string;email:string;role:string};
 type Phase='loading'|'login'|'setup'|'dashboard';
