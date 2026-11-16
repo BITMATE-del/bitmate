@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import UiIcon,{type UiIconName} from './UiIcon';
 import {QRCodeSVG} from 'qrcode.react';
 import s from './HeaderUserTools.module.css';
@@ -62,7 +63,23 @@ export default function HeaderUserTools(){
   const root=useRef<HTMLDivElement>(null);
   const panelCloseTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
 
-  useEffect(()=>{supabase.auth.getUser().then(async({data:{user}})=>{if(user){setEmail(user.email||'');setUid(user.id||'');const {data}=await supabase.rpc('is_dealer_user');setIsDealer(Boolean(data))}})},[supabase]);
+  useEffect(()=>{
+    let live=true;
+    const update=async()=>{
+      const neonUser=await neonIdentity();
+      if(neonUser){
+        if(live){setEmail(neonUser.email||'');setUid(neonUser.id||'');setIsDealer(neonUser.role==='dealer')}
+        return;
+      }
+      const {data:{user}}=await supabase.auth.getUser();
+      if(!live)return;
+      if(user){setEmail(user.email||'');setUid(user.id||'');const {data}=await supabase.rpc('is_dealer_user');if(live)setIsDealer(Boolean(data))}
+      else{setEmail('');setUid('');setIsDealer(false)}
+    };
+    void update();
+    window.addEventListener('bm-auth-changed',update);
+    return()=>{live=false;window.removeEventListener('bm-auth-changed',update)};
+  },[supabase]);
   useEffect(()=>{
     const saved=localStorage.getItem('bitmate_display_currency');
     if(saved==='KRW'||saved==='USDT')setDisplayCurrency(saved);
@@ -79,7 +96,10 @@ export default function HeaderUserTools(){
     if(panel!=='wallet'||!uid)return;
     let alive=true;
     setWalletLoading(true);
-    supabase.rpc('user_wallet_snapshot').then(({data,error})=>{
+    (async()=>{
+      const identity=await neonIdentity();
+      return identity?neonRpc<WalletSnapshot>('user_wallet_snapshot'):supabase.rpc('user_wallet_snapshot');
+    })().then(({data,error})=>{
       if(!alive)return;
       setWalletLoading(false);
       if(!error&&data){
@@ -97,7 +117,7 @@ export default function HeaderUserTools(){
   const openHoverPanel=(next:Panel)=>{clearPanelCloseTimer();setPanel(next)};
   const schedulePanelClose=(next:Panel)=>{clearPanelCloseTimer();panelCloseTimer.current=setTimeout(()=>{setPanel(v=>v===next?null:v);panelCloseTimer.current=null},650)};
   const toggle=(next:Panel)=>{clearPanelCloseTimer();setPanel(v=>v===next?null:next)};
-  const logout=async()=>{await supabase.auth.signOut();location.href='/'};
+  const logout=async()=>{await Promise.allSettled([fetch('/api/recovery-auth/logout',{method:'POST',credentials:'same-origin'}),supabase.auth.signOut()]);window.dispatchEvent(new Event('bm-auth-changed'));location.href='/'};
   const usdt=wallet.spot.find(x=>x.asset==='USDT');
   const spotAvailable=Number(usdt?.available||0);
   const spotLocked=Number(usdt?.locked||0);
