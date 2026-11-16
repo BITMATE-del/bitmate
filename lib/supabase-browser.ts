@@ -90,6 +90,16 @@ export function createBrowserSupabase(){
     let single=false;
     const query:any={
       select(_cols='*'){return query},
+      upsert(payload:Record<string,unknown>){
+        if(table!=='cfd_risk_acceptances')return Promise.resolve({data:null,error:{message:'지원하지 않는 데이터 변경입니다.'}});
+        return fetch('/api/recovery-view/'+table,{
+          method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({version:payload.version})
+        }).then(async r=>{
+          const result=await r.json().catch(()=>({data:null,error:{message:'저장 실패'}}));
+          return {data:result.data??null,error:result.error??(r.ok?null:{message:'저장 실패'})};
+        }).catch(e=>({data:null,error:{message:e instanceof Error?e.message:'서버 연결 실패'}}));
+      },
       eq(field:string,value:unknown){filters.push({field,operator:'eq',value});return query},
       in(field:string,value:unknown[]){filters.push({field,operator:'in',value});return query},
       gte(field:string,value:unknown){filters.push({field,operator:'gte',value});return query},
