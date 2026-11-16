@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import {siteConfirm} from './SiteDialog';
 import s from './CfdTrading.module.css';
 import o from './AdminCfdRoundOverride.module.css';
@@ -22,12 +23,22 @@ export default function AdminCfdRoundOverrideClient(){
     syncing.current=false;
   }
   const [admin,setAdmin]=useState<boolean|null>(null);
+  const [neonMode,setNeonMode]=useState(false);
   const [rows,setRows]=useState<any[]>([]);
   const [drafts,setDrafts]=useState<Record<string,Draft>>({});
   const [msg,setMsg]=useState('');
   const [busyId,setBusyId]=useState<string|null>(null);
 
   async function load(){
+    const identity=await neonIdentity();
+    if(identity?.role==='admin'){
+      setNeonMode(true);setAdmin(true);
+      const {data,error}=await neonRpc<{timed_trades:any[]}>('admin_get_cfd_dashboard');
+      if(error){setMsg(error.message);return}
+      setRows(data?.timed_trades||[]);
+      return;
+    }
+    setNeonMode(false);
     const {data:{user}}=await supabase.auth.getUser();
     const role=user?.app_metadata?.role;
     const ok=role==='admin'||role==='superadmin'||user?.app_metadata?.superadmin===true;
@@ -51,9 +62,8 @@ export default function AdminCfdRoundOverrideClient(){
     );
     if(!ok)return;
     setBusyId(t.id);setMsg('');
-    const {error}=await supabase.rpc('admin_set_cfd_timed_round_override',{
-      p_trade_id:t.id,p_override:d.value,p_reason:d.reason.trim()
-    });
+    const args={p_trade_id:t.id,p_override:d.value,p_reason:d.reason.trim()};
+    const {error}=neonMode?await neonRpc('admin_set_cfd_timed_round_override',args):await supabase.rpc('admin_set_cfd_timed_round_override',args);
     setBusyId(null);
     if(error){setMsg(error.message);return}
     setMsg('회차 판정 보정이 즉시 저장되었습니다.');
