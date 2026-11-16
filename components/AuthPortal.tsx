@@ -52,7 +52,7 @@ export default function AuthPortal({mode}:Props){
       });
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'인증 처리에 실패했습니다.');
-      router.push(mode==='login'?nextPath():'/account');
+      router.push('/account-access');
       router.refresh();
     }catch(err){
       const text=err instanceof Error?err.message:'인증 처리 중 오류가 발생했습니다.';
