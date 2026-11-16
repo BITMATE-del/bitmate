@@ -243,6 +243,20 @@ async function settleDueCfdTrades(){
 }
 setInterval(()=>void settleDueCfdTrades(),4000);
 console.log('BITMATE_AUTH_SERVICE_STARTING');
+const dynamicMemberRpc=new Set(['p2p_market_snapshot','p2p_apply_player','p2p_create_ad','p2p_update_my_ad','p2p_set_my_ad_status','p2p_create_order','p2p_order_action','p2p_send_message','p2p_order_messages','user_create_withdrawal_request','user_withdrawal_assignment','user_internal_transfer','user_deposit_access_snapshot','get_crypto_loan_collateral_options','get_crypto_loan_quote_v2','apply_crypto_loan_v2','repay_crypto_loan_now','request_crypto_loan_extension_v2','accept_crypto_loan_extension','start_index_investment','open_cfd_market_order','update_cfd_sltp','close_cfd_position','validate_signup_code']);
+const dynamicAdminRpc=new Set(['admin_set_p2p_player_status','admin_set_p2p_order_status','admin_set_p2p_ad_status','admin_approve_crypto_loan_v2','admin_reject_crypto_loan_v2','admin_offer_crypto_loan_extension','admin_reject_crypto_loan_extension','admin_mark_crypto_loan_overdue','admin_seize_crypto_loan_collateral','admin_update_crypto_loan_product_terms','admin_set_system_setting','admin_update_profile','admin_update_kyc','admin_update_deletion','admin_assign_tron_deposit_address','admin_set_api_status','admin_set_subaccount_status','admin_set_referral_code_active','admin_set_referral_reward_status','admin_update_asset_network','admin_update_withdrawal_status','admin_upsert_dealer_code','admin_set_dealer_active','admin_reset_user_password','admin_create_notice','admin_delete_notice','admin_update_notice_content']);
+const dynamicDealerRpc=new Set(['dealer_set_payment_settings','dealer_update_withdrawal_status','dealer_set_cfd_timed_round_override','dealer_approve_crypto_loan','dealer_reject_crypto_loan','dealer_set_p2p_player_status']);
+async function runDynamicPublicRpc(tx:any,name:string,args:Record<string,unknown>){
+ const entries=Object.entries(args);
+ if(entries.length>18||entries.some(([key])=>!/^p_[a-z0-9_]{1,60}$/.test(key)))throw new Error('RPC_ARGUMENTS_INVALID');
+ const funcs=await tx`select proargnames from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname=${name} and p.prokind='f'`;
+ const valid=funcs.find((row:any)=>entries.every(([key])=>row.proargnames?.includes(key)))||(!entries.length?funcs[0]:null);
+ if(!valid)throw new Error('RPC_SIGNATURE_NOT_FOUND');
+ const parts=entries.map(([key],i)=>'"'+key+'" => $'+(i+1));
+ const query='select public."'+name+'"('+parts.join(',')+') as result';
+ const rows=await tx.unsafe(query,entries.map(([,value])=>value));
+ return rows?.[0]?.result??null;
+}
 // BITMATE_ORIGINAL_RPC_GATEWAY: compatibility for the original app's PostgreSQL functions.
 const publicRpc=new Set(['user_wallet_snapshot','spot_virtual_snapshot','get_cfd_account_summary','get_cfd_timed_account_summary','ensure_cfd_demo_account','start_cfd_timed_trade','spot_virtual_market_order','futures_closed_position_margins']);
 const adminRpc=new Set(['admin_ops_snapshot','admin_wallet_ops_snapshot','admin_member_services_snapshot','admin_p2p_snapshot','admin_crypto_loan_snapshot_v2','admin_get_cfd_dashboard','admin_dealer_snapshot','admin_set_user_usdt_balance','admin_set_user_frozen','admin_set_cfd_timed_round_override']);
@@ -271,23 +285,53 @@ async function runOriginalRpc(tx:any,name:string,a:any){
  case 'dealer_portal_snapshot':return one(await tx`select public.dealer_portal_snapshot() as result`);
  case 'dealer_set_user_usdt_balance':return one(await tx`select public.dealer_set_user_usdt_balance(${String(a.p_user_id||'')},${Number(a.p_available)},${String(a.p_note||'')}) as result`);
  case 'dealer_set_user_frozen':return one(await tx`select public.dealer_set_user_frozen(${String(a.p_user_id||'')},${a.p_frozen===true},${String(a.p_reason||'')}) as result`);
- default:throw new Error('RPC_NOT_AVAILABLE');
+ default:if(dynamicMemberRpc.has(name)||dynamicAdminRpc.has(name)||dynamicDealerRpc.has(name))return runDynamicPublicRpc(tx,name,a);throw new Error('RPC_NOT_AVAILABLE');
  }
 }
 Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  const path=new URL(req.url).pathname;
  if(path==='/health')return response({ok:true,service:'bitmate-auth'});
+ // BITMATE_READONLY_TABLE_GATEWAY: scoped read-only table access.
+ if(path.startsWith('/view/')&&req.method==='GET'){
+  const table=path.slice('/view/'.length);
+  const permitted=new Set(['cfd_products','cfd_timed_trades','cfd_positions','cfd_orders','cfd_trade_executions','cfd_risk_acceptances','notices','demo_balances','futures_market_prices','crypto_loan_products','crypto_loans','p2p_ads','p2p_orders']);
+  if(!permitted.has(table))return response({error:'unsupported_table'},404);
+  const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
+  const digest=await hex(token);
+  const owners=await sql`select u.id,u.role from bm_auth_sessions s join bm_auth_users u on u.id=s.user_id where s.token_hash=${digest} and s.expires_at>now() and u.is_blocked=false`;
+  if(!owners[0])return response({error:'login_required'},401);
+  const owner=owners[0];
+  try{
+   let rows:any[]=[];
+   switch(table){
+    case 'cfd_products':rows=await sql`select * from public.cfd_products order by sort_order,symbol limit 300`;break;
+    case 'cfd_timed_trades':rows=await sql`select * from public.cfd_timed_trades where user_id=${owner.id} order by created_at desc limit 200`;break;
+    case 'cfd_positions':rows=await sql`select * from public.cfd_positions where user_id=${owner.id} order by created_at desc limit 200`;break;
+    case 'cfd_orders':rows=await sql`select * from public.cfd_orders where user_id=${owner.id} order by created_at desc limit 200`;break;
+    case 'cfd_trade_executions':rows=await sql`select * from public.cfd_trade_executions where user_id=${owner.id} order by created_at desc limit 200`;break;
+    case 'notices':rows=await sql`select * from public.notices where status='PUBLISHED' order by pinned desc,published_at desc limit 100`;break;
+    case 'demo_balances':rows=await sql`select * from public.demo_balances where user_id=${owner.id} order by asset limit 100`;break;
+    case 'futures_market_prices':rows=await sql`select * from public.futures_market_prices order by symbol limit 100`;break;
+    case 'crypto_loan_products':rows=await sql`select * from public.crypto_loan_products where status='ACTIVE' and visible=true order by sort_order limit 100`;break;
+    case 'crypto_loans':rows=await sql`select * from public.crypto_loans where user_id=${owner.id} order by created_at desc limit 100`;break;
+    case 'p2p_ads':rows=await sql`select * from public.p2p_ads order by created_at desc limit 150`;break;
+    case 'p2p_orders':rows=await sql`select * from public.p2p_orders where user_id=${owner.id} order by created_at desc limit 150`;break;
+    case 'cfd_risk_acceptances':rows=[];break;
+   }
+   return response({data:rows,error:null});
+  }catch(error){console.error('BITMATE_VIEW_ERROR',table,String(error).slice(0,150));return response({data:null,error:'데이터 조회 실패'},500)}
+ }
  if(path.startsWith('/rpc/')&&req.method==='POST'){
   const name=path.slice('/rpc/'.length);
-  if(!/^[a-z][a-z0-9_]{2,70}$/.test(name)||(!publicRpc.has(name)&&!adminRpc.has(name)&&!dealerRpc.has(name)))return response({error:'RPC_NOT_AVAILABLE'},404);
+  if(!/^[a-z][a-z0-9_]{2,70}$/.test(name)||(!publicRpc.has(name)&&!adminRpc.has(name)&&!dealerRpc.has(name)&&!dynamicMemberRpc.has(name)&&!dynamicAdminRpc.has(name)&&!dynamicDealerRpc.has(name)))return response({error:'RPC_NOT_AVAILABLE'},404);
   const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
   if(!token)return response({error:'로그인이 필요합니다.'},401);
   const digest=await hex(token);
   const rows=await sql`select u.id,u.role from bm_auth_sessions s join bm_auth_users u on u.id=s.user_id where s.token_hash=${digest} and s.expires_at>now() and u.is_blocked=false`;
   const actor=rows[0];
   if(!actor)return response({error:'인증 세션이 만료되었습니다.'},401);
-  if(adminRpc.has(name)&&actor.role!=='admin')return response({error:'관리자 권한이 없습니다.'},403);
-  if(dealerRpc.has(name)&&actor.role!=='dealer'&&actor.role!=='admin')return response({error:'총판 권한이 없습니다.'},403);
+  if((adminRpc.has(name)||dynamicAdminRpc.has(name))&&actor.role!=='admin')return response({error:'관리자 권한이 없습니다.'},403);
+  if((dealerRpc.has(name)||dynamicDealerRpc.has(name))&&actor.role!=='dealer'&&actor.role!=='admin')return response({error:'총판 권한이 없습니다.'},403);
   let raw='';try{raw=await req.text()}catch{return response({error:'잘못된 요청입니다.'},400)}
   if(raw.length>10000)return response({error:'요청이 너무 큽니다.'},413);
   let a:any={};try{a=raw?JSON.parse(raw):{}}catch{return response({error:'잘못된 JSON입니다.'},400)}
