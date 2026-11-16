@@ -6,7 +6,7 @@ await sql`create table if not exists bm_auth_users(
  id uuid primary key default gen_random_uuid(),
  email text not null unique,
  password_hash text not null,
- role text not null default 'user' check (role in ('user','admin')),
+ role text not null default 'user' check (role in ('user','admin','dealer')),
  created_at timestamptz not null default now()
 )`;
 await sql`create table if not exists bm_auth_sessions(
@@ -17,7 +17,7 @@ await sql`create table if not exists bm_auth_sessions(
 )`;
 await sql`create index if not exists bm_auth_sessions_user_id_idx on bm_auth_sessions(user_id)`;
 await sql`alter table bm_auth_users drop constraint if exists bm_auth_users_role_check`;
-await sql`alter table bm_auth_users add constraint bm_auth_users_role_check check (role in ('user','admin'))`;
+await sql`alter table bm_auth_users add constraint bm_auth_users_role_check check (role in ('user','admin','dealer'))`;
 await sql`alter table bm_auth_users add column if not exists is_blocked boolean not null default false`;
 await sql`alter table bm_auth_users add column if not exists is_test_account boolean not null default false`;
 await sql`create unique index if not exists bm_single_initial_admin on bm_auth_users ((role)) where role='admin'`;
@@ -26,6 +26,37 @@ await sql`create table if not exists bm_admin_audit(
  target_id uuid references bm_auth_users(id),
  action text not null, created_at timestamptz not null default now()
 )`;
+
+await sql`create table if not exists bm_dealer_codes(
+ id uuid primary key default gen_random_uuid(),
+ owner_id uuid not null unique references bm_auth_users(id),
+ code text not null unique,
+ enabled boolean not null default true,
+ created_at timestamptz not null default now()
+)`;
+await sql`create table if not exists bm_dealer_members(
+ user_id uuid primary key references bm_auth_users(id),
+ dealer_id uuid not null references bm_dealer_codes(id),
+ created_at timestamptz not null default now()
+)`;
+await sql`create index if not exists bm_dealer_members_dealer_id_idx on bm_dealer_members(dealer_id)`;
+await sql`create table if not exists bm_demo_wallets(
+ user_id uuid primary key references bm_auth_users(id),
+ available numeric(20,2) not null default 0 check (available>=0),
+ locked numeric(20,2) not null default 0 check (locked>=0),
+ updated_at timestamptz not null default now()
+)`;
+await sql`create table if not exists bm_demo_ledger(
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references bm_auth_users(id),
+ actor_id uuid references bm_auth_users(id),
+ delta numeric(20,2) not null,
+ balance_after numeric(20,2) not null,
+ idempotency_key uuid not null unique,
+ description text not null default 'DEMO_BALANCE_ADJUSTMENT',
+ created_at timestamptz not null default now()
+)`;
+await sql`create index if not exists bm_demo_ledger_user_time_idx on bm_demo_ledger(user_id,created_at desc)`;
 console.log('BITMATE_AUTH_DB_READY');
 const hex=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const response=(obj:unknown,status=200)=>Response.json(obj,{status,headers:{'cache-control':'no-store'}});
@@ -40,8 +71,26 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
   let user:any;
   if(path==='/signup'){
    const hash=await Bun.password.hash(password,{algorithm:'argon2id'});
-   try{const rows=await sql`insert into bm_auth_users(email,password_hash) values(${email},${hash}) returning id,email,role`;user=rows[0]}
-   catch(error:any){if(error?.code==='23505')return response({error:'이미 가입된 이메일입니다.'},409);return response({error:'회원가입 처리 실패'},500)}
+   const code=String(body.signupCode||'').trim().toUpperCase();
+   if(code&&!/^[A-Z0-9_-]{3,20}$/.test(code))return response({error:'가입코드 형식을 확인하세요.'},400);
+   try{
+     user=await sql.begin(async tx=>{
+       let dealerId:string|null=null;
+       if(code){
+         const match=await tx`select id from bm_dealer_codes where code=${code} and enabled=true`;
+         if(!match.length)throw new Error('INVALID_DEALER_CODE');
+         dealerId=match[0].id;
+       }
+       const rows=await tx`insert into bm_auth_users(email,password_hash) values(${email},${hash}) returning id,email,role`;
+       if(dealerId)await tx`insert into bm_dealer_members(user_id,dealer_id) values(${rows[0].id},${dealerId})`;
+       await tx`insert into bm_demo_wallets(user_id) values(${rows[0].id})`;
+       return rows[0];
+     });
+   }catch(error:any){
+     if(error?.code==='23505')return response({error:'이미 가입된 이메일입니다.'},409);
+     if(String(error).includes('INVALID_DEALER_CODE'))return response({error:'유효하지 않은 총판 가입코드입니다.'},400);
+     return response({error:'회원가입 처리 실패'},500);
+   }
   }else{
    const rows=await sql`select id,email,role,password_hash,is_blocked from bm_auth_users where email=${email}`;
    const candidate=rows[0];
@@ -112,7 +161,115 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
    await sql`insert into bm_admin_audit(actor_id,target_id,action) values(${operator.id},${id},${blocked?'USER_BLOCKED':'USER_UNBLOCKED'})`;
    return response({ok:true,user:updated[0]});
   }
+
+  if(path==='/admin/dealers'&&req.method==='GET'){
+   const rows=await sql`select d.id,d.code,d.enabled,d.created_at,u.id as owner_id,u.email as owner_email,(select count(*)::int from bm_dealer_members m where m.dealer_id=d.id) as member_count from bm_dealer_codes d join bm_auth_users u on u.id=d.owner_id order by d.created_at desc limit 100`;
+   return response({ok:true,dealers:rows});
+  }
+  if(path==='/admin/assign-dealer'&&req.method==='POST'){
+   let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+   const email=String(body.email||'').trim().toLowerCase(),code=String(body.code||'').trim().toUpperCase();
+   if(!/^[A-Z0-9_-]{3,20}$/.test(code)||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return response({error:'이메일 또는 코드 형식을 확인하세요.'},400);
+   try{
+    const dealer=await sql.begin(async tx=>{
+     const owners=await tx`select id from bm_auth_users where email=${email} and role='user' for update`;
+     if(!owners.length)throw new Error('USER_NOT_FOUND');
+     const assigned=await tx`update bm_auth_users set role='dealer' where id=${owners[0].id} returning id,email`;
+     const codeRow=await tx`insert into bm_dealer_codes(owner_id,code) values(${assigned[0].id},${code}) returning id,code`;
+     await tx`insert into bm_admin_audit(actor_id,target_id,action) values(${operator.id},${assigned[0].id},'DEALER_ASSIGNED')`;
+     return {id:codeRow[0].id,code:codeRow[0].code,owner:assigned[0].email};
+    });
+    return response({ok:true,dealer});
+   }catch{return response({error:'회원을 찾을 수 없거나 이미 총판인 계정·중복 코드입니다.'},409)}
+  }
+  if(path==='/admin/demo-wallets'&&req.method==='GET'){
+   const search=String(new URL(req.url).searchParams.get('q')||'').toLowerCase().slice(0,80);
+   const rows=search?await sql`select u.id,u.email,u.is_test_account,coalesce(w.available,0) as available,coalesce(w.locked,0) as locked from bm_auth_users u left join bm_demo_wallets w on w.user_id=u.id where u.role='user' and u.email ilike ${'%'+search+'%'} order by u.created_at desc limit 100`:await sql`select u.id,u.email,u.is_test_account,coalesce(w.available,0) as available,coalesce(w.locked,0) as locked from bm_auth_users u left join bm_demo_wallets w on w.user_id=u.id where u.role='user' order by u.created_at desc limit 100`;
+   return response({ok:true,wallets:rows});
+  }
+  if(path==='/admin/demo-wallet-set'&&req.method==='POST'){
+   let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+   const userId=String(body.userId||''),amount=Number(body.amount),key=String(body.idempotencyKey||'');
+   if(!/^[0-9a-f-]{36}$/i.test(userId)||!Number.isSafeInteger(amount)||amount<0||amount>1000000000||!/^[0-9a-f-]{36}$/i.test(key))return response({error:'금액 또는 요청값을 확인하세요.'},400);
+   try {
+    const result=await sql.begin(async tx=>{
+     const users=await tx`select id from bm_auth_users where id=${userId} and role='user' and is_test_account=true for update`;
+     if(!users.length)throw new Error('NOT_TEST_MEMBER');
+     await tx`insert into bm_demo_wallets(user_id) values(${userId}) on conflict(user_id) do nothing`;
+     const locked=await tx`select available from bm_demo_wallets where user_id=${userId} for update`;
+     const previous=Number(locked[0].available);
+     await tx`update bm_demo_wallets set available=${amount},updated_at=now() where user_id=${userId}`;
+     await tx`insert into bm_demo_ledger(user_id,actor_id,delta,balance_after,idempotency_key) values(${userId},${operator.id},${amount-previous},${amount},${key})`;
+     await tx`insert into bm_admin_audit(actor_id,target_id,action) values(${operator.id},${userId},'ADMIN_DEMO_BALANCE_SET')`;
+     return {available:amount};
+    });
+    return response({ok:true,wallet:result});
+   }catch(error){return response({error:String(error).includes('NOT_TEST_MEMBER')?'테스트 회원만 가상잔액을 조정할 수 있습니다.':'중복 요청이거나 잔액 처리에 실패했습니다.'},409)}
+  }
+  if(path==='/admin/demo-ledger'&&req.method==='GET'){
+   const rows=await sql`select l.id,l.delta,l.balance_after,l.created_at,u.email as member_email,a.email as actor_email from bm_demo_ledger l join bm_auth_users u on u.id=l.user_id left join bm_auth_users a on a.id=l.actor_id order by l.created_at desc limit 100`;
+   return response({ok:true,ledger:rows});
+  }
   return response({error:'not_found'},404);
+ }
+
+ if(path.startsWith('/dealer/')&&req.method==='GET'||path.startsWith('/dealer/')&&req.method==='POST'){
+   const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
+   const digest=await hex(token);
+   const actors=await sql`select u.id,u.email,u.role,d.id as dealer_id,d.code from bm_auth_sessions s join bm_auth_users u on u.id=s.user_id join bm_dealer_codes d on d.owner_id=u.id and d.enabled=true where s.token_hash=${digest} and s.expires_at>now() and not u.is_blocked`;
+   const actor=actors[0];
+   if(!actor)return response({error:'총판 권한이 없습니다.'},403);
+   if(path==='/dealer/members'&&req.method==='GET'){
+     const rows=await sql`select u.id,u.email,u.is_blocked,u.is_test_account,u.created_at,coalesce(w.available,0) as available from bm_dealer_members m join bm_auth_users u on u.id=m.user_id left join bm_demo_wallets w on w.user_id=u.id where m.dealer_id=${actor.dealer_id} order by u.created_at desc limit 100`;
+     return response({ok:true,code:actor.code,members:rows});
+   }
+   if(path==='/dealer/create-test'&&req.method==='POST'){
+     let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+     const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');
+     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||password.length<12||password.length>128)return response({error:'이메일 또는 비밀번호를 확인하세요.'},400);
+     const hash=await Bun.password.hash(password,{algorithm:'argon2id'});
+     try {
+       const result=await sql.begin(async tx=>{
+         const created=await tx`insert into bm_auth_users(email,password_hash,is_test_account) values(${email},${hash},true) returning id,email`;
+         await tx`insert into bm_dealer_members(user_id,dealer_id) values(${created[0].id},${actor.dealer_id})`;
+         await tx`insert into bm_demo_wallets(user_id) values(${created[0].id})`;
+         await tx`insert into bm_admin_audit(actor_id,target_id,action) values(${actor.id},${created[0].id},'DEALER_TEST_USER_CREATED')`;
+         return created[0];
+       });
+       return response({ok:true,user:result});
+     }catch{return response({error:'계정 생성 실패. 중복 이메일을 확인하세요.'},409)}
+   }
+   if(path==='/dealer/set-block'&&req.method==='POST'){
+     let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+     const userId=String(body.userId||'');
+     if(!/^[0-9a-f-]{36}$/i.test(userId))return response({error:'회원 식별값 오류'},400);
+     const rows=await sql`update bm_auth_users set is_blocked=${body.blocked===true} where id=${userId} and role='user' and id in (select user_id from bm_dealer_members where dealer_id=${actor.dealer_id}) returning id`;
+     if(!rows.length)return response({error:'소속 회원을 찾을 수 없습니다.'},404);
+     if(body.blocked===true)await sql`delete from bm_auth_sessions where user_id=${userId}`;
+     await sql`insert into bm_admin_audit(actor_id,target_id,action) values(${actor.id},${userId},${body.blocked===true?'DEALER_BLOCKED':'DEALER_UNBLOCKED'})`;
+     return response({ok:true});
+   }
+   // Demo-only balance adjustments are audited, scoped to the issuing dealer and serialized.
+   if(path==='/dealer/wallet-adjust'&&req.method==='POST'){
+     let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+     const userId=String(body.userId||''),amount=Number(body.amount),key=String(body.idempotencyKey||'');
+     if(!/^[0-9a-f-]{36}$/i.test(userId)||!Number.isSafeInteger(amount)||amount<0||amount>1000000000||!/^[0-9a-f-]{36}$/i.test(key))return response({error:'금액 또는 요청값을 확인하세요.'},400);
+     try {
+       const result=await sql.begin(async tx=>{
+         const owned=await tx`select u.id from bm_auth_users u join bm_dealer_members m on m.user_id=u.id where u.id=${userId} and m.dealer_id=${actor.dealer_id} and u.role='user' and u.is_test_account=true for update of u`;
+         if(!owned.length)throw new Error('NOT_TEST_MEMBER');
+         await tx`insert into bm_demo_wallets(user_id) values(${userId}) on conflict(user_id) do nothing`;
+         const wallet=await tx`select available from bm_demo_wallets where user_id=${userId} for update`;
+         const previous=Number(wallet[0].available);
+         const updated=await tx`update bm_demo_wallets set available=${amount},updated_at=now() where user_id=${userId} returning available`;
+         await tx`insert into bm_demo_ledger(user_id,actor_id,delta,balance_after,idempotency_key) values(${userId},${actor.id},${amount-previous},${amount},${key})`;
+         await tx`insert into bm_admin_audit(actor_id,target_id,action) values(${actor.id},${userId},'DEALER_DEMO_BALANCE_SET')`;
+         return updated[0];
+       });
+       return response({ok:true,wallet:result});
+     }catch(error){return response({error:String(error).includes('NOT_TEST_MEMBER')?'본인 소속 테스트 회원만 금액 조정이 가능합니다.':'이미 처리되었거나 잔액 처리에 실패했습니다.'},409)}
+   }
+   return response({error:'not_found'},404);
  }
  if(path==='/session'||path==='/logout'){
   const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
@@ -131,37 +288,3 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  return response({error:'not_found'},404);
 }});
 
-void (async()=>{
-  const host='http://127.0.0.1:'+String(Bun.env.PORT||3000);
-  const email='bm-smoke-'+crypto.randomUUID()+'@example.invalid';
-  const password='SmokeTest_'+crypto.randomUUID();
-  try {
-    const signup=await fetch(host+'/signup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
-    const created=await signup.json();
-    const login=await fetch(host+'/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
-    const logged=await login.json();
-    const session=await fetch(host+'/session',{headers:{authorization:'Bearer '+String(logged.token||'')}});
-    const sessionData=await session.json();
-    if(!signup.ok||!login.ok||!session.ok||sessionData.user?.email!==email)throw new Error('signup='+signup.status+',login='+login.status+',session='+session.status);
-    const logout=await fetch(host+'/logout',{method:'POST',headers:{authorization:'Bearer '+logged.token}});
-    if(!logout.ok)throw new Error('logout='+logout.status);
-    console.log('BITMATE_AUTH_FLOW_SMOKE_PASS');
-  } catch(error){console.error('BITMATE_AUTH_FLOW_SMOKE_FAIL',String(error))}
-  finally {try{await sql`delete from bm_auth_users where email=${email}`}catch{}}
-  try{
-    const external=await fetch('https://bitmate-auth-production.up.railway.app/health',{signal:AbortSignal.timeout(5000)});
-    console.log('BITMATE_AUTH_PUBLIC_HEALTH',external.status);
-  }catch(error){console.error('BITMATE_AUTH_PUBLIC_HEALTH_FAILED',String(error))}
-})();
-
-void (async()=>{
- const host='http://127.0.0.1:'+String(Bun.env.PORT||3000);
- try{
-  const status=await fetch(host+'/admin/status');
-  const data=await status.json();
-  const denied=await fetch(host+'/admin/users');
-  const invalid=await fetch(host+'/admin/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'a@example.com',password:'abcdefghijklmnop',setupKey:'incorrect-setup-key'})});
-  if(!status.ok||typeof data.setupComplete!=='boolean'||denied.status!==401||invalid.status!==403)throw new Error('status='+status.status+',denied='+denied.status+',invalid='+invalid.status);
-  console.log('BITMATE_ADMIN_GUARD_TEST_PASS');
- }catch(e){console.error('BITMATE_ADMIN_GUARD_TEST_FAIL',String(e))}
-})();
