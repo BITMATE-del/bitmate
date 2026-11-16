@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import UiIcon,{type UiIconName} from './UiIcon';
 import TestAccountCreator from './TestAccountCreator';
 import s from './AdminControlCenter.module.css';
@@ -38,28 +39,27 @@ export default function AdminControlCenter(){
   useEffect(()=>{
     let alive=true;
     const load=async()=>{
+      const neonUser=await neonIdentity();
+      if(neonUser?.role==='admin'){
+        if(!alive)return;
+        setRole('admin');setEmail(neonUser.email);setAllowed(true);setLegacyUnavailable(false);
+        const [{data:o,error:oe},{data:w,error:we},{data:l,error:le}]=await Promise.all([
+          neonRpc('admin_ops_snapshot',{p_query:''}),
+          neonRpc('admin_wallet_ops_snapshot'),
+          neonRpc('admin_crypto_loan_snapshot_v2')
+        ]);
+        if(!alive)return;
+        setOps(o||{stats:{}});setWallet(w||{stats:{}});setLoan(l||{loans:[]});
+        setLegacyUnavailable(!!(oe||we||le));setLoading(false);
+        return;
+      }
       const {data:{user}}=await supabase.auth.getUser();
       if(!alive)return;
       const r=String(user?.app_metadata?.role||'').toLowerCase();
       const superadmin=user?.app_metadata?.superadmin===true;
-      let ok=r==='admin'||r==='superadmin'||superadmin;
-      let displayEmail=user?.email||'';
-      if(!ok){
-        try{
-          const res=await fetch('/api/recovery-auth/session',{credentials:'same-origin',cache:'no-store'});
-          if(res.ok){
-            const data=await res.json();
-            if(data?.user?.role==='admin'){
-              ok=true;displayEmail=data.user.email;
-              setLegacyUnavailable(true);
-            }
-          }
-        }catch{}
-      }
-      if(!alive)return;
-      setRole(ok?'admin':'user');setEmail(displayEmail);setAllowed(ok);
+      const ok=r==='admin'||r==='superadmin'||superadmin;
+      setRole(ok?'admin':'user');setEmail(user?.email||'');setAllowed(ok);
       if(!ok){setLoading(false);return}
-      if(!user){setLoading(false);return}
       const [{data:o},{data:w},{data:l}]=await Promise.all([
         supabase.rpc('admin_ops_snapshot',{p_query:''}),
         supabase.rpc('admin_wallet_ops_snapshot'),
