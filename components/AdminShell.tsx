@@ -77,9 +77,12 @@ export default function AdminShell({children}:{children:React.ReactNode}){
   if(isNewConsole)return <>{children}</>;
 
   const logout=async()=>{
-    await fetch('/api/admin/session',{method:'DELETE'});
-    await supabase.auth.signOut();
-    router.replace('/admin/login');
+    await Promise.allSettled([
+      fetch('/api/recovery-auth/logout',{method:'POST',credentials:'same-origin'}),
+      fetch('/api/admin/session',{method:'DELETE'}),
+      supabase.auth.signOut()
+    ]);
+    router.replace('/admin/recovery');
     router.refresh();
   };
 
