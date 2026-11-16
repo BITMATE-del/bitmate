@@ -1,2 +1,2 @@
-import DealerPortal from '@/components/DealerPortal';
-export default function Page(){return <DealerPortal/>;}
+import RecoveryDealerClient from '@/components/RecoveryDealerClient';
+export default function Page(){return <RecoveryDealerClient/>}
