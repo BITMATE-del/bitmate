@@ -1,2 +1,5 @@
-import RecoveryAdminClient from '@/components/RecoveryAdminClient';
-export default function AdminPage(){return <RecoveryAdminClient/>}
+import AdminControlCenter from '@/components/AdminControlCenter';
+
+export default function AdminPage(){
+  return <AdminControlCenter/>;
+}
