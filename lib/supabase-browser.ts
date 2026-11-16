@@ -4,6 +4,7 @@ const FALLBACK_SUPABASE_URL='https://fgyiofykvpkxpeylcocn.supabase.co';
 const FALLBACK_SUPABASE_PUBLISHABLE_KEY='sb_publishable_a7YWOaS5bhOcoHqHMpunKQ_-Nm-2pOC';
 let browserClient:SupabaseClient|null=null;
 
+const neonTableNames=new Set(['cfd_products','cfd_timed_trades','cfd_positions','cfd_orders','cfd_trade_executions','cfd_risk_acceptances','notices','demo_balances','futures_market_prices','crypto_loan_products','crypto_loans','p2p_ads','p2p_orders']);
 const neonRpcNames=new Set([
  'user_wallet_snapshot','spot_virtual_snapshot','spot_virtual_market_order',
  'get_cfd_account_summary','get_cfd_timed_account_summary','ensure_cfd_demo_account',
@@ -80,6 +81,48 @@ export function createBrowserSupabase(){
  const client=new Proxy(legacy,{
   get(target,property,receiver){
    if(property==='auth')return auth;
+   if(property==='from')return (table:string)=>{
+    if(!neonTableNames.has(table))return target.from(table);
+    const filters:Array<{field:string;operator:'eq'|'in'|'gte'|'lte';value:unknown}>=[];
+    let sort:{field:string;ascending:boolean}|null=null;
+    let limit=100;
+    let single=false;
+    const query:any={
+      select(_cols='*'){return query},
+      eq(field:string,value:unknown){filters.push({field,operator:'eq',value});return query},
+      in(field:string,value:unknown[]){filters.push({field,operator:'in',value});return query},
+      gte(field:string,value:unknown){filters.push({field,operator:'gte',value});return query},
+      lte(field:string,value:unknown){filters.push({field,operator:'lte',value});return query},
+      order(field:string,options?:{ascending?:boolean}){sort={field,ascending:options?.ascending!==false};return query},
+      limit(n:number){if(Number.isSafeInteger(n)&&n>0)limit=Math.min(n,200);return query},
+      maybeSingle(){single=true;return query},
+      single(){single=true;return query},
+      then(resolve:(value:any)=>unknown,reject?:(error:unknown)=>unknown){
+        return fetch('/api/recovery-view/'+table,{credentials:'same-origin',cache:'no-store'})
+        .then(async r=>{
+          const result=await r.json().catch(()=>({data:null,error:{message:'조회 실패'}}));
+          if(result.error)return {data:null,error:typeof result.error==='string'?{message:result.error}:result.error};
+          let rows=Array.isArray(result.data)?result.data:[];
+          for(const filter of filters){
+            rows=rows.filter((item:Record<string,unknown>)=>{
+              const current=item[filter.field];
+              switch(filter.operator){
+                case 'eq':return String(current)===String(filter.value);
+                case 'in':return Array.isArray(filter.value)&&filter.value.some(v=>String(current)===String(v));
+                case 'gte':return String(current)>=String(filter.value);
+                case 'lte':return String(current)<=String(filter.value);
+              }
+            });
+          }
+          if(sort){const {field,ascending}=sort;rows=[...rows].sort((a:Record<string,unknown>,b:Record<string,unknown>)=>String(a[field]??'').localeCompare(String(b[field]??''),'en',{numeric:true})*(ascending?1:-1))}
+          rows=rows.slice(0,limit);
+          return {data:single?(rows[0]??null):rows,error:null};
+        }).catch(e=>({data:null,error:{message:e instanceof Error?e.message:'Neon 조회 실패'}}))
+        .then(resolve,reject);
+      }
+    };
+    return query;
+   };
    if(property==='rpc')return (name:string,args?:Record<string,unknown>)=>{
     if(!neonRpcNames.has(name))return target.rpc(name,args);
     return fetch('/api/recovery-rpc/'+name,{
