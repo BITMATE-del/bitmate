@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import {siteConfirm,sitePrompt} from './SiteDialog';
 import BrandLogo from './BrandLogo';
 import TestAccountCreator from './TestAccountCreator';
@@ -24,6 +25,10 @@ const n=(v:number)=>Number(v||0).toLocaleString('ko-KR');
 export default function DealerPortal(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const [data,setData]=useState<Snap|null>(null);
+ async function dealerRpc(name:string,args:Record<string,unknown>):Promise<{data:any;error:any}>{
+   const identity=await neonIdentity();
+   return identity?neonRpc(name,args):supabase.rpc(name,args);
+ }
  const [tab,setTab]=useState<Tab>('members');
  const [memberQuery,setMemberQuery]=useState('');
  const [showCreator,setShowCreator]=useState(false);
@@ -37,9 +42,10 @@ export default function DealerPortal(){
 
  async function load(){
   setLoading(true);
-  const {data:{user}}=await supabase.auth.getUser();
+  const identity=await neonIdentity();
+  const {data:{user}}=identity?{data:{user:identity}}:await supabase.auth.getUser();
   if(!user){location.href='/login?next=/dealer';return}
-  const {data:snap,error}=await supabase.rpc('dealer_portal_snapshot');
+  const {data:snap,error}=identity?await neonRpc('dealer_portal_snapshot'):await supabase.rpc('dealer_portal_snapshot');
   setLoading(false);
   if(error){setMsg(error.message.includes('dealer_required')?'총판 권한이 없는 계정입니다.':error.message);return}
   const next=snap as Snap;setData(next);
@@ -49,29 +55,29 @@ export default function DealerPortal(){
  useEffect(()=>{void load()},[]);
 
  async function saveSettings(){
-  const {error}=await supabase.rpc('dealer_set_payment_settings',{p_asset:asset,p_network:network,p_deposit_address:depositAddress,p_withdraw_address:withdrawAddress,p_note:note});
+  const {error}=await dealerRpc('dealer_set_payment_settings',{p_asset:asset,p_network:network,p_deposit_address:depositAddress,p_withdraw_address:withdrawAddress,p_note:note});
   if(error)return setMsg(error.message);setMsg('전용 입출금 주소 설정을 저장했습니다.');await load();
  }
  async function withdrawal(id:string,status:string){
   let txid:string|null=null;
   if(status==='SENT'){txid=await sitePrompt('전송 TXID를 입력하세요.','',{title:'출금 전송 완료'});if(!txid)return}
   if(!(await siteConfirm('출금 상태를 '+status+'(으)로 변경할까요?',{title:'출금 관리'})))return;
-  const {error}=await supabase.rpc('dealer_update_withdrawal_status',{p_id:id,p_status:status,p_txid:txid,p_note:'총판 처리'});
+  const {error}=await dealerRpc('dealer_update_withdrawal_status',{p_id:id,p_status:status,p_txid:txid,p_note:'총판 처리'});
   if(error)return setMsg(error.message);await load();
  }
  async function loan(id:string,approve:boolean){
   if(approve){
    if(!(await siteConfirm('해당 대출을 승인하고 지급할까요?',{title:'코인대출 승인'})))return;
-   const {error}=await supabase.rpc('dealer_approve_crypto_loan',{p_loan:id});if(error)return setMsg(error.message);
+   const {error}=await dealerRpc('dealer_approve_crypto_loan',{p_loan:id});if(error)return setMsg(error.message);
   }else{
    const reason=await sitePrompt('거절 사유를 입력하세요.','',{title:'코인대출 거절'});if(!reason)return;
-   const {error}=await supabase.rpc('dealer_reject_crypto_loan',{p_loan:id,p_reason:reason});if(error)return setMsg(error.message);
+   const {error}=await dealerRpc('dealer_reject_crypto_loan',{p_loan:id,p_reason:reason});if(error)return setMsg(error.message);
   }
   await load();
  }
  async function cfdOverride(id:string,value:string){
   const reason=await sitePrompt('판정보정 사유를 5자 이상 입력하세요.','',{title:'CFD 판정보정'});if(!reason)return;
-  const {error}=await supabase.rpc('dealer_set_cfd_timed_round_override',{p_trade_id:id,p_override:value,p_reason:reason});
+  const {error}=await dealerRpc('dealer_set_cfd_timed_round_override',{p_trade_id:id,p_override:value,p_reason:reason});
   if(error)return setMsg(error.message);setMsg('판정보정이 저장되었습니다.');await load();
  }
 
@@ -82,7 +88,7 @@ export default function DealerPortal(){
   if(!Number.isFinite(amount)||amount<0){setMsg('올바른 잔액을 입력하세요.');return}
   const note=await sitePrompt('변경 사유를 입력하세요.','',{title:'잔액 변경 사유'});
   if(note===null)return;
-  const {error}=await supabase.rpc('dealer_set_user_usdt_balance',{p_user_id:m.user_id,p_available:amount,p_note:note});
+  const {error}=await dealerRpc('dealer_set_user_usdt_balance',{p_user_id:m.user_id,p_available:amount,p_note:note});
   if(error)return setMsg(error.message);
   setMsg('회원 USDT 잔액이 변경되었습니다.');await load();
  }
@@ -97,7 +103,7 @@ export default function DealerPortal(){
   }else{
     if(!(await siteConfirm(m.email+' 계정의 동결을 해제할까요?',{title:'회원 동결 해제'})))return;
   }
-  const {error}=await supabase.rpc('dealer_set_user_frozen',{p_user_id:m.user_id,p_frozen:!frozen,p_reason:reason||null});
+  const {error}=await dealerRpc('dealer_set_user_frozen',{p_user_id:m.user_id,p_frozen:!frozen,p_reason:reason||null});
   if(error)return setMsg(error.message);
   setMsg(frozen?'회원 동결이 해제되었습니다.':'회원 계정이 동결되었습니다.');await load();
  }
@@ -105,7 +111,7 @@ export default function DealerPortal(){
  async function setP2PStatus(p:P2PPlayer,status:string){
   const label=status==='APPROVED'?'승인':status==='REJECTED'?'거절':status==='SUSPENDED'?'정지':'대기';
   if(!(await siteConfirm(p.email+' P2P 판매자 상태를 '+label+' 처리할까요?',{title:'P2P 판매자 관리'})))return;
-  const {error}=await supabase.rpc('dealer_set_p2p_player_status',{p_id:p.id,p_status:status});
+  const {error}=await dealerRpc('dealer_set_p2p_player_status',{p_id:p.id,p_status:status});
   if(error)return setMsg(error.message);
   setMsg('P2P 판매자 상태가 변경되었습니다.');await load();
  }
