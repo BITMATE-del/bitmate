@@ -52,6 +52,7 @@ export default function AuthPortal({mode}:Props){
       });
       const result=await response.json();
       if(!response.ok)throw new Error(result.error||'인증 처리에 실패했습니다.');
+      window.dispatchEvent(new Event('bm-auth-changed'));
       router.push('/account-access');
       router.refresh();
     }catch(err){
