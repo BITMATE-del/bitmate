@@ -3,8 +3,8 @@ export const runtime='nodejs';
 export const dynamic='force-dynamic';
 
 const backend='https://bitmate-auth-production.up.railway.app';
-const validGet=new Set(['status','summary','users']);
-const validPost=new Set(['setup','create-test','set-block']);
+const validGet=new Set(['status','summary','users','dealers','demo-wallets','demo-ledger']);
+const validPost=new Set(['setup','create-test','set-block','assign-dealer','demo-wallet-set']);
 const error=(msg:string,status:number)=>NextResponse.json({ok:false,error:msg},{status,headers:{'Cache-Control':'no-store'}});
 
 async function forward(req:NextRequest,action:string,method:'GET'|'POST'){
@@ -25,7 +25,7 @@ async function forward(req:NextRequest,action:string,method:'GET'|'POST'){
   if(body.length>4096)return error('입력 내용이 너무 큽니다.',413);
   headers['Content-Type']='application/json';
  }
- const url=backend+'/admin/'+action+(method==='GET'&&action==='users'?('?q='+encodeURIComponent((req.nextUrl.searchParams.get('q')||'').slice(0,80))):'');
+ const url=backend+'/admin/'+action+(method==='GET'&&(action==='users'||action==='demo-wallets')?('?q='+encodeURIComponent((req.nextUrl.searchParams.get('q')||'').slice(0,80))):'');
  try{
   const upstream=await fetch(url,{method,headers,body,cache:'no-store',signal:AbortSignal.timeout(10000)});
   const payload=await upstream.json().catch(()=>({ok:false,error:'관리 서버 응답 오류'}));
