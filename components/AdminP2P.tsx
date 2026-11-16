@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import UiIcon from './UiIcon';
 import s from './AdminP2P.module.css';
 
@@ -20,11 +21,12 @@ export default function AdminP2P(){
  const [msg,setMsg]=useState('');
 
  async function load(){
-  const {data:{user}}=await supabase.auth.getUser();
+  const identity=await neonIdentity();
+  const {data:{user}}=identity?.role==='admin'?{data:{user:{app_metadata:{role:'admin'}}}}:await supabase.auth.getUser();
   const role=String(user?.app_metadata?.role||'').toLowerCase();
   const ok=role==='admin'||role==='superadmin'||user?.app_metadata?.superadmin===true;
   setAllowed(ok);if(!ok)return;
-  const {data:snap,error}=await supabase.rpc('admin_p2p_snapshot');
+  const {data:snap,error}=identity?.role==='admin'?await neonRpc('admin_p2p_snapshot'):await supabase.rpc('admin_p2p_snapshot');
   if(error){setMsg(error.message);return}
   setData((snap||{}) as Snap);
  }
@@ -32,7 +34,8 @@ export default function AdminP2P(){
 
  async function run(name:string,args:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
-  const {error}=await supabase.rpc(name,args);
+  const identity=await neonIdentity();
+  const {error}=identity?.role==='admin'?await neonRpc(name,args):await supabase.rpc(name,args);
   setBusy(false);
   if(error){setMsg(error.message);return}
   setMsg(success);await load();
