@@ -133,7 +133,7 @@ export default function ExchangeHeader(){
     return()=>{cancelled=true};
   },[searchOpen,supabase]);
 
-  const quickLinks:QuickLink[]=isLoggedIn?[...baseQuickLinks,{href:'/more/btmt-membership',icon:'membership',label:'BTMT Membership',sub:'BTMT 스테이킹 멤버십'}]:baseQuickLinks;
+  const quickLinks:QuickLink[]=(isLoggedIn||Boolean(recoveryEmail))?[...baseQuickLinks,{href:'/more/btmt-membership',icon:'membership',label:'BTMT Membership',sub:'BTMT 스테이킹 멤버십'}]:baseQuickLinks;
   const q=query.trim().toLowerCase();
   const filteredLinks=quickLinks.filter(x=>!q||`${x.label} ${x.sub}`.toLowerCase().includes(q));
   const filteredMarkets=markets.filter(x=>!q||`${x.symbol} usdt`.toLowerCase().includes(q));
@@ -190,7 +190,7 @@ export default function ExchangeHeader(){
           {item('/more/mining-boost','boost','Mining Boost','Mining Power 및 채굴 효율 부스트 프로그램')}
           {item('/lucky-draw','lucky','Lucky Draw','행운볼 획득, 추첨 결과 및 보상 내역')}
           {item('/crypto-loan','loan','Crypto Loan','보유 암호화폐를 담보로 하는 자산담보 대출')}
-          {isLoggedIn&&item('/more/btmt-membership','membership','BTMT Membership','BTMT 스테이킹 등급과 거래금액 리워드')}
+          {(isLoggedIn||Boolean(recoveryEmail))&&item('/more/btmt-membership','membership','BTMT Membership','BTMT 스테이킹 등급과 거래금액 리워드')}
         </div>
       </div>
     </nav>
@@ -206,7 +206,7 @@ export default function ExchangeHeader(){
           {filteredLinks.length===0&&filteredMarkets.length===0&&filteredTraders.length===0&&<div style={{padding:'32px 8px',textAlign:'center',color:'#7e868b',fontSize:'13px'}}>검색 결과가 없습니다.</div>}
         </div>}
       </div>
-      {recoveryEmail?<Link href="/account-access" className="loginLink" style={{color:'#b9ff31',fontSize:12,fontWeight:800,maxWidth:160,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={recoveryEmail}>내 계정</Link>:isLoggedIn?<div className="headerAccountTools"><HeaderUserTools/></div>:<>
+      {(recoveryEmail||isLoggedIn)?<div className="headerAccountTools"><HeaderUserTools/></div>:<>
         <Link className="loginLink" href="/login" style={{fontSize:'14px',fontWeight:700,color:'#fff',padding:'0 2px',whiteSpace:'nowrap'}}>Log in</Link>
         <Link className="headerBtn" href="/signup" style={{height:'40px',minHeight:'40px',padding:'0 17px',borderRadius:'8px',background:'#f5f5f5',color:'#111',fontSize:'14px',fontWeight:700,display:'inline-flex',alignItems:'center',justifyContent:'center',whiteSpace:'nowrap'}}>Sign up</Link>
         <button className="iconBtn" aria-label="Download app" style={{width:'30px',height:'40px',padding:0,display:'grid',placeItems:'center'}}><UiIcon name="download" size={20}/></button>
