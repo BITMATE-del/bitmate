@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import s from './AdminDealers.module.css';
 import TestAccountCreator from './TestAccountCreator';
 
@@ -17,7 +18,8 @@ export default function AdminDealers(){
  const [msg,setMsg]=useState('');
 
  async function load(){
-  const {data,error}=await supabase.rpc('admin_dealer_snapshot');
+  const identity=await neonIdentity();
+  const {data,error}=identity?.role==='admin'?await neonRpc('admin_dealer_snapshot'):await supabase.rpc('admin_dealer_snapshot');
   if(error){setMsg(error.message);return}
   setRows(((data as any)?.dealers||[]) as Dealer[]);
  }
@@ -26,13 +28,16 @@ export default function AdminDealers(){
  async function save(){
   if(!email.trim()||!code.trim())return setMsg('회원 이메일과 가입코드를 입력하세요.');
   setBusy(true);setMsg('');
-  const {error}=await supabase.rpc('admin_upsert_dealer_code',{p_owner_email:email.trim(),p_code:code.trim().toUpperCase(),p_display_name:name.trim(),p_active:true});
+  const identity=await neonIdentity();
+  const {error}=identity?.role==='admin'?await neonRpc('admin_upsert_dealer_code',{p_owner_email:email.trim(),p_code:code.trim().toUpperCase(),p_display_name:name.trim(),p_active:true}):await supabase.rpc('admin_upsert_dealer_code',{p_owner_email:email.trim(),p_code:code.trim().toUpperCase(),p_display_name:name.trim(),p_active:true});
   setBusy(false);
   if(error)return setMsg(error.message);
   setEmail('');setCode('');setName('');setMsg('총판 코드가 부여되었습니다.');await load();
  }
  async function toggle(d:Dealer){
-  const {error}=await supabase.rpc('admin_set_dealer_active',{p_id:d.id,p_active:!d.active});
+  const args={p_id:d.id,p_active:!d.active};
+  const identity=await neonIdentity();
+  const {error}=identity?.role==='admin'?await neonRpc('admin_set_dealer_active',args):await supabase.rpc('admin_set_dealer_active',args);
   if(error)return setMsg(error.message);await load();
  }
 
