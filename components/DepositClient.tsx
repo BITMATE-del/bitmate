@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc,neonView} from '@/lib/neon-bridge';
 import UiIcon from './UiIcon';
 import s from './Deposit.module.css';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
@@ -51,7 +52,13 @@ export default function DepositClient(){
  const [syncing,setSyncing]=useState(false);
  const [syncMessage,setSyncMessage]=useState('');
 
+ const [neonMode,setNeonMode]=useState(false);
  const loadRecords=useCallback(async()=>{
+  const identity=await neonIdentity();
+  if(identity){
+    const {data:rows}=await neonView<DepositRecord[]>('deposit_records');
+    setRecords(rows||[]);return;
+  }
   const {data:{user}}=await supabase.auth.getUser();
   if(!user)return;
   const {data:rows}=await supabase.from('deposit_records').select('id,asset,network,address,txid,amount,status,created_at').eq('user_id',user.id).order('created_at',{ascending:false}).limit(50);
@@ -60,7 +67,9 @@ export default function DepositClient(){
 
  useEffect(()=>{
   (async()=>{
-   const {data:nets}=await supabase.from('asset_networks').select('asset,network,display_name,confirmations,min_deposit').eq('active',true).eq('deposit_enabled',true).order('asset');
+   const identity=await neonIdentity();
+   setNeonMode(!!identity);
+   const {data:nets}=identity?await neonView<Array<{asset:string;network:string;display_name:string;confirmations:number;min_deposit:number}>>('asset_networks'):await supabase.from('asset_networks').select('asset,network,display_name,confirmations,min_deposit').eq('active',true).eq('deposit_enabled',true).order('asset');
    if(nets?.length){
     const next:Record<string,NetworkMeta[]>={};
     for(const n of nets){
@@ -70,9 +79,9 @@ export default function DepositClient(){
     setNetworkMap(next);
    }
 
-   const {data:{user}}=await supabase.auth.getUser();
+   const {data:{user}}=identity?{data:{user:identity}}:await supabase.auth.getUser();
    if(user){
-    const {data:access}=await supabase.rpc('user_deposit_access_snapshot');
+    const {data:access}=identity?await neonRpc('user_deposit_access_snapshot'):await supabase.rpc('user_deposit_access_snapshot');
     const snapshot=(access||{}) as {kyc_status?:string;addresses?:DepositAddress[]};
     setKycStatus(String(snapshot.kyc_status||'NOT_SUBMITTED').toUpperCase());
     setAddresses(Array.isArray(snapshot.addresses)?snapshot.addresses:[]);
@@ -95,6 +104,7 @@ export default function DepositClient(){
 
  useEffect(()=>{
   if(!tronAuto||!selectedAddress)return;
+  if(neonMode){setSyncMessage('TRON 자동 입금 확인은 아직 연결되지 않았습니다.');return;}
   let stopped=false;
   let timer:ReturnType<typeof setInterval>|undefined;
 
@@ -116,7 +126,7 @@ export default function DepositClient(){
   void sync();
   timer=setInterval(()=>void sync(),20000);
   return()=>{stopped=true;if(timer)clearInterval(timer)};
- },[tronAuto,selectedAddress,supabase,loadRecords]);
+ },[tronAuto,selectedAddress,supabase,loadRecords,neonMode]);
 
  const copyAddress=async()=>{
   if(!selectedAddress)return;
