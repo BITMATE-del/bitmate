@@ -5,4 +5,21 @@ import {useParams} from 'next/navigation';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
 
 type Notice={slug:string;category:string;title:string;summary:string;body:string;pinned:boolean;published_at:string|null;created_at:string};
-export default function NoticeDetail(){const p=useParams<{slug:string}>();const supabase=useMemo(()=>createBrowserSupabase(),[]);const [n,setN]=useState<Notice|null>(null);const [loading,setLoading]=useState(true);useEffect(()=>{if(!p?.slug)return;supabase.from('notices').select('slug,category,title,summary,body,pinned,published_at,created_at').eq('slug',p.slug).eq('status','PUBLISHED').maybeSingle().then(({data})=>{setN(data as Notice|null);setLoading(false)})},[p?.slug,supabase]);return <main style={{minHeight:'calc(100vh - 72px)',background:'#08090a',color:'#f4f6f7',padding:'42px 0 90px'}}><div className="xtShell" style={{maxWidth:980}}><Link href="/more/notice" style={{color:'#8a9297',fontSize:13}}>← Notice Center</Link>{loading?<div style={{padding:'60px 0',color:'#747c81'}}>불러오는 중...</div>:!n?<div style={{padding:'60px 0'}}>공지를 찾을 수 없습니다.</div>:<article style={{marginTop:24,border:'1px solid #25292c',borderRadius:16,background:'#0e1011',padding:'32px clamp(20px,4vw,44px)'}}><div style={{display:'flex',gap:10,alignItems:'center',fontSize:12,color:'#7e878c'}}>{n.pinned&&<b style={{color:'#b9ff31'}}>IMPORTANT</b>}<span>{n.category}</span><span>·</span><span>{new Date(n.published_at||n.created_at).toLocaleString('ko-KR')}</span></div><h1 style={{fontSize:'clamp(30px,5vw,48px)',letterSpacing:'-.04em',margin:'18px 0 12px'}}>{n.title}</h1><p style={{fontSize:16,color:'#9aa2a7',lineHeight:1.7,borderBottom:'1px solid #24282b',paddingBottom:24}}>{n.summary}</p><div style={{whiteSpace:'pre-wrap',fontSize:15,lineHeight:1.9,color:'#d9dddf',paddingTop:22}}>{n.body}</div></article>}</div></main>}
+export default function NoticeDetail(){const p=useParams<{slug:string}>();const supabase=useMemo(()=>createBrowserSupabase(),[]);const [n,setN]=useState<Notice|null>(null);const [loading,setLoading]=useState(true);useEffect(()=>{
+ if(!p?.slug)return;
+ let alive=true;
+ (async()=>{
+  try{
+   const {data}=await supabase.from('notices').select('slug,category,title,summary,body,pinned,published_at,created_at').eq('slug',p.slug).eq('status','PUBLISHED').maybeSingle();
+   if(data){if(alive)setN(data as Notice);return}
+  }catch{}
+  try{
+   const r=await fetch('/api/recovery-public/notices',{cache:'no-store'});
+   if(!r.ok)throw new Error('unavailable');
+   const result=await r.json();
+   const item=(result.notices||[]).find((n:{id:string})=>n.id===p.slug);
+   if(item&&alive)setN({slug:item.id,category:'GENERAL',title:item.title,summary:item.body.slice(0,120),body:item.body,pinned:false,published_at:item.created_at,created_at:item.created_at});
+  }catch{}
+ })().finally(()=>{if(alive)setLoading(false)});
+ return()=>{alive=false};
+},[p?.slug,supabase]);return <main style={{minHeight:'calc(100vh - 72px)',background:'#08090a',color:'#f4f6f7',padding:'42px 0 90px'}}><div className="xtShell" style={{maxWidth:980}}><Link href="/more/notice" style={{color:'#8a9297',fontSize:13}}>← Notice Center</Link>{loading?<div style={{padding:'60px 0',color:'#747c81'}}>불러오는 중...</div>:!n?<div style={{padding:'60px 0'}}>공지를 찾을 수 없습니다.</div>:<article style={{marginTop:24,border:'1px solid #25292c',borderRadius:16,background:'#0e1011',padding:'32px clamp(20px,4vw,44px)'}}><div style={{display:'flex',gap:10,alignItems:'center',fontSize:12,color:'#7e878c'}}>{n.pinned&&<b style={{color:'#b9ff31'}}>IMPORTANT</b>}<span>{n.category}</span><span>·</span><span>{new Date(n.published_at||n.created_at).toLocaleString('ko-KR')}</span></div><h1 style={{fontSize:'clamp(30px,5vw,48px)',letterSpacing:'-.04em',margin:'18px 0 12px'}}>{n.title}</h1><p style={{fontSize:16,color:'#9aa2a7',lineHeight:1.7,borderBottom:'1px solid #24282b',paddingBottom:24}}>{n.summary}</p><div style={{whiteSpace:'pre-wrap',fontSize:15,lineHeight:1.9,color:'#d9dddf',paddingTop:22}}>{n.body}</div></article>}</div></main>}
