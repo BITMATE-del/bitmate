@@ -5,6 +5,7 @@ import {siteConfirm} from './SiteDialog';
 import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import UiIcon from './UiIcon';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 import s from './WalletActions.module.css';
@@ -46,9 +47,14 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
 
  async function load(){
   setLoading(true);
-  const {data:{user}}=await supabase.auth.getUser();
+  const identity=await neonIdentity();
+  const {data:{user}}=identity?{data:{user:identity}}:await supabase.auth.getUser();
   if(!user){location.href=`/login?next=${encodeURIComponent(location.pathname+location.search)}`;return}
-  const [{data,error},{data:assignment}]=await Promise.all([supabase.rpc('user_wallet_snapshot'),supabase.rpc('user_withdrawal_assignment')]);
+  const [{data,error},{data:assignment}]=await Promise.all(
+    identity
+      ?[neonRpc('user_wallet_snapshot'),neonRpc('user_withdrawal_assignment')]
+      :[supabase.rpc('user_wallet_snapshot'),supabase.rpc('user_withdrawal_assignment')]
+  );
   const assigned=(assignment||{}) as {dealer_managed?:boolean;addresses?:AssignedWithdrawal[]};
   setDealerManaged(Boolean(assigned.dealer_managed));
   setAssignedWithdrawals(Array.isArray(assigned.addresses)?assigned.addresses:[]);
@@ -73,7 +79,8 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
  const submitTransfer=async()=>{
   const n=Number(amount); if(!Number.isFinite(n)||n<=0)return setMsg('이체 금액을 입력하세요.');
   setBusy(true);setMsg('');
-  const {error}=await supabase.rpc('user_internal_transfer',{p_from:from,p_to:to,p_amount:n});
+  const identity=await neonIdentity();
+  const {error}=identity?await neonRpc('user_internal_transfer',{p_from:from,p_to:to,p_amount:n}):await supabase.rpc('user_internal_transfer',{p_from:from,p_to:to,p_amount:n});
   setBusy(false);
   if(error)return setMsg(errorText(error.message));
   setAmount('');setMsg('계정 간 이체가 완료되었습니다.');await load();
@@ -85,7 +92,8 @@ export default function WalletActionsClient({mode}:{mode:'withdraw'|'transfer'})
   const fee=Number(selectedNetwork?.withdraw_fee||0);
   if(!(await siteConfirm(`${asset} ${n.toLocaleString()}\nNetwork: ${network}\nFee: ${fee}\nAddress: ${address}\n\n출금 요청을 제출할까요?`,{title:'출금 요청 확인'})))return;
   setBusy(true);setMsg('');
-  const {error}=await supabase.rpc('user_create_withdrawal_request',{p_asset:asset,p_network:network,p_address:address.trim(),p_amount:n});
+  const identity=await neonIdentity();
+  const {error}=identity?await neonRpc('user_create_withdrawal_request',{p_asset:asset,p_network:network,p_address:address.trim(),p_amount:n}):await supabase.rpc('user_create_withdrawal_request',{p_asset:asset,p_network:network,p_address:address.trim(),p_amount:n});
   setBusy(false);
   if(error)return setMsg(errorText(error.message));
   setAddress('');setAmount('');setMsg('출금 요청이 접수되었습니다. 진행 상태는 아래 출금 내역에서 확인할 수 있습니다.');await load();
