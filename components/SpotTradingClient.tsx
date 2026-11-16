@@ -2,6 +2,7 @@
 
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import s from './SpotTrading.module.css';
 import {useUnifiedWalletDisplay} from '@/lib/useUnifiedWalletDisplay';
 
@@ -40,9 +41,10 @@ export default function SpotTradingClient(){
  }
 
  async function loadAccount(){
-  const {data:{user}}=await supabase.auth.getUser();
+  const identity=await neonIdentity();
+  const {data:{user}}=identity?{data:{user:identity}}:await supabase.auth.getUser();
   if(!user){setSnap(null);return}
-  const {data,error}=await supabase.rpc('spot_virtual_snapshot');
+  const {data,error}=identity?await neonRpc<Snapshot>('spot_virtual_snapshot'):await supabase.rpc('spot_virtual_snapshot');
   if(!error&&data)setSnap(data as Snapshot);
  }
 
@@ -65,12 +67,14 @@ export default function SpotTradingClient(){
   setBusy(true);
   try{
    const id=crypto.randomUUID();
-   const {data,error}=await supabase.rpc('spot_virtual_market_order',{
+   const identity=await neonIdentity();
+   const args={
     p_symbol:symbol+'USDT',
     p_side:side,
     p_amount:numeric,
     p_client_order_id:id
-   });
+   };
+   const {data,error}=identity?await neonRpc('spot_virtual_market_order',args):await supabase.rpc('spot_virtual_market_order',args);
    if(error)throw error;
    const fill=data as any;
    setMsg(`${symbol}/USDT ${side==='BUY'?'매수':'매도'} 체결 · ${fmt(Number(fill.execution_price),priceDigits(Number(fill.execution_price)))}`);
