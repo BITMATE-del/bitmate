@@ -59,3 +59,26 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  }
  return response({error:'not_found'},404);
 }});
+
+void (async()=>{
+  const host='http://127.0.0.1:'+String(Bun.env.PORT||3000);
+  const email='bm-smoke-'+crypto.randomUUID()+'@example.invalid';
+  const password='SmokeTest_'+crypto.randomUUID();
+  try {
+    const signup=await fetch(host+'/signup',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
+    const created=await signup.json();
+    const login=await fetch(host+'/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email,password})});
+    const logged=await login.json();
+    const session=await fetch(host+'/session',{headers:{authorization:'Bearer '+String(logged.token||'')}});
+    const sessionData=await session.json();
+    if(!signup.ok||!login.ok||!session.ok||sessionData.user?.email!==email)throw new Error('signup='+signup.status+',login='+login.status+',session='+session.status);
+    const logout=await fetch(host+'/logout',{method:'POST',headers:{authorization:'Bearer '+logged.token}});
+    if(!logout.ok)throw new Error('logout='+logout.status);
+    console.log('BITMATE_AUTH_FLOW_SMOKE_PASS');
+  } catch(error){console.error('BITMATE_AUTH_FLOW_SMOKE_FAIL',String(error))}
+  finally {try{await sql`delete from bm_auth_users where email=${email}`}catch{}}
+  try{
+    const external=await fetch('https://bitmate-auth-production.up.railway.app/health',{signal:AbortSignal.timeout(5000)});
+    console.log('BITMATE_AUTH_PUBLIC_HEALTH',external.status);
+  }catch(error){console.error('BITMATE_AUTH_PUBLIC_HEALTH_FAILED',String(error))}
+})();
