@@ -3,6 +3,7 @@
 
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 
 export type DisplayCurrency='KRW'|'USDT';
 
@@ -34,7 +35,8 @@ export function useUnifiedWalletDisplay(){
   },[]);
 
   const loadWallet=useCallback(async()=>{
-    const {data:{user}}=await supabase.auth.getUser();
+    const neonUser=await neonIdentity();
+    const {data:{user}}=neonUser?{data:{user:neonUser}}:await supabase.auth.getUser();
     setLoggedIn(!!user);
     if(!user){
       walletCache=null;
@@ -52,7 +54,7 @@ export function useUnifiedWalletDisplay(){
 
     if(!walletInflight){
       walletInflight=(async()=>{
-        const {data,error}=await supabase.rpc('user_wallet_snapshot');
+        const {data,error}=neonUser?await neonRpc<WalletSnapshot>('user_wallet_snapshot'):await supabase.rpc('user_wallet_snapshot');
         if(error||!data)return null;
         const snap=data as WalletSnapshot;
         const usdt=Array.isArray(snap.spot)?snap.spot.find(x=>x.asset==='USDT'):null;
