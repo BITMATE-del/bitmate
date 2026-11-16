@@ -29,7 +29,7 @@ export default function AdminWalletOperations(){
   const identity=await neonIdentity();
   const {data:{user}}=identity?.role==='admin'?{data:{user:{app_metadata:{role:'admin'}}}}:await supabase.auth.getUser();
   const role=String(user?.app_metadata?.role||'').toLowerCase();
-  const ok=role==='admin'||role==='superadmin'||user?.app_metadata?.superadmin===true;
+  const ok=role==='admin'||role==='superadmin'||(user?.app_metadata as {superadmin?:boolean}|undefined)?.superadmin===true;
   setAllowed(ok);if(!ok)return;
   const {data:snap,error}=identity?.role==='admin'?await neonRpc('admin_wallet_ops_snapshot'):await supabase.rpc('admin_wallet_ops_snapshot');
   if(error){setMsg(error.message);return}
