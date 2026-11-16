@@ -48,7 +48,7 @@ export default function AdminShell({children}:{children:React.ReactNode}){
   const [search,setSearch]=useState('');
   const [badges,setBadges]=useState<Badges>({members:0,wallet:0,loan:0});
   const isLogin=pathname==='/admin/login';
-  const isNewConsole=pathname==='/admin'||isLogin;
+  const isNewConsole=pathname==='/admin/recovery'||isLogin;
 
   useEffect(()=>{setMobileOpen(false)},[pathname]);
 
@@ -116,7 +116,7 @@ export default function AdminShell({children}:{children:React.ReactNode}){
         <button className={s.groupToggle} onClick={()=>setSystemOpen(v=>!v)}><span>시스템 / 기타</span><b>{systemOpen?'−':'+'}</b></button>
         {systemOpen&&<nav className={`${s.nav} ${s.subNav}`}>{system.map(navItem)}</nav>}
       </div>
-      <div className={s.sideFoot}><a href="/" target="_blank" rel="noreferrer">사용자 사이트 보기 ↗</a><button onClick={logout}>로그아웃</button></div>
+      <div className={s.sideFoot}><Link href="/admin/recovery">신규 Railway 회원·총판 관리 →</Link><a href="/" target="_blank" rel="noreferrer">사용자 사이트 보기 ↗</a><button onClick={logout}>로그아웃</button></div>
     </aside>
 
     {mobileOpen&&<button className={s.scrim} aria-label="메뉴 닫기" onClick={()=>setMobileOpen(false)}/>}
