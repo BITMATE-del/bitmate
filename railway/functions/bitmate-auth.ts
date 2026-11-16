@@ -243,7 +243,7 @@ async function settleDueCfdTrades(){
 }
 setInterval(()=>void settleDueCfdTrades(),4000);
 console.log('BITMATE_AUTH_SERVICE_STARTING');
-const dynamicMemberRpc=new Set(['p2p_market_snapshot','p2p_apply_player','p2p_create_ad','p2p_update_my_ad','p2p_set_my_ad_status','p2p_create_order','p2p_order_action','p2p_send_message','p2p_order_messages','user_create_withdrawal_request','user_withdrawal_assignment','user_internal_transfer','user_deposit_access_snapshot','get_crypto_loan_collateral_options','get_crypto_loan_quote_v2','apply_crypto_loan_v2','repay_crypto_loan_now','request_crypto_loan_extension_v2','accept_crypto_loan_extension','start_index_investment','open_cfd_market_order','update_cfd_sltp','close_cfd_position','validate_signup_code']);
+const dynamicMemberRpc=new Set(['p2p_market_snapshot','p2p_apply_player','p2p_create_ad','p2p_update_my_ad','p2p_set_my_ad_status','p2p_create_order','p2p_create_order_live','p2p_order_action','p2p_send_message','p2p_order_messages','user_create_withdrawal_request','user_withdrawal_assignment','user_internal_transfer','user_deposit_access_snapshot','get_crypto_loan_collateral_options','get_crypto_loan_quote_v2','apply_crypto_loan_v2','repay_crypto_loan_now','request_crypto_loan_extension_v2','accept_crypto_loan_extension','start_index_investment','open_cfd_market_order','update_cfd_sltp','close_cfd_position','accept_cfd_risk','validate_signup_code']);
 const dynamicAdminRpc=new Set(['admin_set_p2p_player_status','admin_set_p2p_order_status','admin_set_p2p_ad_status','admin_approve_crypto_loan_v2','admin_reject_crypto_loan_v2','admin_offer_crypto_loan_extension','admin_reject_crypto_loan_extension','admin_mark_crypto_loan_overdue','admin_seize_crypto_loan_collateral','admin_update_crypto_loan_product_terms','admin_set_system_setting','admin_adjust_demo_balance','admin_update_profile','admin_update_kyc','admin_update_deletion','admin_assign_tron_deposit_address','admin_set_api_status','admin_set_subaccount_status','admin_set_referral_code_active','admin_set_referral_reward_status','admin_update_asset_network','admin_update_withdrawal_status','admin_upsert_dealer_code','admin_set_dealer_active','admin_reset_user_password','admin_create_notice','admin_delete_notice','admin_update_notice_content']);
 const dynamicDealerRpc=new Set(['dealer_set_payment_settings','dealer_update_withdrawal_status','dealer_set_cfd_timed_round_override','dealer_approve_crypto_loan','dealer_reject_crypto_loan','dealer_set_p2p_player_status']);
 async function runDynamicPublicRpc(tx:any,name:string,args:Record<string,unknown>){
@@ -311,7 +311,7 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  // BITMATE_READONLY_TABLE_GATEWAY: scoped read-only table access.
  if(path.startsWith('/view/')&&req.method==='GET'){
   const table=path.slice('/view/'.length);
-  const permitted=new Set(['cfd_products','cfd_timed_trades','cfd_positions','cfd_orders','cfd_trade_executions','cfd_risk_acceptances','notices','demo_balances','futures_market_prices','crypto_loan_products','crypto_loans','p2p_ads','p2p_orders']);
+  const permitted=new Set(['cfd_products','cfd_timed_trades','cfd_positions','cfd_orders','cfd_trade_executions','cfd_risk_acceptances','notices','demo_balances','futures_market_prices','crypto_loan_products','crypto_loans','crypto_loan_collaterals','crypto_loan_extensions','deposit_records','asset_networks','p2p_ads','p2p_orders']);
   if(!permitted.has(table))return response({error:'unsupported_table'},404);
   const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
   const digest=await hex(token);
@@ -331,6 +331,10 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
     case 'futures_market_prices':rows=await sql`select * from public.futures_market_prices order by symbol limit 100`;break;
     case 'crypto_loan_products':rows=await sql`select * from public.crypto_loan_products where status='ACTIVE' and visible=true order by sort_order limit 100`;break;
     case 'crypto_loans':rows=await sql`select * from public.crypto_loans where user_id=${owner.id} order by created_at desc limit 100`;break;
+    case 'crypto_loan_collaterals':rows=await sql`select * from public.crypto_loan_collaterals where user_id=${owner.id} order by created_at desc limit 100`;break;
+    case 'crypto_loan_extensions':rows=await sql`select * from public.crypto_loan_extensions where user_id=${owner.id} order by created_at desc limit 100`;break;
+    case 'deposit_records':rows=await sql`select * from public.deposit_records where user_id=${owner.id} order by created_at desc limit 50`;break;
+    case 'asset_networks':rows=await sql`select asset,network,display_name,confirmations,min_deposit,deposit_enabled,active from public.asset_networks where active and deposit_enabled order by asset,network limit 100`;break;
     case 'p2p_ads':rows=await sql`select * from public.p2p_ads order by created_at desc limit 150`;break;
     case 'p2p_orders':rows=await sql`select * from public.p2p_orders where user_id=${owner.id} order by created_at desc limit 150`;break;
     case 'cfd_risk_acceptances':rows=[];break;
