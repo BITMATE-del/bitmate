@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {usePathname,useRouter} from 'next/navigation';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import UiIcon,{type UiIconName} from './UiIcon';
 import s from './AdminShell.module.css';
 import BrandLogo from './BrandLogo';
@@ -56,11 +57,12 @@ export default function AdminShell({children}:{children:React.ReactNode}){
     if(isNewConsole)return;
     let alive=true;
     const load=async()=>{
-      const [{data:ops},{data:wallet},{data:loan}]=await Promise.all([
-        supabase.rpc('admin_ops_snapshot',{p_query:''}),
-        supabase.rpc('admin_wallet_ops_snapshot'),
-        supabase.rpc('admin_crypto_loan_snapshot_v2')
-      ]);
+      const identity=await neonIdentity();
+      const [{data:ops},{data:wallet},{data:loan}]=await Promise.all(
+        identity?.role==='admin'
+        ?[neonRpc('admin_ops_snapshot',{p_query:''}),neonRpc('admin_wallet_ops_snapshot'),neonRpc('admin_crypto_loan_snapshot_v2')]
+        :[supabase.rpc('admin_ops_snapshot',{p_query:''}),supabase.rpc('admin_wallet_ops_snapshot'),supabase.rpc('admin_crypto_loan_snapshot_v2')]
+      );
       if(!alive)return;
       const loans=Array.isArray((loan as any)?.loans)?(loan as any).loans:[];
       setBadges({
