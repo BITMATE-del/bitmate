@@ -3,8 +3,8 @@ export const runtime='nodejs';
 export const dynamic='force-dynamic';
 
 const backend='https://bitmate-auth-production.up.railway.app';
-const validGet=new Set(['status','summary','users','dealers','demo-wallets','demo-ledger']);
-const validPost=new Set(['setup','create-test','set-block','assign-dealer','demo-wallet-set']);
+const validGet=new Set(['status','summary','users','dealers','demo-wallets','demo-ledger','notices']);
+const validPost=new Set(['setup','create-test','set-block','assign-dealer','demo-wallet-set','notice-create','notice-delete','password-reset']);
 const error=(msg:string,status:number)=>NextResponse.json({ok:false,error:msg},{status,headers:{'Cache-Control':'no-store'}});
 
 async function forward(req:NextRequest,action:string,method:'GET'|'POST'){
