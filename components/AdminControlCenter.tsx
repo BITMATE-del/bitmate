@@ -25,6 +25,7 @@ const coreLinks:CoreLink[]=[
 export default function AdminControlCenter(){
   const supabase=useMemo(()=>createBrowserSupabase(),[]);
   const [allowed,setAllowed]=useState<boolean|null>(null);
+  const [legacyUnavailable,setLegacyUnavailable]=useState(false);
   const [showCreator,setShowCreator]=useState(false);
   const [showAdvanced,setShowAdvanced]=useState(false);
   const [role,setRole]=useState('');
@@ -41,9 +42,24 @@ export default function AdminControlCenter(){
       if(!alive)return;
       const r=String(user?.app_metadata?.role||'').toLowerCase();
       const superadmin=user?.app_metadata?.superadmin===true;
-      const ok=r==='admin'||r==='superadmin'||superadmin;
-      setRole(superadmin?'superadmin':r||'user');setEmail(user?.email||'');setAllowed(ok);
+      let ok=r==='admin'||r==='superadmin'||superadmin;
+      let displayEmail=user?.email||'';
+      if(!ok){
+        try{
+          const res=await fetch('/api/recovery-auth/session',{credentials:'same-origin',cache:'no-store'});
+          if(res.ok){
+            const data=await res.json();
+            if(data?.user?.role==='admin'){
+              ok=true;displayEmail=data.user.email;
+              setLegacyUnavailable(true);
+            }
+          }
+        }catch{}
+      }
+      if(!alive)return;
+      setRole(ok?'admin':'user');setEmail(displayEmail);setAllowed(ok);
       if(!ok){setLoading(false);return}
+      if(!user){setLoading(false);return}
       const [{data:o},{data:w},{data:l}]=await Promise.all([
         supabase.rpc('admin_ops_snapshot',{p_query:''}),
         supabase.rpc('admin_wallet_ops_snapshot'),
@@ -96,6 +112,7 @@ export default function AdminControlCenter(){
     <div className={s.actionBar}><div><strong>빠른 관리</strong><small>회원 검색, 자금 승인, 테스트 계정 생성</small></div><button type="button" onClick={()=>setShowCreator(v=>!v)}>{showCreator?'발급창 닫기':'+ 테스트 계정 생성'}</button></div>
     {showCreator&&<TestAccountCreator onCreated={()=>setShowCreator(false)}/>}
 
+    {legacyUnavailable&&<div role="status" style={{padding:'14px 18px',margin:'14px 0',border:'1px solid #735c35',background:'#2b2419',borderRadius:10,color:'#f4d6a1',fontSize:12,lineHeight:1.7}}>기존 BITMATE 어드민 메뉴와 화면을 복구했어. 다만 기존 회원·지갑·거래 기능은 Supabase DB 연결이 복구되거나 Railway로 이관되기 전에는 처리할 수 없어. 위에 표시된 건수는 실제 운영 수치가 아닐 수 있어. <a href="/admin/recovery" style={{color:'#c4ff61',fontWeight:700}}>현재 작동하는 Railway 관리 화면으로 이동</a></div>}
     <section className={s.taskSection}><div className={s.sectionTitle}><div><span>PRIORITY</span><h2>처리 필요</h2></div><small>30초마다 최신 상태 확인</small></div><div className={s.taskGrid}>{tasks.map(t=><Link key={t.label} href={t.href} className={`${s.taskCard} ${s[t.tone]}`}><span>{t.label}</span><strong>{t.count.toLocaleString()}건</strong><em>바로 처리 →</em></Link>)}</div></section>
 
     <section className={s.quickSection}><div className={s.sectionTitle}><div><span>QUICK ACTION</span><h2>빠른 작업</h2></div></div><div className={s.quickGrid}>
