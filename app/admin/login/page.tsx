@@ -1,6 +1,2 @@
-import {Suspense} from 'react';
-import AdminLogin from '@/components/AdminLogin';
-
-export default function Page(){
-  return <Suspense fallback={null}><AdminLogin/></Suspense>;
-}
+import {redirect} from 'next/navigation';
+export default function AdminLogin(){redirect('/admin')}
