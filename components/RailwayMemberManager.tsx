@@ -38,6 +38,18 @@ export default function RailwayMemberManager(){
    }catch(e){setError(e instanceof Error?e.message:'발급 실패')}
    finally{setBusy(false)}
  }
+ async function resetPassword(m:Member){
+   if(!window.confirm(m.email+' 계정의 비밀번호를 초기화할까요? 기존 로그인 세션이 종료됩니다.'))return;
+   setBusy(true);setError('');setMessage('');
+   try{
+     const result=await request('/api/recovery-admin/password-reset',{method:'POST',body:JSON.stringify({userId:m.id})});
+     const temporary=String(result.temporaryPassword||'');
+     if(!temporary)throw new Error('새 비밀번호를 받아오지 못했습니다.');
+     setMessage('비밀번호를 초기화했습니다. 임시 비밀번호를 회원에게 안전하게 전달하세요.');
+     window.prompt('임시 비밀번호 (이 화면을 닫으면 다시 표시되지 않습니다)',temporary);
+   }catch(e){setError(e instanceof Error?e.message:'비밀번호 초기화 실패')}
+   finally{setBusy(false)}
+ }
  async function toggle(m:Member){
    if(!window.confirm(m.is_blocked?'동결을 해제할까요?':'선택한 계정을 동결할까요?'))return;
    setBusy(true);setError('');setMessage('');
@@ -72,7 +84,7 @@ export default function RailwayMemberManager(){
      <div style={{overflowX:'auto',border:'1px solid #354249',borderRadius:12}}>
        <table style={{width:'100%',borderCollapse:'collapse',minWidth:650,fontSize:13}}>
          <thead style={{background:'#1a282e'}}><tr><th style={{textAlign:'left',padding:14}}>회원</th><th style={{textAlign:'left',padding:14}}>구분</th><th style={{textAlign:'left',padding:14}}>가입일</th><th style={{textAlign:'left',padding:14}}>상태</th><th style={{textAlign:'left',padding:14}}>관리</th></tr></thead>
-         <tbody>{members.map(m=><tr key={m.id} style={{borderTop:'1px solid #2c3b40'}}><td style={{padding:14}}><strong>{m.email}</strong><small style={{display:'block',color:'#80979f',marginTop:6}}>{m.id}</small></td><td style={{padding:14}}>{m.role==='admin'?'관리자':m.role==='dealer'?'총판':m.is_test_account?'테스트':'일반'}</td><td style={{padding:14}}>{new Date(m.created_at).toLocaleDateString('ko-KR')}</td><td style={{padding:14,color:m.is_blocked?'#ff9fa6':'#b9ff31'}}>{m.is_blocked?'동결':'정상'}</td><td style={{padding:14}}>{m.role==='user'&&<button disabled={busy} onClick={()=>void toggle(m)} style={{border:'1px solid #47565b',color:'#ecf2f3',background:'#223138',borderRadius:7,padding:'8px 12px',cursor:'pointer'}}>{m.is_blocked?'동결 해제':'동결'}</button>}</td></tr>)}</tbody>
+         <tbody>{members.map(m=><tr key={m.id} style={{borderTop:'1px solid #2c3b40'}}><td style={{padding:14}}><strong>{m.email}</strong><small style={{display:'block',color:'#80979f',marginTop:6}}>{m.id}</small></td><td style={{padding:14}}>{m.role==='admin'?'관리자':m.role==='dealer'?'총판':m.is_test_account?'테스트':'일반'}</td><td style={{padding:14}}>{new Date(m.created_at).toLocaleDateString('ko-KR')}</td><td style={{padding:14,color:m.is_blocked?'#ff9fa6':'#b9ff31'}}>{m.is_blocked?'동결':'정상'}</td><td style={{padding:14}}>{m.role==='user'&&<div style={{display:'flex',gap:7}}><button disabled={busy} onClick={()=>void toggle(m)} style={{border:'1px solid #47565b',color:'#ecf2f3',background:'#223138',borderRadius:7,padding:'8px 12px',cursor:'pointer'}}>{m.is_blocked?'동결 해제':'동결'}</button><button disabled={busy} onClick={()=>void resetPassword(m)} style={{border:'1px solid #47565b',color:'#ecf2f3',background:'#223138',borderRadius:7,padding:'8px 12px',cursor:'pointer'}}>비밀번호 초기화</button></div>}</td></tr>)}</tbody>
        </table>
        {!members.length&&<div style={{padding:25,color:'#91a3a8',textAlign:'center'}}>{busy?'회원 조회 중…':'조회된 회원이 없습니다.'}</div>}
      </div>
