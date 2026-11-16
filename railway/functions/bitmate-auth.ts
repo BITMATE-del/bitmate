@@ -1,7 +1,8 @@
 import {SQL} from "bun";
 const url=Bun.env.DATABASE_URL;
 if(!url)throw new Error("DATABASE_URL missing");
-const sql=new SQL(url);
+const railway=new SQL(url);
+let sql=railway;
 await sql`create table if not exists bm_auth_users(
  id uuid primary key default gen_random_uuid(),
  email text not null unique,
@@ -67,13 +68,243 @@ await sql`create table if not exists bm_notices (
  updated_at timestamptz not null default now()
 )`;
 await sql`create index if not exists bm_notices_created_idx on bm_notices(created_at desc)`;
+
+async function initializeNeonAndCopy(){
+ const neonUrl=Bun.env.NEON_DATABASE_URL;
+ if(!neonUrl)return;
+ const neon=new SQL(neonUrl);
+ try{
+await neon`create table if not exists bm_auth_users(
+ id uuid primary key default gen_random_uuid(),
+ email text not null unique,
+ password_hash text not null,
+ role text not null default 'user' check (role in ('user','admin','dealer')),
+ created_at timestamptz not null default now()
+)`;
+await neon`create table if not exists bm_auth_sessions(
+ token_hash text primary key,
+ user_id uuid not null references bm_auth_users(id) on delete cascade,
+ expires_at timestamptz not null,
+ created_at timestamptz not null default now()
+)`;
+await neon`create index if not exists bm_auth_sessions_user_id_idx on bm_auth_sessions(user_id)`;
+await neon`alter table bm_auth_users drop constraint if exists bm_auth_users_role_check`;
+await neon`alter table bm_auth_users add constraint bm_auth_users_role_check check (role in ('user','admin','dealer'))`;
+await neon`alter table bm_auth_users add column if not exists is_blocked boolean not null default false`;
+await neon`alter table bm_auth_users add column if not exists is_test_account boolean not null default false`;
+await neon`create unique index if not exists bm_single_initial_admin on bm_auth_users ((role)) where role='admin'`;
+await neon`create table if not exists bm_admin_audit(
+ id bigserial primary key, actor_id uuid references bm_auth_users(id),
+ target_id uuid references bm_auth_users(id),
+ action text not null, created_at timestamptz not null default now()
+)`;
+
+await neon`create table if not exists bm_dealer_codes(
+ id uuid primary key default gen_random_uuid(),
+ owner_id uuid not null unique references bm_auth_users(id),
+ code text not null unique,
+ enabled boolean not null default true,
+ created_at timestamptz not null default now()
+)`;
+await neon`create table if not exists bm_dealer_members(
+ user_id uuid primary key references bm_auth_users(id),
+ dealer_id uuid not null references bm_dealer_codes(id),
+ created_at timestamptz not null default now()
+)`;
+await neon`create index if not exists bm_dealer_members_dealer_id_idx on bm_dealer_members(dealer_id)`;
+await neon`create table if not exists bm_demo_wallets(
+ user_id uuid primary key references bm_auth_users(id),
+ available numeric(20,2) not null default 0 check (available>=0),
+ locked numeric(20,2) not null default 0 check (locked>=0),
+ updated_at timestamptz not null default now()
+)`;
+await neon`create table if not exists bm_demo_ledger(
+ id uuid primary key default gen_random_uuid(),
+ user_id uuid not null references bm_auth_users(id),
+ actor_id uuid references bm_auth_users(id),
+ delta numeric(20,2) not null,
+ balance_after numeric(20,2) not null,
+ idempotency_key uuid not null unique,
+ description text not null default 'DEMO_BALANCE_ADJUSTMENT',
+ created_at timestamptz not null default now()
+)`;
+await neon`create index if not exists bm_demo_ledger_user_time_idx on bm_demo_ledger(user_id,created_at desc)`;
+await neon`create table if not exists bm_notices (
+ id uuid primary key default gen_random_uuid(),
+ title text not null check (char_length(title) between 1 and 160),
+ body text not null check (char_length(body) between 1 and 10000),
+ published boolean not null default true,
+ author_id uuid not null references bm_auth_users(id),
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now()
+)`;
+await neon`create index if not exists bm_notices_created_idx on bm_notices(created_at desc)`;
+
+  const counts:Record<string,number>={};
+  {const rows=await railway`select * from bm_auth_users`;
+   for(const item of rows){await neon`insert into bm_auth_users(id,email,password_hash,role,created_at,is_blocked,is_test_account) values(${item.id},${item.email},${item.password_hash},${item.role},${item.created_at},${item.is_blocked},${item.is_test_account}) on conflict(id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_auth_users`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_auth_users_row_count_mismatch');
+   counts['bm_auth_users']=rows.length;
+  }
+  {const rows=await railway`select * from bm_auth_sessions`;
+   for(const item of rows){await neon`insert into bm_auth_sessions(token_hash,user_id,expires_at,created_at) values(${item.token_hash},${item.user_id},${item.expires_at},${item.created_at}) on conflict(token_hash) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_auth_sessions`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_auth_sessions_row_count_mismatch');
+   counts['bm_auth_sessions']=rows.length;
+  }
+  {const rows=await railway`select * from bm_admin_audit`;
+   for(const item of rows){await neon`insert into bm_admin_audit(id,actor_id,target_id,action,created_at) values(${item.id},${item.actor_id},${item.target_id},${item.action},${item.created_at}) on conflict(id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_admin_audit`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_admin_audit_row_count_mismatch');
+   counts['bm_admin_audit']=rows.length;
+  }
+  {const rows=await railway`select * from bm_dealer_codes`;
+   for(const item of rows){await neon`insert into bm_dealer_codes(id,owner_id,code,enabled,created_at) values(${item.id},${item.owner_id},${item.code},${item.enabled},${item.created_at}) on conflict(id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_dealer_codes`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_dealer_codes_row_count_mismatch');
+   counts['bm_dealer_codes']=rows.length;
+  }
+  {const rows=await railway`select * from bm_dealer_members`;
+   for(const item of rows){await neon`insert into bm_dealer_members(user_id,dealer_id,created_at) values(${item.user_id},${item.dealer_id},${item.created_at}) on conflict(user_id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_dealer_members`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_dealer_members_row_count_mismatch');
+   counts['bm_dealer_members']=rows.length;
+  }
+  {const rows=await railway`select * from bm_demo_wallets`;
+   for(const item of rows){await neon`insert into bm_demo_wallets(user_id,available,locked,updated_at) values(${item.user_id},${item.available},${item.locked},${item.updated_at}) on conflict(user_id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_demo_wallets`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_demo_wallets_row_count_mismatch');
+   counts['bm_demo_wallets']=rows.length;
+  }
+  {const rows=await railway`select * from bm_demo_ledger`;
+   for(const item of rows){await neon`insert into bm_demo_ledger(id,user_id,actor_id,delta,balance_after,idempotency_key,description,created_at) values(${item.id},${item.user_id},${item.actor_id},${item.delta},${item.balance_after},${item.idempotency_key},${item.description},${item.created_at}) on conflict(id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_demo_ledger`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_demo_ledger_row_count_mismatch');
+   counts['bm_demo_ledger']=rows.length;
+  }
+  {const rows=await railway`select * from bm_notices`;
+   for(const item of rows){await neon`insert into bm_notices(id,title,body,published,author_id,created_at,updated_at) values(${item.id},${item.title},${item.body},${item.published},${item.author_id},${item.created_at},${item.updated_at}) on conflict(id) do nothing`}
+   const check=await neon`select count(*)::int as n from bm_notices`;
+   if(Number(check[0].n)<rows.length)throw new Error('bm_notices_row_count_mismatch');
+   counts['bm_notices']=rows.length;
+  }
+  const audits=await neon`select coalesce(max(id),0)::bigint as max from bm_admin_audit`;
+  const maxAudit=Number(audits[0].max);
+  await neon`select setval(pg_get_serial_sequence('bm_admin_audit','id'),${Math.max(1,maxAudit)},${maxAudit>0})`;
+  sql=neon;
+  console.log('BITMATE_NEON_CUTOVER_SUCCESS',JSON.stringify(counts));
+ }catch(error){
+  console.error('BITMATE_NEON_CUTOVER_ERROR',String(error));
+  sql=railway;
+ }
+}
+await initializeNeonAndCopy();
+
 console.log('BITMATE_AUTH_DB_READY');
 const hex=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const response=(obj:unknown,status=200)=>Response.json(obj,{status,headers:{'cache-control':'no-store'}});
+const marketSymbols=new Set(['BTCUSDT','ETHUSDT','XRPUSDT','SOLUSDT','DOGEUSDT','TRXUSDT','BNBUSDT','ADAUSDT','AVAXUSDT','LINKUSDT']);
+let marketSyncOnce=false;
+async function syncMarketPrices(){
+ try{
+  const res=await fetch('https://bitmate.co.kr/api/futures/markets',{signal:AbortSignal.timeout(8500)});
+  if(!res.ok)throw new Error('binance_http_'+res.status);
+  const data=await res.json();
+  const list=data.markets;
+  if(!Array.isArray(list))throw new Error('market_feed_invalid_response');
+  const records=list.filter((x:any)=>marketSymbols.has(String(x.symbol||''))&&Number(x.lastPrice)>0&&Number.isFinite(Number(x.lastPrice)));
+  if(records.length<5)throw new Error('market_price_coverage_low');
+  await sql.begin(async tx=>{
+   for(const item of records){
+    const symbol=String(item.symbol),price=Number(item.lastPrice);
+    await tx`insert into public.futures_market_prices(symbol,last_price,source_time) values(${symbol},${price},now()) on conflict(symbol) do update set last_price=excluded.last_price,source_time=excluded.source_time,updated_at=now()`;
+    await tx`insert into public.cfd_products(symbol,display_name,current_price,last_price_at) values(${symbol},${symbol.replace('USDT','/USDT')},${price},now()) on conflict(symbol) do update set current_price=excluded.current_price,last_price_at=excluded.last_price_at,updated_at=now()`;
+   }
+  });
+  if(!marketSyncOnce){console.log('BITMATE_MARKET_SYNC_PASS',records.length);marketSyncOnce=true}
+ }catch(error){if(!marketSyncOnce)console.error('BITMATE_MARKET_SYNC_FAIL',String(error))}
+}
+void syncMarketPrices();
+setInterval(()=>void syncMarketPrices(),10000);
+let cfdSettlementBusy=false;
+async function settleDueCfdTrades(){
+ if(cfdSettlementBusy)return;
+ cfdSettlementBusy=true;
+ try{
+  const due=await sql`select id from public.cfd_timed_trades where status='ACTIVE' and expires_at<=now() order by expires_at asc limit 30`;
+  for(const trade of due){
+   try{await sql`select private.settle_cfd_timed_trade(${trade.id})`}
+   catch(error){console.error('BITMATE_CFD_SETTLEMENT_FAILED',String(error).slice(0,220))}
+  }
+  if(due.length)console.log('BITMATE_CFD_SETTLEMENT_WORKER',due.length);
+ }catch(error){console.error('BITMATE_CFD_SETTLEMENT_QUERY_FAILED',String(error).slice(0,180))}
+ finally{cfdSettlementBusy=false}
+}
+setInterval(()=>void settleDueCfdTrades(),4000);
 console.log('BITMATE_AUTH_SERVICE_STARTING');
+// BITMATE_ORIGINAL_RPC_GATEWAY: compatibility for the original app's PostgreSQL functions.
+const publicRpc=new Set(['user_wallet_snapshot','spot_virtual_snapshot','get_cfd_account_summary','get_cfd_timed_account_summary','ensure_cfd_demo_account','start_cfd_timed_trade','spot_virtual_market_order','futures_closed_position_margins']);
+const adminRpc=new Set(['admin_ops_snapshot','admin_wallet_ops_snapshot','admin_member_services_snapshot','admin_p2p_snapshot','admin_crypto_loan_snapshot_v2','admin_get_cfd_dashboard','admin_dealer_snapshot','admin_set_user_usdt_balance','admin_set_user_frozen','admin_set_cfd_timed_round_override']);
+const dealerRpc=new Set(['dealer_portal_snapshot','dealer_set_user_usdt_balance','dealer_set_user_frozen']);
+async function runOriginalRpc(tx:any,name:string,a:any){
+ const one=async(rows:any)=>rows?.[0]?.result??null;
+ switch(name){
+ case 'user_wallet_snapshot':return one(await tx`select public.user_wallet_snapshot() as result`);
+ case 'spot_virtual_snapshot':return one(await tx`select public.spot_virtual_snapshot() as result`);
+ case 'get_cfd_account_summary':return one(await tx`select public.get_cfd_account_summary() as result`);
+ case 'get_cfd_timed_account_summary':return one(await tx`select public.get_cfd_timed_account_summary() as result`);
+ case 'ensure_cfd_demo_account':return one(await tx`select public.ensure_cfd_demo_account() as result`);
+ case 'futures_closed_position_margins':return one(await tx`select public.futures_closed_position_margins() as result`);
+ case 'spot_virtual_market_order':return one(await tx`select public.spot_virtual_market_order(${String(a.p_symbol||'')},${String(a.p_side||'')},${Number(a.p_amount)},${String(a.p_client_order_id||'')}) as result`);
+ case 'start_cfd_timed_trade':return one(await tx`select public.start_cfd_timed_trade(${String(a.p_symbol||'')},${String(a.p_direction||'')},${Number(a.p_duration_minutes)},${Number(a.p_amount)},${String(a.p_idempotency_key||'')}) as result`);
+ case 'admin_ops_snapshot':return one(await tx`select public.admin_ops_snapshot(${String(a.p_query||'')}) as result`);
+ case 'admin_wallet_ops_snapshot':return one(await tx`select public.admin_wallet_ops_snapshot() as result`);
+ case 'admin_member_services_snapshot':return one(await tx`select public.admin_member_services_snapshot() as result`);
+ case 'admin_p2p_snapshot':return one(await tx`select public.admin_p2p_snapshot() as result`);
+ case 'admin_crypto_loan_snapshot_v2':return one(await tx`select public.admin_crypto_loan_snapshot_v2() as result`);
+ case 'admin_get_cfd_dashboard':return one(await tx`select public.admin_get_cfd_dashboard() as result`);
+ case 'admin_dealer_snapshot':return one(await tx`select public.admin_dealer_snapshot() as result`);
+ case 'admin_set_user_usdt_balance':return one(await tx`select public.admin_set_user_usdt_balance(${String(a.p_user_id||'')},${Number(a.p_available)},${String(a.p_note||'')}) as result`);
+ case 'admin_set_user_frozen':return one(await tx`select public.admin_set_user_frozen(${String(a.p_user_id||'')},${a.p_frozen===true},${String(a.p_reason||'')}) as result`);
+ case 'admin_set_cfd_timed_round_override':return one(await tx`select public.admin_set_cfd_timed_round_override(${String(a.p_trade_id||'')},${String(a.p_override||'AUTO')},${String(a.p_reason||'')}) as result`);
+ case 'dealer_portal_snapshot':return one(await tx`select public.dealer_portal_snapshot() as result`);
+ case 'dealer_set_user_usdt_balance':return one(await tx`select public.dealer_set_user_usdt_balance(${String(a.p_user_id||'')},${Number(a.p_available)},${String(a.p_note||'')}) as result`);
+ case 'dealer_set_user_frozen':return one(await tx`select public.dealer_set_user_frozen(${String(a.p_user_id||'')},${a.p_frozen===true},${String(a.p_reason||'')}) as result`);
+ default:throw new Error('RPC_NOT_AVAILABLE');
+ }
+}
 Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  const path=new URL(req.url).pathname;
  if(path==='/health')return response({ok:true,service:'bitmate-auth'});
+ if(path.startsWith('/rpc/')&&req.method==='POST'){
+  const name=path.slice('/rpc/'.length);
+  if(!/^[a-z][a-z0-9_]{2,70}$/.test(name)||(!publicRpc.has(name)&&!adminRpc.has(name)&&!dealerRpc.has(name)))return response({error:'RPC_NOT_AVAILABLE'},404);
+  const token=req.headers.get('authorization')?.replace(/^Bearer\s+/i,'')||'';
+  if(!token)return response({error:'로그인이 필요합니다.'},401);
+  const digest=await hex(token);
+  const rows=await sql`select u.id,u.role from bm_auth_sessions s join bm_auth_users u on u.id=s.user_id where s.token_hash=${digest} and s.expires_at>now() and u.is_blocked=false`;
+  const actor=rows[0];
+  if(!actor)return response({error:'인증 세션이 만료되었습니다.'},401);
+  if(adminRpc.has(name)&&actor.role!=='admin')return response({error:'관리자 권한이 없습니다.'},403);
+  if(dealerRpc.has(name)&&actor.role!=='dealer'&&actor.role!=='admin')return response({error:'총판 권한이 없습니다.'},403);
+  let raw='';try{raw=await req.text()}catch{return response({error:'잘못된 요청입니다.'},400)}
+  if(raw.length>10000)return response({error:'요청이 너무 큽니다.'},413);
+  let a:any={};try{a=raw?JSON.parse(raw):{}}catch{return response({error:'잘못된 JSON입니다.'},400)}
+  if(!a||typeof a!=='object'||Array.isArray(a))return response({error:'잘못된 입력입니다.'},400);
+  try{
+   const data=await sql.begin(async tx=>{
+    await tx`select set_config('request.jwt.claim.sub',${actor.id},true)`;
+    await tx`select set_config('request.jwt.claim.role','authenticated',true)`;
+    return runOriginalRpc(tx,name,a);
+   });
+   return response({data,error:null});
+  }catch(error:any){
+   const message=String(error?.message||error);
+   console.error('BITMATE_RPC_ERROR',name,message.slice(0,240));
+   return response({data:null,error:{message:message.slice(0,180)}},400);
+  }
+ }
  if(path==='/notices'&&req.method==='GET'){
    const rows=await sql`select id,title,body,created_at from bm_notices where published=true order by created_at desc limit 50`;
    return response({ok:true,notices:rows});
@@ -346,4 +577,3 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  }
  return response({error:'not_found'},404);
 }});
-
