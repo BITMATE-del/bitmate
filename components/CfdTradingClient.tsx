@@ -3,6 +3,7 @@
 import {siteConfirm,sitePrompt} from './SiteDialog';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc,neonView} from '@/lib/neon-bridge';
 import BinanceMarketDepth from './BinanceMarketDepth';
 import s from './CfdTrading.module.css';
 import TradeShareButton from './TradeShareButton';
@@ -23,6 +24,29 @@ export default function CfdTradingClient(){
  const [bottomTab,setBottomTab]=useState<BottomTab>('positions'),[bookTab,setBookTab]=useState<BookTab>('book'),[ticks,setTicks]=useState<number[]>([]);
 
  async function load(){
+  const identity=await neonIdentity();
+  if(identity){
+   const {data:p,error:productsError}=await neonView<Product[]>('cfd_products');
+   if(productsError){setMsg(productsError.message);return}
+   const list=p||[];
+   setProducts(list);
+   setSelected(prev=>prev?(list.find(x=>x.id===prev.id)||prev):(list[0]||null));
+   const ensured=await neonRpc('ensure_cfd_demo_account');
+   if(ensured.error){setMsg(ensured.error.message);return}
+   const [positions,account,orders,executions]=await Promise.all([
+     neonView<Position[]>('cfd_positions'),
+     neonRpc('get_cfd_account_summary'),
+     neonView<Order[]>('cfd_orders'),
+     neonView<Execution[]>('cfd_trade_executions')
+   ]);
+   const failure=positions.error||account.error||orders.error||executions.error;
+   if(failure){setMsg(failure.message);return}
+   const all=positions.data||[];
+   setPositions(all.filter(x=>['OPEN','PARTIALLY_CLOSED'].includes(x.status)));
+   setClosed(all.filter(x=>['CLOSED','LIQUIDATED'].includes(x.status)));
+   setSummary(account.data);setOrders(orders.data||[]);setExecutions(executions.data||[]);
+   return;
+  }
   const {data:{user}}=await supabase.auth.getUser();
   const {data:p}=await supabase.from('cfd_products').select('*').order('sort_order');
   const list=(p||[]) as Product[];
@@ -70,9 +94,42 @@ export default function CfdTradingClient(){
   }));
  },[ticks]);
 
- async function order(){setMsg('');if(!selected){setMsg('상품을 선택하세요.');return;}if(m<=0){setMsg('증거금을 확인하세요.');return;}const riskVersion='cfd-risk-v1';const {data:{user}}=await supabase.auth.getUser();if(!user){setMsg('로그인이 필요합니다.');return;}await supabase.from('cfd_risk_acceptances').upsert({user_id:user.id,version:riskVersion},{onConflict:'user_id,version'});const id=crypto.randomUUID();const {error}=await supabase.rpc('open_cfd_market_order',{p_symbol:selected.symbol,p_side:side,p_margin:m,p_leverage:lev,p_stop_loss:sl?Number(sl):null,p_take_profit:tp?Number(tp):null,p_client_order_id:id,p_idempotency_key:id});if(error){setMsg(error.message);return;}setMsg('CFD 시장가 주문이 체결되었습니다.');await load()}
- async function close(id:string,pct:number){if(!(await siteConfirm(`${pct}% 청산하시겠습니까?`,{title:'CFD 포지션 청산'})))return;const {error}=await supabase.rpc('close_cfd_position',{p_position_id:id,p_percent:pct});if(error)setMsg(error.message);else{setMsg('청산이 반영되었습니다.');await load()}}
- async function updateStops(p:Position){const nsl=(await sitePrompt('Stop Loss',p.stop_loss?.toString()||'',{title:'SL 설정',inputType:'number'}))??'';const ntp=(await sitePrompt('Take Profit',p.take_profit?.toString()||'',{title:'TP 설정',inputType:'number'}))??'';const {error}=await supabase.rpc('update_cfd_sltp',{p_position_id:p.id,p_stop_loss:nsl?Number(nsl):null,p_take_profit:ntp?Number(ntp):null});if(error)setMsg(error.message);else await load()}
+ async function order(){
+  setMsg('');
+  if(!selected){setMsg('상품을 선택하세요.');return}
+  if(m<=0){setMsg('증거금을 확인하세요.');return}
+  const identity=await neonIdentity();
+  const {data:{user}}=identity?{data:{user:identity}}:await supabase.auth.getUser();
+  if(!user){setMsg('로그인이 필요합니다.');return}
+  const riskVersion='cfd-risk-v1';
+  if(identity){
+    const acceptance=await neonRpc('accept_cfd_risk',{p_version:riskVersion});
+    if(acceptance.error){setMsg(acceptance.error.message);return}
+  }else{
+    const {error}=await supabase.from('cfd_risk_acceptances').upsert({user_id:user.id,version:riskVersion},{onConflict:'user_id,version'});
+    if(error){setMsg(error.message);return}
+  }
+  const id=crypto.randomUUID();
+  const args={p_symbol:selected.symbol,p_side:side,p_margin:m,p_leverage:lev,p_stop_loss:sl?Number(sl):null,p_take_profit:tp?Number(tp):null,p_client_order_id:id,p_idempotency_key:id};
+  const {error}=identity?await neonRpc('open_cfd_market_order',args):await supabase.rpc('open_cfd_market_order',args);
+  if(error){setMsg(error.message);return}
+  setMsg('CFD 시장가 주문이 체결되었습니다.');await load();
+ }
+ async function close(id:string,pct:number){
+  if(!(await siteConfirm(`${pct}% 청산하시겠습니까?`,{title:'CFD 포지션 청산'})))return;
+  const identity=await neonIdentity();
+  const args={p_position_id:id,p_percent:pct};
+  const {error}=identity?await neonRpc('close_cfd_position',args):await supabase.rpc('close_cfd_position',args);
+  if(error)setMsg(error.message);else{setMsg('청산이 반영되었습니다.');await load()}
+ }
+ async function updateStops(p:Position){
+  const nsl=(await sitePrompt('Stop Loss',p.stop_loss?.toString()||'',{title:'SL 설정',inputType:'number'}))??'';
+  const ntp=(await sitePrompt('Take Profit',p.take_profit?.toString()||'',{title:'TP 설정',inputType:'number'}))??'';
+  const identity=await neonIdentity();
+  const args={p_position_id:p.id,p_stop_loss:nsl?Number(nsl):null,p_take_profit:ntp?Number(ntp):null};
+  const {error}=identity?await neonRpc('update_cfd_sltp',args):await supabase.rpc('update_cfd_sltp',args);
+  if(error)setMsg(error.message);else await load();
+ }
 
 
  const fmt=(v:number|null|undefined,d=2)=>v==null||!Number.isFinite(Number(v))?'—':Number(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
