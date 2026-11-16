@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import {useEffect,useMemo,useState} from 'react';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import UiIcon from './UiIcon';
 import {siteAlert,siteConfirm,sitePrompt} from './SiteDialog';
 import s from './AdminOperations.module.css';
@@ -21,6 +22,7 @@ const boolValue=(v:unknown)=>v===true||v==='true';
 export default function AdminOperations(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
  const [allowed,setAllowed]=useState<boolean|null>(null);
+ const [neonMode,setNeonMode]=useState(false);
  const [tab,setTab]=useState<Tab>('members');
  const [memberFilter,setMemberFilter]=useState<MemberFilter>('ALL');
  const [query,setQuery]=useState('');
@@ -29,10 +31,18 @@ export default function AdminOperations(){
  const [msg,setMsg]=useState('');
 
  async function load(q=query){
+  const connected=await neonIdentity();
+  if(connected?.role==='admin'){
+    setNeonMode(true);setAllowed(true);
+    const {data:snap,error}=await neonRpc<Snapshot>('admin_ops_snapshot',{p_query:q.trim()});
+    if(error){setMsg(error.message);return}
+    setData((snap||{}) as Snapshot);
+    return;
+  }
   const {data:{user}}=await supabase.auth.getUser();
   const role=String(user?.app_metadata?.role||'').toLowerCase();
   const ok=role==='admin'||role==='superadmin'||user?.app_metadata?.superadmin===true;
-  setAllowed(ok); if(!ok)return;
+  setNeonMode(false);setAllowed(ok);if(!ok)return;
   const {data:snap,error}=await supabase.rpc('admin_ops_snapshot',{p_query:q.trim()});
   if(error){setMsg(error.message);return}
   setData((snap||{}) as Snapshot);
@@ -50,7 +60,7 @@ export default function AdminOperations(){
 
  async function run(name:string,args:Record<string,unknown>,success:string){
   setBusy(true);setMsg('');
-  const {error}=await supabase.rpc(name,args);
+  const {error}=neonMode?await neonRpc(name,args):await supabase.rpc(name,args);
   setBusy(false);
   if(error){setMsg(error.message);return false}
   setMsg(success);await load();return true;
@@ -81,6 +91,20 @@ export default function AdminOperations(){
   await run('admin_set_user_frozen',{p_user_id:u.id,p_frozen:freezing,p_reason:reason||null},freezing?'회원 계정이 동결되었습니다.':'회원 계정 동결이 해제되었습니다.');
  }
  async function resetPassword(u:UserRow){
+  if(neonMode){
+    const yes=await siteConfirm(`${u.email||u.id}\n기존 세션을 종료하고 비밀번호를 초기화할까요?`,{title:'회원 비밀번호 초기화'});
+    if(!yes)return;
+    setBusy(true);setMsg('');
+    try{
+      const r=await fetch('/api/recovery-admin/password-reset',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({userId:u.id})});
+      const payload=await r.json();
+      if(!r.ok)throw new Error(payload.error||'초기화 실패');
+      await siteAlert(`임시 비밀번호\n${payload.temporaryPassword}\n\n회원에게 안전하게 전달해주세요. 다시 표시되지 않습니다.`,{title:'비밀번호 초기화 완료'});
+      await load();
+    }catch(e){setMsg(e instanceof Error?e.message:'비밀번호 초기화 실패')}
+    finally{setBusy(false)}
+    return;
+  }
   const temporary=makeTemporaryPassword();
   const ok=await siteConfirm(
     `${u.email||u.id}\n임시 비밀번호로 초기화하면 현재 로그인 세션이 모두 종료됩니다.\n비밀번호를 초기화할까요?`,
@@ -94,6 +118,7 @@ export default function AdminOperations(){
   await load();
   await siteAlert(`비밀번호가 초기화되었습니다.\n\n임시 비밀번호\n${temporary}\n\n이 비밀번호는 관리자 화면에 다시 표시되지 않습니다.`,{title:'비밀번호 초기화 완료'});
  }
+
  async function adjust(u:UserRow){
   const asset=((await sitePrompt('조정할 자산','USDT',{title:'잔액 조정'}))||'').trim().toUpperCase();if(!asset)return;
   const amount=Number(await sitePrompt('증가/차감 금액을 입력하세요. 차감은 음수입니다.','0',{title:'잔액 조정',inputType:'number'}));if(!Number.isFinite(amount)||amount===0){await siteAlert('0이 아닌 숫자를 입력하세요.');return}
