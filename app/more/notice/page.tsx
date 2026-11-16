@@ -9,7 +9,24 @@ const label=(x:string)=>cats.find(c=>c[0]===x)?.[1]||x;
 
 export default function NoticePage(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]); const [rows,setRows]=useState<Notice[]>([]); const [cat,setCat]=useState('ALL'); const [q,setQ]=useState(''); const [loading,setLoading]=useState(true);
- useEffect(()=>{supabase.from('notices').select('id,slug,category,title,summary,body,pinned,published_at,created_at').eq('status','PUBLISHED').order('pinned',{ascending:false}).order('published_at',{ascending:false}).then(({data})=>{setRows((data||[]) as Notice[]);setLoading(false)})},[supabase]);
+ useEffect(()=>{
+   let active=true;
+   (async()=>{
+     try{
+       const {data}=await supabase.from('notices').select('id,slug,category,title,summary,body,pinned,published_at,created_at').eq('status','PUBLISHED').order('pinned',{ascending:false}).order('published_at',{ascending:false});
+       if(data?.length){if(active)setRows(data as Notice[]);return;}
+     }catch{}
+     try{
+       const res=await fetch('/api/recovery-public/notices',{cache:'no-store'});
+       if(!res.ok)throw new Error('notices_unavailable');
+       const result=await res.json();
+       if(active)setRows((result.notices||[]).map((n:{id:string;title:string;body:string;created_at:string})=>({
+         id:n.id,slug:n.id,category:'GENERAL',title:n.title,summary:n.body.slice(0,120),body:n.body,pinned:false,published_at:n.created_at,created_at:n.created_at
+       })));
+     }catch{if(active)setRows([])}
+   })().finally(()=>{if(active)setLoading(false)});
+   return()=>{active=false};
+ },[supabase]);
  const filtered=rows.filter(n=>(cat==='ALL'||n.category===cat)&&(!q.trim()||`${n.title} ${n.summary}`.toLowerCase().includes(q.trim().toLowerCase())));
  return <main style={{minHeight:'calc(100vh - 72px)',background:'#08090a',color:'#f4f6f7',padding:'42px 0 90px'}}><div className="xtShell">
   <div style={{display:'flex',justifyContent:'space-between',gap:20,alignItems:'end',flexWrap:'wrap',paddingBottom:24,borderBottom:'1px solid #222629'}}><div><span style={{fontSize:11,color:'#7d858a',fontWeight:900,letterSpacing:'.14em'}}>SYSTEM & SERVICE</span><h1 style={{fontSize:'clamp(38px,5vw,62px)',margin:'8px 0 8px',letterSpacing:'-.045em'}}>Notice Center</h1><p style={{margin:0,color:'#8a9297'}}>서비스 운영, 시스템 점검, 거래·입출금 및 정책 변경 사항을 확인하세요.</p></div><input className="noticeSearchInput" value={q} onChange={e=>setQ(e.target.value)} placeholder="공지 검색" style={{width:280,height:42,border:'1px solid #303539',background:'#111416',color:'#fff',borderRadius:9,padding:'0 13px'}}/></div>
