@@ -3,6 +3,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {createBrowserSupabase} from '@/lib/supabase-browser';
+import {neonIdentity,neonRpc} from '@/lib/neon-bridge';
 import {siteConfirm} from '@/components/SiteDialog';
 import s from './P2PMarket.module.css';
 
@@ -35,6 +36,10 @@ const p2pErrorMessage=(code:string)=>{
 
 export default function P2PMarketClient(){
  const supabase=useMemo(()=>createBrowserSupabase(),[]);
+ async function p2pRpc(name:string,args:Record<string,unknown>={}):Promise<{data:any;error:any}>{
+  const identity=await neonIdentity();
+  return identity?neonRpc(name,args):supabase.rpc(name,args);
+ }
  const router=useRouter();
  const [userId,setUserId]=useState<string|null>(null);
  const [data,setData]=useState<Snapshot>({ads:[],my_player:null,my_orders:[],my_ads:[]});
@@ -66,7 +71,11 @@ export default function P2PMarketClient(){
  const [orderPayment,setOrderPayment]=useState('계좌이체');
 
  async function load(){
-   const [{data:{user}},{data:snap,error}]=await Promise.all([supabase.auth.getUser(),supabase.rpc('p2p_market_snapshot')]);
+   const identity=await neonIdentity();
+   const [{data:{user}},{data:snap,error}]=await Promise.all([
+     identity?Promise.resolve({data:{user:identity}}):supabase.auth.getUser(),
+     p2pRpc('p2p_market_snapshot')
+   ]);
    setUserId(user?.id||null);
    if(error){setMsg(error.message);return;}
    setData((snap||{ads:[],my_player:null,my_orders:[],my_ads:[]}) as Snapshot);
@@ -96,7 +105,7 @@ export default function P2PMarketClient(){
  useEffect(()=>{
    if(!chatOrder)return;
    let alive=true;
-   const get=async()=>{const {data:m}=await supabase.rpc('p2p_order_messages',{p_order_id:chatOrder.id});if(alive)setMessages((m||[]) as Message[])};
+   const get=async()=>{const {data:m}=await p2pRpc('p2p_order_messages',{p_order_id:chatOrder.id});if(alive)setMessages((m||[]) as Message[])};
    get();const id=setInterval(get,3000);return()=>{alive=false;clearInterval(id)};
  },[chatOrder?.id,supabase]);
 
@@ -109,13 +118,13 @@ export default function P2PMarketClient(){
  }
  async function applyPlayer(){
    if(!await requireLogin())return;setBusy(true);setMsg('');
-   const {error}=await supabase.rpc('p2p_apply_player',{p_nickname:nickname,p_fee_rate:Number(fee),p_primary_asset:asset,p_payment_methods:payMethods,p_min_order:Number(minOrder),p_max_order:Number(maxOrder),p_bio:bio});
+   const {error}=await p2pRpc('p2p_apply_player',{p_nickname:nickname,p_fee_rate:Number(fee),p_primary_asset:asset,p_payment_methods:payMethods,p_min_order:Number(minOrder),p_max_order:Number(maxOrder),p_bio:bio});
    setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setApplyOpen(false);setMsg('P2P 플레이어 신청이 접수되었습니다.');await load();
  }
  async function createAd(){
    setBusy(true);setMsg('');
    if(liveUsdtKrw<=0){setBusy(false);setMsg('실시간 USDT 시세를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');return}
-   const {error}=await supabase.rpc('p2p_create_ad',{p_price:liveUsdtKrw,p_available_amount:Number(available),p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,p_fee_rate:Number(fee),p_headline:headline,p_terms:terms});
+   const {error}=await p2pRpc('p2p_create_ad',{p_price:liveUsdtKrw,p_available_amount:Number(available),p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,p_fee_rate:Number(fee),p_headline:headline,p_terms:terms});
    setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setAdOpen(false);setMsg('판매 카드가 등록되었습니다.');await load();
  }
  function openEditAd(ad:Ad){
@@ -132,7 +141,7 @@ export default function P2PMarketClient(){
  async function updateAd(){
    if(!editingAd)return;
    setBusy(true);setMsg('');
-   const {error}=await supabase.rpc('p2p_update_my_ad',{
+   const {error}=await p2pRpc('p2p_update_my_ad',{
      p_id:editingAd.id,p_price:liveUsdtKrw||editingAd.price,p_available_amount:Number(available),
      p_min_order:Number(adMin),p_max_order:Number(adMax),p_payment_methods:adPayMethods,
      p_fee_rate:Number(fee),p_headline:headline,p_terms:terms
@@ -142,7 +151,7 @@ export default function P2PMarketClient(){
  }
  async function changeAdStatus(ad:Ad,status:'ACTIVE'|'PAUSED'|'CLOSED'){
    setBusy(true);setMsg('');
-   const {error}=await supabase.rpc('p2p_set_my_ad_status',{p_id:ad.id,p_status:status});
+   const {error}=await p2pRpc('p2p_set_my_ad_status',{p_id:ad.id,p_status:status});
    setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}
    setMsg(status==='ACTIVE'?'판매 카드가 다시 노출됩니다.':status==='PAUSED'?'판매 카드 노출을 일시중지했습니다.':'판매 카드를 종료했습니다.');
    await load();
@@ -151,18 +160,18 @@ export default function P2PMarketClient(){
    if(!orderAd||!await requireLogin())return;
    if(liveUsdtKrw<=0){setMsg('실시간 USDT 시세를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');return}
    setBusy(true);setMsg('');
-   const {error}=await supabase.rpc('p2p_create_order_live',{p_ad_id:orderAd.id,p_asset_amount:Number(orderUsdt),p_payment_method:orderPayment,p_live_price:liveUsdtKrw});
+   const {error}=await p2pRpc('p2p_create_order_live',{p_ad_id:orderAd.id,p_asset_amount:Number(orderUsdt),p_payment_method:orderPayment,p_live_price:liveUsdtKrw});
    setBusy(false);if(error){setMsg(p2pErrorMessage(error.message));return}setOrderAd(null);setTab('mine');setMsg('USDT 구매 요청을 전송했습니다.');await load();
  }
  async function orderAction(order:Order,action:string){
-   setBusy(true);setMsg('');const {error}=await supabase.rpc('p2p_order_action',{p_order_id:order.id,p_action:action});setBusy(false);
+   setBusy(true);setMsg('');const {error}=await p2pRpc('p2p_order_action',{p_order_id:order.id,p_action:action});setBusy(false);
    if(error){setMsg(p2pErrorMessage(error.message));return}await load();
  }
  async function sendMessage(){
    if(!chatOrder||!chatText.trim())return;const value=chatText.trim();setChatText('');
-   const {error}=await supabase.rpc('p2p_send_message',{p_order_id:chatOrder.id,p_message:value});
+   const {error}=await p2pRpc('p2p_send_message',{p_order_id:chatOrder.id,p_message:value});
    if(error){setMsg(p2pErrorMessage(error.message));return}
-   const {data:m}=await supabase.rpc('p2p_order_messages',{p_order_id:chatOrder.id});setMessages((m||[]) as Message[]);
+   const {data:m}=await p2pRpc('p2p_order_messages',{p_order_id:chatOrder.id});setMessages((m||[]) as Message[]);
  }
 
  const playerStatus=data.my_player?.status||null;
