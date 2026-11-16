@@ -21,19 +21,10 @@ export async function middleware(req:NextRequest){
   headers.set('x-robots-tag','noindex, nofollow, noarchive');
   headers.set('cache-control','no-store');
 
-  const migratedRoutes:Record<string,string>={'/admin/dealers':'dealers','/admin/operations':'members','/admin/wallet':'wallets'};
-  if(migratedRoutes[pathname]){
-    const target=req.nextUrl.clone();
-    target.pathname='/admin';
-    target.search='';
-    target.searchParams.set('tab',migratedRoutes[pathname]);
-    return NextResponse.redirect(target);
-  }
-
   // The new admin entry points use Railway-backed HttpOnly session cookies.
   // Authorization happens in /api/recovery-admin/* on the server.
   // Do not redirect either entry point through legacy Supabase admin login.
-  if(pathname==='/admin'||pathname==='/admin/login'){
+  if(pathname==='/admin/login'||pathname==='/admin/recovery'){
 
     const res=NextResponse.next({request:{headers}});
     res.headers.set('X-Frame-Options','DENY');
@@ -43,9 +34,19 @@ export async function middleware(req:NextRequest){
   }
 
   const token=req.cookies.get('bm_admin_token')?.value;
-  if(!token||!(await verifyAdmin(token))){
+  const railwayToken=req.cookies.get('bm_recovery_session')?.value;
+  let railwayAdmin=false;
+  if(railwayToken){
+    try{
+      const session=await fetch('https://bitmate-auth-production.up.railway.app/session',{
+        headers:{Authorization:'Bearer '+railwayToken},cache:'no-store',signal:AbortSignal.timeout(5000)
+      });
+      if(session.ok){const data=await session.json();railwayAdmin=data?.user?.role==='admin'}
+    }catch{}
+  }
+  if(!railwayAdmin&&(!token||!(await verifyAdmin(token)))){
     const url=req.nextUrl.clone();
-    url.pathname='/admin/login';
+    url.pathname='/admin/recovery';
     url.searchParams.set('next',pathname);
     const res=NextResponse.redirect(url);
     res.cookies.delete('bm_admin_token');
