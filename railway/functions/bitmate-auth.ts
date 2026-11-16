@@ -57,6 +57,16 @@ await sql`create table if not exists bm_demo_ledger(
  created_at timestamptz not null default now()
 )`;
 await sql`create index if not exists bm_demo_ledger_user_time_idx on bm_demo_ledger(user_id,created_at desc)`;
+await sql`create table if not exists bm_notices (
+ id uuid primary key default gen_random_uuid(),
+ title text not null check (char_length(title) between 1 and 160),
+ body text not null check (char_length(body) between 1 and 10000),
+ published boolean not null default true,
+ author_id uuid not null references bm_auth_users(id),
+ created_at timestamptz not null default now(),
+ updated_at timestamptz not null default now()
+)`;
+await sql`create index if not exists bm_notices_created_idx on bm_notices(created_at desc)`;
 console.log('BITMATE_AUTH_DB_READY');
 const hex=async(s:string)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const response=(obj:unknown,status=200)=>Response.json(obj,{status,headers:{'cache-control':'no-store'}});
@@ -64,6 +74,10 @@ console.log('BITMATE_AUTH_SERVICE_STARTING');
 Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
  const path=new URL(req.url).pathname;
  if(path==='/health')return response({ok:true,service:'bitmate-auth'});
+ if(path==='/notices'&&req.method==='GET'){
+   const rows=await sql`select id,title,body,created_at from bm_notices where published=true order by created_at desc limit 50`;
+   return response({ok:true,notices:rows});
+ }
  if(req.method==='POST'&&(path==='/signup'||path==='/login')){
   let body:any;try{body=await req.json()}catch{return response({error:'invalid_request'},400)}
   const email=String(body.email||'').trim().toLowerCase(),password=String(body.password||'');
@@ -205,6 +219,43 @@ Bun.serve({port:Number(Bun.env.PORT||3000),async fetch(req){
     });
     return response({ok:true,wallet:result});
    }catch(error){return response({error:String(error).includes('NOT_TEST_MEMBER')?'테스트 회원만 가상잔액을 조정할 수 있습니다.':'중복 요청이거나 잔액 처리에 실패했습니다.'},409)}
+  }
+  if(path==='/admin/notices'&&req.method==='GET'){
+   const notices=await sql`select id,title,body,published,created_at,updated_at from bm_notices order by created_at desc limit 100`;
+   return response({ok:true,notices});
+  }
+  if(path==='/admin/notice-create'&&req.method==='POST'){
+   let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+   const title=String(body.title||'').trim(),content=String(body.body||'').trim();
+   if(!title||title.length>160||!content||content.length>10000)return response({error:'제목 또는 본문을 확인하세요.'},400);
+   const rows=await sql`insert into bm_notices(title,body,published,author_id) values(${title},${content},true,${operator.id}) returning id,title,body,created_at`;
+   await sql`insert into bm_admin_audit(actor_id,action,target_id) values(${operator.id},'NOTICE_CREATED',${operator.id})`;
+   return response({ok:true,notice:rows[0]});
+  }
+  if(path==='/admin/notice-delete'&&req.method==='POST'){
+   let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+   const noticeId=String(body.noticeId||'');
+   if(!/^[0-9a-f-]{36}$/i.test(noticeId))return response({error:'공지 식별값이 올바르지 않습니다.'},400);
+   const rows=await sql`delete from bm_notices where id=${noticeId} returning id`;
+   if(!rows.length)return response({error:'공지를 찾을 수 없습니다.'},404);
+   await sql`insert into bm_admin_audit(actor_id,action,target_id) values(${operator.id},'NOTICE_DELETED',${operator.id})`;
+   return response({ok:true});
+  }
+  if(path==='/admin/password-reset'&&req.method==='POST'){
+   let body:any;try{body=await req.json()}catch{return response({error:'올바른 요청이 아닙니다.'},400)}
+   const userId=String(body.userId||'');
+   if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId))return response({error:'회원 식별값이 올바르지 않습니다.'},400);
+   const temporary='Bm-'+Array.from(crypto.getRandomValues(new Uint8Array(18)),x=>'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'[x%57]).join('')+'!';
+   const hash=await Bun.password.hash(temporary,{algorithm:'argon2id'});
+   const updated=await sql.begin(async tx=>{
+     const users=await tx`update bm_auth_users set password_hash=${hash} where id=${userId} and role='user' returning id`;
+     if(!users.length)return null;
+     await tx`delete from bm_auth_sessions where user_id=${userId}`;
+     await tx`insert into bm_admin_audit(actor_id,target_id,action) values(${operator.id},${userId},'USER_PASSWORD_RESET')`;
+     return users[0];
+   });
+   if(!updated)return response({error:'일반 회원 계정을 찾을 수 없습니다.'},404);
+   return response({ok:true,temporaryPassword:temporary});
   }
   if(path==='/admin/demo-ledger'&&req.method==='GET'){
    const rows=await sql`select l.id,l.delta,l.balance_after,l.created_at,u.email as member_email,a.email as actor_email from bm_demo_ledger l join bm_auth_users u on u.id=l.user_id left join bm_auth_users a on a.id=l.actor_id order by l.created_at desc limit 100`;
