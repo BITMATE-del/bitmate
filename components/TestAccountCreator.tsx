@@ -12,9 +12,17 @@ export default function TestAccountCreator({onCreated}:{onCreated?:()=>void}){
  async function create(e:React.FormEvent){
    e.preventDefault();setBusy(true);setMessage('');setSuccess(false);
    try{
-     const {data:{session}}=await supabase.auth.getSession();
-     if(!session){setMessage('로그인 세션이 만료되었습니다. 다시 로그인하세요.');return}
-     const response=await fetch('/api/internal/test-account',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({email,password})});
+     const identity=await fetch('/api/recovery-auth/session',{cache:'no-store',credentials:'same-origin'}).then(r=>r.ok?r.json():null).catch(()=>null);
+     let response:Response;
+     if(identity?.user?.role==='admin'){
+       response=await fetch('/api/recovery-admin/create-test',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+     }else if(identity?.user?.role==='dealer'){
+       response=await fetch('/api/recovery-dealer/create-test',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+     }else{
+       const {data:{session}}=await supabase.auth.getSession();
+       if(!session){setMessage('로그인 세션이 만료되었습니다. 다시 로그인하세요.');return}
+       response=await fetch('/api/internal/test-account',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token},body:JSON.stringify({email,password})});
+     }
      const result=await response.json();
      if(!response.ok){setMessage(result.error||'발급에 실패했습니다.');return}
      setMessage('테스트 계정이 생성됐습니다. 이메일 인증 없이 로그인할 수 있습니다.');
