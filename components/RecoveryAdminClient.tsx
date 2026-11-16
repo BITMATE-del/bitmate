@@ -44,6 +44,11 @@ export default function RecoveryAdminClient(){
  },[]);
 
  useEffect(()=>{
+  const tab=new URLSearchParams(window.location.search).get('tab');
+  if(tab==='members'||tab==='dealers'||tab==='wallets'||tab==='ledger')setActiveNav(tab);
+ },[]);
+
+ useEffect(()=>{
   let active=true;
   (async()=>{
    try{
