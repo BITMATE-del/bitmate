@@ -14,13 +14,13 @@ export async function POST(req:NextRequest,{params}:{params:Promise<{name:string
   catch{return fail('허용되지 않은 요청입니다.',403)}
  }
  const token=req.cookies.get('bm_recovery_session')?.value;
- if(!token)return fail('로그인이 필요합니다.',401);
+ if(!token&&name!=='futures_markets')return fail('로그인이 필요합니다.',401);
  const raw=await req.text();
  if(raw.length>10000)return fail('요청 크기가 너무 큽니다.',413);
  try{
   const upstream=await fetch(backend+'/rpc/'+name,{
    method:'POST',
-   headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+   headers:{...(token?{Authorization:'Bearer '+token}:{}),'Content-Type':'application/json'},
    body:raw||'{}',cache:'no-store',signal:AbortSignal.timeout(15000)
   });
   const result=await upstream.json().catch(()=>({data:null,error:{message:'거래 서버 응답 오류'}}));
